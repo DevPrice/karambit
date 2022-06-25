@@ -1,0 +1,19 @@
+{
+  "name": "karambit-inject",
+  "version": "0.1.0-alpha",
+  "description": "A compile-time and type-safe dependency injector for Typescript.",
+  "main": "build/karambit.js",
+  "files": [
+    "build"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "release": "npm run build",
+    "test": "npm run build && npm run --prefix integration test"
+  },
+  "author": "DevPrice",
+  "devDependencies": {
+    "@types/node": "^17.0.31",
+    "typescript": "^4.7.3"
+  }
+}
