@@ -93,13 +93,12 @@ export class DependencyGraphBuilder {
 
     private getInjectConstructorParams(type: ts.Type): ConstructorParameter[] | undefined {
         if (this.scopeFilter === undefined) return this.constructorHelper.getInjectConstructorParams(type)
-        if (this.scopeFilter.filterOnly === undefined) return undefined
 
         const symbol = type.getSymbol()
         const declarations = symbol?.getDeclarations()
         const declaration = declarations && declarations.length > 0 ? declarations[0] : undefined
         const scope = declaration && ts.isClassDeclaration(declaration) ? this.nodeDetector.getScope(declaration) : undefined
-        if (scope !== this.scopeFilter.filterOnly) return undefined
+        if (scope && scope !== this.scopeFilter.filterOnly) return undefined
 
         return this.constructorHelper.getInjectConstructorParams(type)
     }
