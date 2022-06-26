@@ -1,5 +1,8 @@
 # Karambit
 
+[![NPM version](https://badge.fury.io/js/karambit-inject.svg)](https://www.npmjs.com/package/karambit-inject)
+[![NPM License](https://img.shields.io/npm/l/karambit-inject)](LICENSE.txt)
+
 A compile-time and type-safe dependency injector for Typescript.
 
 Karambit is different from other Typescript dependency injection libraries in several key ways:
@@ -15,7 +18,7 @@ Karambit is heavily inspired by [Dagger](https://github.com/google/dagger/), and
 
 ## Installation
 
-This project is available as a package in [NPM](https://npmjs.com).
+This project is available as a package in [NPM](https://www.npmjs.com/package/karambit-inject).
 
 ```
 $ npm install --save-dev karambit-inject
