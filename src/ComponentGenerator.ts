@@ -146,6 +146,12 @@ export class ComponentGenerator {
             }
         })
 
+        const missing = Array.from(mergedGraph.missing.keys())
+        const missingRequired = missing.filter(it => !it.optional)
+        if (missingRequired.length > 0) {
+            throw new Error(`Missing required binding(s) in ${componentType.symbol.name}: ${missingRequired.map(it => qualifiedTypeToString(it.type))}`)
+        }
+
         const missingOptionals = Array.from(mergedGraph.missing.keys()).map(it => it.type)
         const generatedDeps = new Set(
             Array.from(mergedGraph.resolved.keys()).concat(missingOptionals)
