@@ -3,6 +3,7 @@
   "version": "0.1.0-alpha",
   "description": "A compile-time and type-safe dependency injector for Typescript.",
   "main": "build/karambit.js",
+  "license": "Apache-2.0",
   "files": [
     "build"
   ],
