@@ -11,8 +11,9 @@
   ],
   "scripts": {
     "build": "tsc",
-    "release": "npm run build",
-    "test": "npm run build && npm run --prefix integration test"
+    "release": "npm test",
+    "pretest": "npm run build",
+    "test": "npm run --prefix integration test"
   },
   "author": "DevPrice",
   "devDependencies": {
