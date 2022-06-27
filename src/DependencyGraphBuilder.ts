@@ -39,7 +39,8 @@ export class DependencyGraphBuilder {
         private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly constructorHelper: ConstructorHelper,
-        private readonly scopeFilter?: { filterOnly?: ts.Symbol }
+        private readonly scopeFilter?: { filterOnly?: ts.Symbol },
+        private readonly parentGraph?: Container<QualifiedType>,
     ) { }
 
     buildDependencyGraph(
@@ -100,7 +101,11 @@ export class DependencyGraphBuilder {
         const scope = declaration && ts.isClassDeclaration(declaration) ? this.nodeDetector.getScope(declaration) : undefined
         if (scope && scope !== this.scopeFilter.filterOnly) return undefined
 
-        return this.constructorHelper.getInjectConstructorParams(type)
+        const params = this.constructorHelper.getInjectConstructorParams(type)
+        const parentGraph = this.parentGraph
+        // if the parent can provide this, then let it
+        if (params && parentGraph && params.every(it => parentGraph.has(it.type))) return undefined
+        return params
     }
 
     private assertNoCycles(type: QualifiedType, map: ReadonlyMap<QualifiedType, ReadonlySet<QualifiedType>>) {
