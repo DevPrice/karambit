@@ -267,12 +267,10 @@ export class ComponentDeclarationBuilder {
         const params = this.constructorHelper.getInjectConstructorParams(type.type) ?? []
         if (!params) throw new Error(`Can't find injectable constructor for type: ${this.typeChecker.typeToString(type.type)}`)
         const declaration = symbol.getDeclarations()![0]
-        const scopeDecorators = (declaration.decorators && declaration.decorators.filter(this.nodeDetector.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression))) ?? []
-        if (scopeDecorators.length > 1) throw new Error(`Inject constructor may only have one scope! ${this.typeChecker.typeToString(type.type)} has ${scopeDecorators.length}.`)
-        const scope = scopeDecorators[0]
+        const scope = this.nodeDetector.getScope(declaration)
         if (scope) {
             if (!this.nodeDetector.isReusableScope(scope) && scope !== componentScope) {
-                throw new Error(`Invalid scope for ${self.typeChecker.typeToString(type.type)}! Got: ${scope.getName()}, expected: ${componentScope?.getName()}`)
+                throw new Error(`Invalid scope for ${self.typeChecker.typeToString(type.type)}! Got: ${scope.getName()}, expected: ${componentScope?.getName() ?? "No scope"}`)
             }
             const propIdentifier = self.nameGenerator.getPropertyIdentifier(type)
             return [
