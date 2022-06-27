@@ -5,7 +5,9 @@
   "main": "build/karambit.js",
   "license": "Apache-2.0",
   "files": [
-    "build"
+    "FEATURES.md",
+    "build/karambit.d.ts",
+    "build/*.js"
   ],
   "scripts": {
     "build": "tsc",
