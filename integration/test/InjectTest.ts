@@ -72,7 +72,7 @@ describe("Injection", () => {
             assert.strictEqual(parentComponent.subcomponentFactory([2, 2]).sum, 4)
         })
         it("subcomponent can provide parent bindings", () => {
-            assert.strictEqual(parentComponent.parentClass.child, childInstance)
+            assert.strictEqual(parentComponent.subcomponentFactory([2, 2]).parentClass.child, childInstance)
         })
         it("subcomponent works with scoped constructor", () => {
             const subcomponent = parentComponent.scopedSubcomponentFactory()
