@@ -41,7 +41,9 @@ export class DependencyGraphBuilder {
         private readonly constructorHelper: ConstructorHelper,
         private readonly scopeFilter?: { filterOnly?: ts.Symbol },
         private readonly parentGraph?: Container<QualifiedType>,
-    ) { }
+    ) {
+        this.assertNoDuplicateBindings()
+    }
 
     buildDependencyGraph(
         dependencies: ReadonlySet<Dependency>
@@ -116,6 +118,20 @@ export class DependencyGraphBuilder {
         })
         if (cycle.length > 0) {
             throw new Error(`Found circular dependency! ${cycle.map(it => qualifiedTypeToString(it)).join(" -> ")}`)
+        }
+    }
+
+    private assertNoDuplicateBindings() {
+        const allBoundTypes = [...this.dependencyMap.keys(), ...this.factoryMap.keys()]
+        const boundTypeSet = new Set(allBoundTypes)
+        if (allBoundTypes.length !== boundTypeSet.size) {
+            const duplicates: QualifiedType[] = []
+            for (const type of boundTypeSet) {
+                if (this.dependencyMap.has(type) && this.factoryMap.has(type)) {
+                    duplicates.push(type)
+                }
+            }
+            throw new Error(`Duplicate providers for type(s): ${duplicates.map(qualifiedTypeToString).join(", ")}`)
         }
     }
 }
