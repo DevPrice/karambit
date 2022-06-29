@@ -37,17 +37,22 @@ export class ComponentGenerator {
     private getDependencyMap(component: ts.ClassLikeDeclaration): ReadonlyMap<QualifiedType, PropertyProvider> {
         const dependencyParams = this.constructorHelper.getConstructorParamsForDeclaration(component) ?? []
         const dependencyMap = new Map<QualifiedType, PropertyProvider>()
+        function getDuplicateBindingError (type: QualifiedType): Error {
+            return new Error(`Duplicate component dependency binding for ${qualifiedTypeToString(type)}!`)
+        }
         dependencyParams.forEach(param => {
             const name = this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)
             const type = param.type
             const isInstanceBinding = param.decorators.some(this.nodeDetector.isBindsInstanceDecorator)
             if (isInstanceBinding) {
+                if (dependencyMap.has(type)) throw getDuplicateBindingError(type)
                 dependencyMap.set(type, {name, type})
             } else {
                 this.propertyExtractor.getDeclaredPropertiesForType(type.type).forEach(property => {
-                    const type = this.propertyExtractor.typeFromPropertyDeclaration(property)
+                    const propertyType = this.propertyExtractor.typeFromPropertyDeclaration(property)
                     const propertyName = property.name.getText()
-                    dependencyMap.set(type, {type, name, propertyName})
+                    if (dependencyMap.has(propertyType)) throw getDuplicateBindingError(type)
+                    dependencyMap.set(propertyType, {type: propertyType, name, propertyName})
                 })
             }
         })
