@@ -52,7 +52,7 @@ export class DependencyGraphBuilder {
         const todo: Dependency[] = Array.from(dependencies)
 
         let next: Dependency | undefined
-        while (next = todo.shift()) {
+        while (next = todo.shift()) { // eslint-disable-line
             const boundType = this.typeResolver.resolveBoundType(next.type)
             if (result.has(boundType)) continue
 

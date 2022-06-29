@@ -127,7 +127,7 @@ export class InjectNodeDetector {
     }
 
     private getIdentifiers(decorator: ts.Node): [ts.Identifier] | [ts.Identifier, ts.Identifier] | [] {
-        for (let child of decorator.getChildren()) {
+        for (const child of decorator.getChildren()) {
             if (ts.isPropertyAccessExpression(child)) {
                 return child.getChildren().filter(ts.isIdentifier) as any
             }
