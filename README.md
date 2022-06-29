@@ -58,6 +58,7 @@ Finally, add the Karambit transformer as a plugin inside your `.tsconfig`:
 
 ```json
 {
+  "experimentalDecorators": true,
   "compilerOptions": {
     "plugins": [
       { "transform": "karambit-inject" }
