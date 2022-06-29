@@ -15,9 +15,10 @@ export class PropertyExtractor {
         const declarations = symbol.getDeclarations()
         const baseTypes = type.getBaseTypes() ?? []
         const baseProperties = baseTypes.flatMap(it => this.getDeclaredPropertiesForType(it))
+
         if (declarations === undefined) return baseProperties
-        return declarations.filter(it => ts.isClassDeclaration(it) || ts.isInterfaceDeclaration(it))
-            .map(it => it as ts.ClassDeclaration | ts.InterfaceDeclaration)
+        return declarations.filter(it => ts.isClassDeclaration(it) || ts.isInterfaceDeclaration(it) || ts.isTypeLiteralNode(it))
+            .map(it => it as ts.ClassDeclaration | ts.InterfaceDeclaration | ts.TypeLiteralNode)
             .flatMap(declaration => {
                 const members = declaration.members as ts.NodeArray<ElementLike>
                 return members.filter((it: ElementLike) => ts.isPropertyDeclaration(it) || ts.isPropertySignature(it))

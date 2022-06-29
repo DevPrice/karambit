@@ -29,6 +29,9 @@ describe("Injection", () => {
         it("parent provides instance binding", () => {
             assert.strictEqual(parentComponent.boundString, "bound")
         })
+        it("type literal properties are bound", () => {
+            assert.strictEqual(parentComponent.value, Symbol.for("value"))
+        })
     })
     describe("Providers", () => {
         it("provider type provides instance of Provider", () => {
@@ -215,17 +218,17 @@ abstract class ScopedSubcomponent {
 @Component({subcomponents: [ChildSubcomponent, ScopedSubcomponent]})
 class ParentComponent {
 
-    constructor(child: ChildComponent, @BindsInstance public boundString: string) { }
+    constructor(child: ChildComponent, typeLiteralChild: {value: symbol}, @BindsInstance public boundString: string) { }
 
+    readonly value: symbol
     readonly parentClass: ParentClass
-
     readonly providerHolder: ProviderHolder
 
     readonly subcomponentFactory: (values: number[]) => ChildSubcomponent
     readonly scopedSubcomponentFactory: () => ScopedSubcomponent
 }
 
-const parentComponent = new ParentComponent(new ChildComponent(), "bound")
+const parentComponent = new ParentComponent(new ChildComponent(), {value: Symbol.for("value")}, "bound")
 
 @Module
 abstract class ProviderModule {
