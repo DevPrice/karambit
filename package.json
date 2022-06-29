@@ -22,7 +22,7 @@
     "lint": "eslint 'src/**/*.ts'",
     "fix": "eslint 'src/**/*.ts' --fix",
     "check": "npm run lint && npm run test",
-    "release": "npm test"
+    "release": "npm check"
   },
   "author": "DevPrice",
   "repository": "github:DevPrice/karambit",
