@@ -18,12 +18,11 @@
   "scripts": {
     "prepare": "husky install",
     "build": "tsc",
-    "pretest": "npm run build",
     "test": "npm run --prefix integration test",
     "lint": "eslint 'src/**/*.ts'",
     "fix": "eslint 'src/**/*.ts' --fix",
     "check": "npm run lint && npm run test",
-    "release": "npm run check"
+    "release": "npm run build && npm run check"
   },
   "author": "DevPrice",
   "repository": "github:DevPrice/karambit",
