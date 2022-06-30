@@ -2,6 +2,7 @@
 
 [![NPM version](https://badge.fury.io/js/karambit-inject.svg)](https://www.npmjs.com/package/karambit-inject)
 [![NPM License](https://img.shields.io/npm/l/karambit-inject)](LICENSE.txt)
+[![Build](https://github.com/DevPrice/karambit/actions/workflows/build.yml/badge.svg)](https://github.com/DevPrice/karambit/actions/workflows/build.yml)
 
 A compile-time and type-safe dependency injector for Typescript.
 
