@@ -1,6 +1,10 @@
 import * as ts from "typescript"
 import * as Path from "path"
+import {Inject} from "karambit-inject"
+import {SourceFileScope} from "./Scopes"
 
+@Inject
+@SourceFileScope
 export class Importer {
 
     #newImports: Map<string, ts.ImportDeclaration> = new Map()

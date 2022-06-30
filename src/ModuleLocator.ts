@@ -2,6 +2,7 @@ import * as ts from "typescript"
 import {filterNotNull} from "./Util"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
+import {Inject, Reusable} from "karambit-inject"
 
 export type Bindings = ReadonlyMap<QualifiedType, QualifiedType>
 
@@ -24,6 +25,8 @@ export interface ProviderMethod {
     scope?: ts.Symbol
 }
 
+@Inject
+@Reusable
 export class ModuleLocator {
 
     constructor(

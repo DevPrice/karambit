@@ -1,6 +1,10 @@
 import * as ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
+import {Inject} from "karambit-inject"
+import {SourceFileScope} from "./Scopes"
 
+@Inject
+@SourceFileScope
 export class NameGenerator {
 
     constructor(

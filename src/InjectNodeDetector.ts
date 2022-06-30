@@ -1,5 +1,6 @@
 import * as ts from "typescript"
 import {filterNotNull} from "./Util"
+import {Inject, Reusable} from "karambit-inject"
 
 const injectModuleName = require("../package.json").name
 const injectSourceFileName = require("../package.json").main
@@ -10,6 +11,8 @@ interface Decorated {
     decorators?: ts.NodeArray<ts.Decorator>
 }
 
+@Inject
+@Reusable
 export class InjectNodeDetector {
 
     constructor(private readonly typeChecker: ts.TypeChecker) {

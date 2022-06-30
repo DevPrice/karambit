@@ -11,6 +11,7 @@ import {Resolver} from "./Resolver"
 import {QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {SubcomponentFactory, SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
+import {Inject, Reusable} from "karambit-inject"
 
 interface GeneratedSubcomponent {
     readonly name: string
@@ -18,6 +19,8 @@ interface GeneratedSubcomponent {
     readonly graph: DependencyGraph
 }
 
+@Inject
+@Reusable
 export class ComponentGenerator {
 
     constructor(
@@ -157,7 +160,7 @@ export class ComponentGenerator {
         const missing = Array.from(mergedGraph.missing.keys())
         const missingRequired = missing.filter(it => !it.optional)
         if (missingRequired.length > 0) {
-            throw new Error(`Missing required binding(s) in ${componentType.symbol.name}: ${missingRequired.map(it => qualifiedTypeToString(it.type))}`)
+            throw new Error(`Missing required binding(s) in ${componentType.symbol.name}: ${missingRequired.map(it => qualifiedTypeToString(it.type)).join(", ")}`)
         }
 
         const missingOptionals = Array.from(mergedGraph.missing.keys()).map(it => it.type)

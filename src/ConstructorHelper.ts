@@ -1,6 +1,7 @@
 import * as ts from "typescript"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
+import {Inject, Reusable} from "karambit-inject"
 
 export interface ConstructorParameter {
     type: QualifiedType
@@ -10,6 +11,8 @@ export interface ConstructorParameter {
     optional: boolean
 }
 
+@Inject
+@Reusable
 export class ConstructorHelper {
 
     constructor(

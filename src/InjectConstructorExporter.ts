@@ -1,6 +1,9 @@
 import * as ts from "typescript"
 import {InjectNodeDetector} from "./InjectNodeDetector"
+import {Inject, Reusable} from "karambit-inject"
 
+@Inject
+@Reusable
 export class InjectConstructorExporter {
 
     constructor(
