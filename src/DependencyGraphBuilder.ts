@@ -101,7 +101,7 @@ export class DependencyGraphBuilder {
         const declarations = symbol?.getDeclarations()
         const declaration = declarations && declarations.length > 0 ? declarations[0] : undefined
         const scope = declaration && ts.isClassDeclaration(declaration) ? this.nodeDetector.getScope(declaration) : undefined
-        if (scope && scope !== this.scopeFilter.filterOnly) return undefined
+        if (scope && !this.nodeDetector.isReusableScope(scope) && scope !== this.scopeFilter.filterOnly) return undefined
 
         const params = this.constructorHelper.getInjectConstructorParams(type)
         const parentGraph = this.parentGraph

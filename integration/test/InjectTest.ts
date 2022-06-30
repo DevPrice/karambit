@@ -87,6 +87,11 @@ describe("Injection", () => {
             assert.strictEqual(subcomponent.scopedInterface, subcomponent.scopedInterface)
             assert.strictEqual(subcomponent.scopedInterface.value, "bound:scoped")
         })
+        it("grandchild subcomponent can provide all bindings", () => {
+            const subcomponent = parentComponent.subcomponentFactory([2])
+            const grandchildComponent = subcomponent.grandChildSubcomponentFactory({})
+            assert.deepStrictEqual([2], grandchildComponent.grandChildClass.values)
+        })
     })
 })
 
@@ -178,13 +183,36 @@ class SubcomponentModule {
     }
 }
 
-@Subcomponent({modules: [SubcomponentModule]})
+interface GrandChildDependency { }
+
+@Inject
+@Reusable
+class GrandChildClass {
+
+    constructor(
+        readonly values: number[],
+        readonly parentClass: ParentClass,
+        readonly parentInterface: ParentInterface,
+        readonly dep: GrandChildDependency,
+    ) { }
+}
+
+@Subcomponent
+abstract class GrandChildSubcomponent {
+
+    protected constructor(@BindsInstance dep: GrandChildDependency) { }
+
+    readonly grandChildClass: GrandChildClass
+}
+
+@Subcomponent({modules: [SubcomponentModule], subcomponents: [GrandChildSubcomponent]})
 abstract class ChildSubcomponent {
 
-    constructor(@BindsInstance values: number[]) { }
+    protected constructor(@BindsInstance values: number[]) { }
 
     readonly sum: number
     readonly parentClass: ParentClass
+    readonly grandChildSubcomponentFactory: (dep: GrandChildDependency) => GrandChildSubcomponent
 }
 
 @Inject
@@ -215,7 +243,18 @@ abstract class ScopedSubcomponent {
     readonly scopedInterface: ScopedSubcomponentInterface
 }
 
-@Component({subcomponents: [ChildSubcomponent, ScopedSubcomponent]})
+interface ParentInterface { }
+
+@Module
+class ParentModule {
+
+    @Provides
+    static provideParentInterface(): ParentInterface {
+        return {}
+    }
+}
+
+@Component({modules: [ParentModule], subcomponents: [ChildSubcomponent, ScopedSubcomponent]})
 class ParentComponent {
 
     constructor(child: ChildComponent, typeLiteralChild: {value: symbol}, @BindsInstance public boundString: string) { }
