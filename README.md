@@ -155,4 +155,4 @@ class HelloWorldComponent {
 
 While this example is clearly a bit contrived, you should be able to see how simple it can be to add new types to a graph and build much more complex dependency structures.
 
-This is only scratching the surface of what Karambit is capable of, so check out the [feature guide](FEATURES.md) for a more in-depth look at everything it has to offer.
+This is only scratching the surface of what Karambit is capable of, so check out the [feature guide](FEATURES.md) for a more in-depth look at everything it has to offer. For a small, real-world migration example, check out [this PR](https://github.com/DevPrice/karambit/pull/1) that bootstrapped Karambit to use itself for dependency injection.
