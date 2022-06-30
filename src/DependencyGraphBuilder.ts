@@ -40,7 +40,7 @@ export class DependencyGraphBuilder {
         private readonly propertyExtractor: PropertyExtractor,
         private readonly constructorHelper: ConstructorHelper,
         private readonly scopeFilter?: { filterOnly?: ts.Symbol },
-        private readonly parentGraph?: Container<QualifiedType>,
+        private readonly parentGraph?: (type: QualifiedType) => boolean,
     ) {
         this.assertNoDuplicateBindings()
     }
@@ -103,10 +103,13 @@ export class DependencyGraphBuilder {
         const scope = declaration && ts.isClassDeclaration(declaration) ? this.nodeDetector.getScope(declaration) : undefined
         if (scope && !this.nodeDetector.isReusableScope(scope) && scope !== this.scopeFilter.filterOnly) return undefined
 
+        // this is our scope
         const params = this.constructorHelper.getInjectConstructorParams(type)
+        if (scope === this.scopeFilter.filterOnly && this.scopeFilter.filterOnly) return params
+
         const parentGraph = this.parentGraph
         // if the parent can provide this, then let it
-        if (params && parentGraph && params.every(it => parentGraph.has(it.type))) return undefined
+        if (params && parentGraph && parentGraph(createQualifiedType({type}))) return undefined
         return params
     }
 

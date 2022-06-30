@@ -1,7 +1,7 @@
 import * as ts from "typescript"
 import {NameGenerator} from "./NameGenerator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-import {Container, filterNotNull} from "./Util"
+import {filterNotNull} from "./Util"
 import {Importer} from "./Importer"
 import {ProviderMethod, ModuleLocator, Bindings} from "./ModuleLocator"
 import {ComponentDeclarationBuilder} from "./ComponentDeclarationBuilder"
@@ -134,8 +134,11 @@ export class ComponentGenerator {
             Array.from(dependencies.keys()).map(it => it.type)
                 .map(subcomponentFactoryLocator.asSubcomponentFactory)
         )
+        const canBind = (type: QualifiedType) => {
+            return graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
+        }
         const generatedSubcomponents = subcomponents.map(it =>
-            this.generateSubcomponent(it, typeResolver, componentScope ? new Map([[componentScope, componentType.symbol.name]]) : new Map(), dependencies)
+            this.generateSubcomponent(it, typeResolver, componentScope ? new Map([[componentScope, componentType.symbol.name]]) : new Map(), canBind)
         )
 
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
@@ -196,7 +199,7 @@ export class ComponentGenerator {
         factory: SubcomponentFactory,
         resolver: Resolver<QualifiedType>,
         ancestorScopes: ReadonlyMap<ts.Symbol, string>,
-        parentGraph: Container<QualifiedType>,
+        parentCanBind: (type: QualifiedType) => boolean,
     ): GeneratedSubcomponent {
         const dependencyMap = this.getDependencyMap(factory.declaration)
         const subcomponentScope = this.nodeDetector.getScope(factory.declaration)
@@ -210,7 +213,7 @@ export class ComponentGenerator {
             new Set(this.moduleLocator.getInstalledSubcomponents(factory.decorator)),
         )
         const scope = this.nodeDetector.getScope(factory.declaration)
-        const graphBuilder = new DependencyGraphBuilder(
+        const graphBuilder: DependencyGraphBuilder = new DependencyGraphBuilder(
             typeResolver,
             this.nodeDetector,
             dependencyMap,
@@ -219,7 +222,7 @@ export class ComponentGenerator {
             this.propertyExtractor,
             this.constructorHelper,
             {filterOnly: scope},
-            parentGraph,
+            parentCanBind,
         )
         const graph = graphBuilder.buildDependencyGraph(new Set(rootDependencies))
         const dependencies = graph.resolved
@@ -232,8 +235,11 @@ export class ComponentGenerator {
         if (scope && ancestorScopes.has(scope)) {
             throw new Error(`Subcomponent may not share a scope with an ancestor! ${subcomponentName} has the same scope as its ancestor ${ancestorScopes.get(scope)}`)
         }
+        const graphResolver = (type: QualifiedType) => {
+            return parentCanBind(type) || graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
+        }
         const generatedSubcomponents = subcomponents.map(it =>
-            this.generateSubcomponent(it, typeResolver, scope ? new Map([...ancestorScopes.entries(), [scope, subcomponentName]]) : ancestorScopes, new Set([...dependencies.keys(), ...parentGraph.keys()]))
+            this.generateSubcomponent(it, typeResolver, scope ? new Map([...ancestorScopes.entries(), [scope, subcomponentName]]) : ancestorScopes, graphResolver)
         )
         const resolvedSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.resolved.keys()))
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
