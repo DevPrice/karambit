@@ -1,12 +1,5 @@
 import * as ts from "typescript"
-import {NameGenerator} from "./NameGenerator"
-import {InjectNodeDetector} from "./InjectNodeDetector"
-import {ComponentGenerator} from "./ComponentGenerator"
-import {Importer} from "./Importer"
-import {InjectConstructorExporter} from "./InjectConstructorExporter"
-import {ModuleLocator} from "./ModuleLocator"
-import {ConstructorHelper} from "./ConstructorHelper"
-import {PropertyExtractor} from "./PropertyExtractor"
+import {ProgramComponent} from "./Component"
 
 interface ComponentLikeInfo {
     readonly modules?: unknown[]
@@ -106,33 +99,17 @@ export interface Provider<T> {
 }
 
 export default function(program: ts.Program) {
-    const typeChecker = program.getTypeChecker()
-    const nodeDetector = new InjectNodeDetector(typeChecker)
-    const constructorHelper = new ConstructorHelper(typeChecker, nodeDetector)
-    const propertyExtractor = new PropertyExtractor(typeChecker, nodeDetector)
+    const programComponent = new ProgramComponent(program)
     return (ctx: ts.TransformationContext) => {
-        const injectConstructorExporter = new InjectConstructorExporter(ctx, nodeDetector)
-        const moduleLocator = new ModuleLocator(typeChecker, ctx, nodeDetector)
+        const transformationContextComponent = programComponent.transformationContextSubcomponentFactory(ctx)
         return (sourceFile: ts.SourceFile) => {
-            const nameGenerator = new NameGenerator(typeChecker)
-            const importer = new Importer(sourceFile)
-            const componentGenerator = new ComponentGenerator(
-                typeChecker,
-                ctx,
-                sourceFile,
-                nodeDetector,
-                nameGenerator,
-                importer,
-                moduleLocator,
-                constructorHelper,
-                propertyExtractor,
-            )
+            const sourceFileComponent = transformationContextComponent.sourceFileSubcomponentFactory(sourceFile)
             return runTransformers(
                 sourceFile,
-                injectConstructorExporter.exportProviders,
-                componentGenerator.generateComponents,
-                node => nodeDetector.eraseInjectRuntime(node, ctx),
-                importer.addImportsToSourceFile,
+                transformationContextComponent.injectConstructorExporter.exportProviders,
+                sourceFileComponent.componentGenerator.generateComponents,
+                node => programComponent.nodeDetector.eraseInjectRuntime(node, ctx),
+                sourceFileComponent.importer.addImportsToSourceFile,
             )
         }
     }

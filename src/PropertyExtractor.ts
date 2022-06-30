@@ -2,7 +2,10 @@ import * as ts from "typescript"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {ElementLike, PropertyLike} from "./DependencyGraphBuilder"
 import {InjectNodeDetector} from "./InjectNodeDetector"
+import {Inject, Reusable} from "karambit-inject"
 
+@Inject
+@Reusable
 export class PropertyExtractor {
 
     constructor(

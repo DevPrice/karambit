@@ -8,7 +8,10 @@
     "noImplicitAny": true,
     "strictNullChecks": true,
     "sourceMap": true,
-    "incremental": true
+    "experimentalDecorators": true,
+    "plugins": [
+      { "transform": "karambit-inject" }
+    ]
   },
   "include": [
     "src/**/*.ts"
