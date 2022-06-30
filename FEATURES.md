@@ -14,7 +14,6 @@ From the Hello World sample:
 ```typescript
 @Component(/* ... */)
 class HelloWorldComponent {
-
     readonly greeter: Greeter
 }
 ```
@@ -102,7 +101,6 @@ In the Hello World sample, the `string` type is provided via a `@Provides` metho
 ```typescript
 @Module
 abstract class HelloWorldModule {
-
     @Provides
     static provideGreetingTarget(): string {
         return "World"
@@ -146,7 +144,16 @@ Installing `MyModule` to a Component or including it within another module will 
 
 ## Optional bindings
 
-If the parameter to a provider (`@Inject` constructor or `@Provides` method) is optional, or if a Component property is optional, then compilation will not fail if the binding is missing. Instead, `undefined` will be provided for that type within the Component graph.
+If the parameter to a provider (`@Inject` constructor or `@Provides` method) is optional or has an initializer, or if a Component property is optional, then compilation will not fail if the binding is missing. Instead, `undefined` will be provided for that type within the Component graph.
+
+```typescript
+@Inject
+class Car {
+    // if there is no Engine provided in the component where this class is bound, then compilation will fail
+    // however, Color and SeatWarmer are bound optionally, and compilation will succeed even if they are not provided
+    constructor(engine: Engine, color: Color = Color.RED, warmer?: SeatWarmer) { }
+}
+```
 
 ## Qualifiers
 
@@ -265,7 +272,6 @@ However, a subcomponent must be installed in a parent to be used. To install it,
 ```typescript
 @Component({subcomponents: [MySubcomponent]})
 class ParentComponent {
-    
     readonly subcomponentFactory: () => MySubcomponent
 }
 ```
