@@ -43,7 +43,7 @@ export class InjectNodeDetector {
 
     private isScope(type: ts.Type): boolean {
         const symbol = type.getSymbol() ?? type.aliasSymbol
-        return (symbol?.getName() === "Scope" || symbol?.getName() === "ReusableScope") && this.isInjectSymbol(symbol)
+        return (symbol?.getName() === "ScopeDecorator" || symbol?.getName() === "ReusableScopeDecorator") && this.isInjectSymbol(symbol)
     }
 
     isQualifierDecorator(decorator: ts.Node): boolean {
@@ -69,12 +69,12 @@ export class InjectNodeDetector {
 
     private isQualifier(type: ts.Type): boolean {
         const symbol = type.getSymbol() ?? type.aliasSymbol
-        return symbol?.getName() === "Qualifier" && this.isInjectSymbol(symbol)
+        return symbol?.getName() === "QualifierDecorator" && this.isInjectSymbol(symbol)
     }
 
     private isNamedQualifier(type: ts.Type): boolean {
         const symbol = type.getSymbol() ?? type.aliasSymbol
-        return symbol?.getName() === "NamedQualifier" && this.isInjectSymbol(symbol)
+        return symbol?.getName() === "NamedQualifierDecorator" && this.isInjectSymbol(symbol)
     }
 
     private getQualifierName(decorator: ts.Decorator): string | undefined {
@@ -146,7 +146,7 @@ export class InjectNodeDetector {
         const declaration = symbol.declarations && symbol.declarations[0]
         const type = declaration && this.typeChecker.getTypeAtLocation(declaration)
         const typeSymbol = type?.symbol
-        return typeSymbol?.name == "ReusableScope" && this.isInjectSymbol(typeSymbol)
+        return typeSymbol?.name == "ReusableScopeDecorator" && this.isInjectSymbol(typeSymbol)
     }
 
     isInjectionModuleImport(node: ts.Node) {

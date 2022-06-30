@@ -69,37 +69,37 @@ export function BindsInstance(): never {
     throw new Error("Decorated code was not processed by transformer!")
 }
 
-export function Scope(): Scope {
+export function Scope(): ScopeDecorator {
     return (): never => {
         throw new Error("Decorated code was not processed by transformer!")
     }
 }
 
-export const Reusable: ReusableScope = Scope()
+export const Reusable: ReusableScopeDecorator = Scope()
 
-export function Qualifier(): Qualifier {
+export function Qualifier(): QualifierDecorator {
     return (): never => {
         throw new Error("Decorated code was not processed by transformer!")
     }
 }
 
-export function Named(name: string): NamedQualifier {
+export function Named(name: string): NamedQualifierDecorator {
     return (): never => {
         throw new Error("Decorated code was not processed by transformer!")
     }
 }
 
-interface Scope {
+export interface ScopeDecorator {
     <T>(target: any, propertyKey?: string | symbol, descriptor?: TypedPropertyDescriptor<T>): any | void
 }
 
-interface ReusableScope extends Scope { }
+interface ReusableScopeDecorator extends ScopeDecorator { }
 
-interface Qualifier {
+export interface QualifierDecorator {
     (target: any, propertyKey?: string | symbol, parameterIndex?: any | number): any | void
 }
 
-interface NamedQualifier extends Qualifier { }
+interface NamedQualifierDecorator extends QualifierDecorator { }
 
 export interface Provider<T> {
     (): T
