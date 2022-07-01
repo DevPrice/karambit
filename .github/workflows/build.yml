@@ -8,9 +8,7 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
     - name: Use Node.js 18.x
@@ -21,3 +19,8 @@ jobs:
     - run: npm ci
     - run: npm --prefix integration ci
     - run: npm run release
+    - run: npm pack
+    - uses: actions/upload-artifact@v3
+      with:
+        path: karambit-inject-*.tgz
+        if-no-files-found: error
