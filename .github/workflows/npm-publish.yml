@@ -5,7 +5,27 @@ on:
     types: [created]
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          cache: 'npm'
+      - run: npm ci
+      - run: npm --prefix integration ci
+      - id: build-cache
+        uses: actions/cache@v3
+        with:
+          path: build
+          key: ${{ github.sha }}
+      - if: ${{ steps.build-cache.outputs.cache-hit != 'true' }}
+        run: npm run release
+
   publish:
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -14,8 +34,44 @@ jobs:
           node-version: 16
           registry-url: https://registry.npmjs.org/
       - run: npm ci
-      - run: npm --prefix integration ci
-      - run: npm run release
+      - id: build-cache
+        uses: actions/cache@v3
+        with:
+          path: build
+          key: ${{ github.sha }}
+      - if: ${{ steps.build-cache.outputs.cache-hit != 'true' }}
+        name: Require cache
+        run: exit 1
       - run: npm publish
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
+
+  publish-gpr:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18.x
+          registry-url: 'https://npm.pkg.github.com'
+          scope: ${{ github.repository_owner }}
+      - uses: actions/checkout@v3
+      - run: npm ci
+      - id: build-cache
+        uses: actions/cache@v3
+        with:
+          path: build
+          key: ${{ github.sha }}
+      - if: ${{ steps.build-cache.outputs.cache-hit != 'true' }}
+        name: Require cache
+        run: exit 1
+      - run: npm config set registry 'https://npm.pkg.github.com'
+      - run: echo '//npm.pkg.github.com/:_authToken=${{ github.token  }}' > ${{ github.workspace }}/.npmrc
+      - run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ github.token }}
