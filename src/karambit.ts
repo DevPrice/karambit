@@ -104,13 +104,7 @@ export default function(program: ts.Program) {
         const transformationContextComponent = programComponent.transformationContextSubcomponentFactory(ctx)
         return (sourceFile: ts.SourceFile) => {
             const sourceFileComponent = transformationContextComponent.sourceFileSubcomponentFactory(sourceFile)
-            return runTransformers(
-                sourceFile,
-                transformationContextComponent.injectConstructorExporter.exportProviders,
-                sourceFileComponent.componentGenerator.generateComponents,
-                node => programComponent.nodeDetector.eraseInjectRuntime(node, ctx),
-                sourceFileComponent.importer.addImportsToSourceFile,
-            )
+            return runTransformers(sourceFile, ...sourceFileComponent.transformers)
         }
     }
 }
