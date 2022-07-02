@@ -3,15 +3,16 @@ import {NameGenerator} from "./NameGenerator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {filterNotNull} from "./Util"
 import {Importer} from "./Importer"
-import {ProviderMethod, ModuleLocator, Bindings} from "./ModuleLocator"
+import {ModuleLocator, Bindings} from "./ModuleLocator"
 import {ComponentDeclarationBuilder} from "./ComponentDeclarationBuilder"
-import {Dependency, DependencyGraph, DependencyGraphBuilder, PropertyProvider} from "./DependencyGraphBuilder"
+import {Dependency, DependencyGraph, DependencyGraphBuilder} from "./DependencyGraphBuilder"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Resolver} from "./Resolver"
 import {QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {SubcomponentFactory, SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {Inject, Reusable} from "karambit-inject"
+import {PropertyProvider, ProvidesMethod} from "./Providers"
 
 interface GeneratedSubcomponent {
     readonly name: string
@@ -79,9 +80,9 @@ export class ComponentGenerator {
     private getFactoriesAndBindings(
         componentDecorator: ts.Decorator,
         componentScope?: ts.Symbol
-    ): {factories: ReadonlyMap<QualifiedType, ProviderMethod>, bindings: Bindings} {
+    ): {factories: ReadonlyMap<QualifiedType, ProvidesMethod>, bindings: Bindings} {
         const installedModules = this.moduleLocator.getInstalledModules(componentDecorator)
-        const factories = new Map<QualifiedType, ProviderMethod>()
+        const factories = new Map<QualifiedType, ProvidesMethod>()
         installedModules.flatMap(module => module.factories).forEach(factory => {
             if (factory.scope && !this.nodeDetector.isReusableScope(factory.scope) && factory.scope != componentScope) {
                 throw new Error(`Invalid scope for ${factory.module.name?.getText()}.${factory.method.name.getText()}! Got: ${factory.scope.getName()}, expected: ${componentScope?.getName()}`)

@@ -3,26 +3,14 @@ import {filterNotNull} from "./Util"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-inject"
+import {ProvidesMethodParameter, ProvidesMethod} from "./Providers"
 
 export type Bindings = ReadonlyMap<QualifiedType, QualifiedType>
 
 export interface Module {
     includes: ts.Symbol[]
-    factories: ProviderMethod[]
+    factories: ProvidesMethod[]
     bindings: Bindings
-}
-
-export interface FactoryParameter {
-    type: QualifiedType
-    optional: boolean
-}
-
-export interface ProviderMethod {
-    module: ts.ClassDeclaration
-    method: ts.MethodDeclaration
-    returnType: QualifiedType
-    parameters: FactoryParameter[]
-    scope?: ts.Symbol
 }
 
 @Inject
@@ -91,12 +79,12 @@ export class ModuleLocator {
         return modules
     }
 
-    private getFactoriesAndBindings(module: ts.ClassDeclaration): {factories: ProviderMethod[], bindings: Bindings} {
+    private getFactoriesAndBindings(module: ts.ClassDeclaration): {factories: ProvidesMethod[], bindings: Bindings} {
         const typeChecker = this.typeChecker
         const nodeDetector = this.nodeDetector
         const ctx = this.context
         const bindings = new Map<QualifiedType, QualifiedType>()
-        const factories: ProviderMethod[] = []
+        const factories: ProvidesMethod[] = []
         function visitFactory(method: ts.MethodDeclaration) {
             if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.StaticKeyword)) {
                 throw Error(`Provider methods must be static! Provider: ${module.name?.getText()}.${method.name?.getText()}`)
@@ -106,7 +94,7 @@ export class ModuleLocator {
                 type: signature.getReturnType(),
                 qualifier: nodeDetector.getQualifier(method)
             })
-            const parameters: FactoryParameter[] = method.getChildren()
+            const parameters: ProvidesMethodParameter[] = method.getChildren()
                 .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
                 .filter(ts.isParameter)
                 .map(it => it as ts.ParameterDeclaration)

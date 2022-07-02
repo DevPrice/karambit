@@ -1,18 +1,12 @@
 import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {Resolver} from "./Resolver"
 import {ConstructorHelper, ConstructorParameter} from "./ConstructorHelper"
-import {ProviderMethod, FactoryParameter} from "./ModuleLocator"
 import {Container, findCycles} from "./Util"
 import * as ts from "typescript"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-
-export interface PropertyProvider {
-    readonly name: ts.Identifier | ts.PrivateIdentifier
-    readonly propertyName?: string
-    readonly type: QualifiedType
-}
+import {PropertyProvider, ProviderParameter, ProvidesMethod} from "./Providers"
 
 export interface Dependency {
     readonly type: QualifiedType
@@ -24,18 +18,13 @@ export interface DependencyGraph {
     readonly missing: Container<Dependency>
 }
 
-export type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
-export type ElementLike = ts.ClassElement | ts.TypeElement
-
-type ProviderParameter = FactoryParameter | ConstructorParameter
-
 export class DependencyGraphBuilder {
 
     constructor(
         private readonly typeResolver: Resolver<QualifiedType>,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly dependencyMap:  ReadonlyMap<QualifiedType, PropertyProvider>,
-        private readonly factoryMap: ReadonlyMap<QualifiedType, ProviderMethod>,
+        private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
         private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly constructorHelper: ConstructorHelper,

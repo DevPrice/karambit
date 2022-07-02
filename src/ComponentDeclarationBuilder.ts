@@ -1,14 +1,13 @@
 import * as ts from "typescript"
-import {ProviderMethod} from "./ModuleLocator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {NameGenerator} from "./NameGenerator"
-import {PropertyProvider} from "./DependencyGraphBuilder"
 import {Importer} from "./Importer"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Resolver} from "./Resolver"
 import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {Container} from "./Util"
 import {SubcomponentFactory, SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
+import {PropertyProvider, ProvidesMethod} from "./Providers"
 
 export class ComponentDeclarationBuilder {
 
@@ -22,7 +21,7 @@ export class ComponentDeclarationBuilder {
         private readonly constructorHelper: ConstructorHelper,
         private readonly typeResolver: Resolver<QualifiedType>,
         private readonly dependencyMap: ReadonlyMap<QualifiedType, PropertyProvider>,
-        private readonly factoryMap: ReadonlyMap<QualifiedType, ProviderMethod>,
+        private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
         private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
         private readonly parentProviders: Container<QualifiedType> = new Set(),
         private readonly optionalTypes: Container<QualifiedType> = new Set(),
@@ -366,7 +365,7 @@ export class ComponentDeclarationBuilder {
 
     }
 
-    private factoryCallExpression(factory: ProviderMethod): ts.Expression {
+    private factoryCallExpression(factory: ProvidesMethod): ts.Expression {
         return ts.factory.createCallExpression(
             ts.factory.createPropertyAccessExpression(
                 this.getExpressionForDeclaration(factory.module),
@@ -377,7 +376,7 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    private getFactoryDeclaration(factory: ProviderMethod): ts.ClassElement[] {
+    private getFactoryDeclaration(factory: ProvidesMethod): ts.ClassElement[] {
         if (factory.scope) return this.getCachedFactoryDeclaration(factory)
         return [this.getterMethodDeclaration(factory.returnType, this.factoryCallExpression(factory))]
     }
@@ -391,7 +390,7 @@ export class ComponentDeclarationBuilder {
         return type.isUnionOrIntersection() && type.types.some(it => this.isTypeNullable(it))
     }
 
-    private getCachedFactoryDeclaration(factory: ProviderMethod): ts.ClassElement[] {
+    private getCachedFactoryDeclaration(factory: ProvidesMethod): ts.ClassElement[] {
         const propIdentifier = this.nameGenerator.getPropertyIdentifier(factory.returnType)
         const nullable = this.isTypeNullable(factory.returnType.type)
         return [
