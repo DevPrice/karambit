@@ -34,12 +34,4 @@ export class ConstructorHelper {
                 }
             })
     }
-
-    getInjectConstructorParams(type: ts.Type): ConstructorParameter[] | undefined {
-        const symbol = type.getSymbol() ?? type.aliasSymbol
-        const declaration = symbol?.getDeclarations()![0]
-        if (!declaration || !ts.isClassDeclaration(declaration) || !declaration.decorators?.some(this.nodeDetector.isInjectDecorator)) return undefined
-
-        return this.getConstructorParamsForDeclaration(declaration)
-    }
 }

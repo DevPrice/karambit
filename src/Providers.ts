@@ -36,6 +36,8 @@ export interface ProvidesMethodParameter {
 export interface InjectableConstructor {
     readonly providerType: ProviderType.INJECTABLE_CONSTRUCTOR
     readonly type: ts.Type
+    readonly scope: ts.Symbol | undefined
+    readonly declaration: ts.ClassDeclaration
     readonly parameters: ConstructorParameter[]
 }
 

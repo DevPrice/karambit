@@ -7,7 +7,6 @@ import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {
-    ConstructorParameter,
     InjectableConstructor,
     InstanceProvider,
     PropertyProvider,
@@ -105,32 +104,36 @@ export class DependencyGraphBuilder {
     }
 
     private getInjectableConstructor(type: ts.Type): InjectableConstructor | undefined {
-        const parameters = this.getInjectableConstructorParams(type)
-        if (!parameters) return undefined
-        return {
-            providerType: ProviderType.INJECTABLE_CONSTRUCTOR,
-            type,
-            parameters
-        }
-    }
-
-    private getInjectableConstructorParams(type: ts.Type): ConstructorParameter[] | undefined {
-        if (this.scopeFilter === undefined) return this.constructorHelper.getInjectConstructorParams(type)
-
         const symbol = type.getSymbol()
-        const declarations = symbol?.getDeclarations()
+        const declarations = symbol?.getDeclarations()?.filter(ts.isClassDeclaration)
         const declaration = declarations && declarations.length > 0 ? declarations[0] : undefined
-        const scope = declaration && ts.isClassDeclaration(declaration) ? this.nodeDetector.getScope(declaration) : undefined
+        if (!declaration) return undefined
+        if (!declaration.decorators?.some(this.nodeDetector.isInjectDecorator)) return undefined
+        const parameters = this.constructorHelper.getConstructorParamsForDeclaration(declaration)
+        if (!parameters) return undefined
+
+        const scope = this.nodeDetector.getScope(declaration)
+        const constructor: InjectableConstructor = {
+            providerType: ProviderType.INJECTABLE_CONSTRUCTOR,
+            declaration,
+            type,
+            parameters,
+            scope,
+        }
+
+        if (this.scopeFilter === undefined) return constructor
+
+        //  this is another component's scope
         if (scope && !this.nodeDetector.isReusableScope(scope) && scope !== this.scopeFilter.filterOnly) return undefined
 
         // this is our scope
-        const params = this.constructorHelper.getInjectConstructorParams(type)
-        if (scope === this.scopeFilter.filterOnly && this.scopeFilter.filterOnly) return params
+        if (scope === this.scopeFilter.filterOnly && this.scopeFilter.filterOnly) return constructor
 
         const parentGraph = this.parentGraph
-        // if the parent can provide this, then let it
-        if (params && parentGraph && parentGraph(createQualifiedType({type}))) return undefined
-        return params
+
+        // unscoped, if the parent can provide this, then let it
+        if (parentGraph && parentGraph(createQualifiedType({type}))) return undefined
+        return constructor
     }
 
     private assertNoCycles(type: QualifiedType, map: ReadonlyMap<QualifiedType, DependencyProvider>) {

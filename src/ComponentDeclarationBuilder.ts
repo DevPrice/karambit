@@ -22,7 +22,6 @@ export class ComponentDeclarationBuilder {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
-        private readonly context: ts.TransformationContext,
         private readonly sourceFile: ts.SourceFile,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly nameGenerator: NameGenerator,
@@ -251,20 +250,15 @@ export class ComponentDeclarationBuilder {
     }
 
     private getConstructorProviderDeclaration(constructor: InjectableConstructor, componentScope?: ts.Symbol): ts.ClassElement[] {
-        const symbol = constructor.type.getSymbol() ?? constructor.type.aliasSymbol
-        if (!symbol) throw new Error(`Couldn't find a constructor for type ${this.typeChecker.typeToString(constructor.type)}`)
         const self = this
         function constructorCallExpression(): ts.Expression {
             return ts.factory.createNewExpression(
-                self.getExpressionForDeclaration(declaration),
+                self.getExpressionForDeclaration(constructor.declaration),
                 undefined,
-                params.map(it => it.type).map(self.typeResolver.resolveBoundType).map(self.getParamExpression)
+                constructor.parameters.map(it => it.type).map(self.typeResolver.resolveBoundType).map(self.getParamExpression)
             )
         }
-        const params = constructor.parameters
-        if (!params) throw new Error(`Can't find injectable constructor for type: ${this.typeChecker.typeToString(constructor.type)}`)
-        const declaration = symbol.getDeclarations()![0]
-        const scope = this.nodeDetector.getScope(declaration)
+        const scope = constructor.scope
         const qualifiedType = createQualifiedType({type: constructor.type})
         if (scope) {
             if (!this.nodeDetector.isReusableScope(scope) && scope !== componentScope) {

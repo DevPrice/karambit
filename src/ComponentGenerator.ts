@@ -185,7 +185,6 @@ export class ComponentGenerator {
 
         const builder = new ComponentDeclarationBuilder(
             this.typeChecker,
-            this.context,
             this.sourceFile,
             this.nodeDetector,
             this.nameGenerator,
@@ -272,7 +271,6 @@ export class ComponentGenerator {
 
         const subcomponentBuilder = new ComponentDeclarationBuilder(
             this.typeChecker,
-            this.context,
             this.sourceFile,
             this.nodeDetector,
             this.nameGenerator,
