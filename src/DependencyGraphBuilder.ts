@@ -55,41 +55,11 @@ export class DependencyGraphBuilder {
             const boundType = this.typeResolver.resolveBoundType(next.type)
             if (result.has(boundType)) continue
 
-            const providedType = this.nodeDetector.isProvider(boundType.type)
-            if (providedType) {
-                const qualifiedProvidedType = createQualifiedType({
-                    ...boundType,
-                    type: providedType
-                })
-                todo.push({type: qualifiedProvidedType, optional: false})
-                continue
-            }
-
-            const propertyProvider = this.dependencyMap.get(boundType)
-            if (propertyProvider) {
-                result.set(boundType, {...propertyProvider, children: new Set()})
-                continue
-            }
-
-            const providesMethod: ProvidesMethod | undefined = this.factoryMap.get(boundType)
-            if (providesMethod) {
-                const children = providesMethod.parameters
-                result.set(boundType, {...providesMethod, children: new Set(children.map(it => it.type))})
-                todo.push(...children)
-                continue
-            }
-
-            const injectableConstructor = this.getInjectableConstructor(boundType.type)
-            if (injectableConstructor) {
-                const children = injectableConstructor.parameters
-                result.set(boundType, {...injectableConstructor, children: new Set(children.map(it => it.type))})
-                todo.push(...children)
-                continue
-            }
-
-            const factory = this.subcomponentFactoryLocator.asSubcomponentFactory(boundType.type)
-            if (factory) {
-                result.set(boundType, {...factory, children: new Set()})
+            const providerResult = this.getProvider(boundType)
+            if (providerResult) {
+                const {provider, dependencies} = providerResult
+                if (provider !== undefined) result.set(boundType, provider)
+                if (dependencies !== undefined) todo.push(...dependencies)
             } else {
                 missing.add(next)
             }
@@ -101,6 +71,45 @@ export class DependencyGraphBuilder {
             resolved: result,
             missing,
         }
+    }
+
+    private getProvider(boundType: QualifiedType): { provider?: DependencyProvider, dependencies?: Iterable<Dependency> } | undefined {
+        const providedType = this.nodeDetector.isProvider(boundType.type)
+        if (providedType) {
+            const qualifiedProvidedType = createQualifiedType({
+                ...boundType,
+                type: providedType
+            })
+            return {
+                dependencies: [{type: qualifiedProvidedType, optional: false}]
+            }
+        }
+
+        const propertyProvider = this.dependencyMap.get(boundType)
+        if (propertyProvider) {
+            return {
+                provider: {...propertyProvider, children: new Set()}
+            }
+        }
+
+        const provider: ProvidesMethod | InjectableConstructor | undefined =
+            this.factoryMap.get(boundType) ?? this.getInjectableConstructor(boundType.type)
+        if (provider) {
+            const dependencies = provider.parameters
+            return {
+                provider: {...provider, children: new Set(dependencies.map(it => it.type))},
+                dependencies
+            }
+        }
+
+        const factory = this.subcomponentFactoryLocator.asSubcomponentFactory(boundType.type)
+        if (factory) {
+            return {
+                provider: {...factory, children: new Set()}
+            }
+        }
+
+        return undefined
     }
 
     private getInjectableConstructor(type: ts.Type): InjectableConstructor | undefined {
