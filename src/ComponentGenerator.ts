@@ -202,7 +202,7 @@ export class ComponentGenerator {
             component.heritageClauses,
             [
                 ...ts.visitNodes(component.members, builder.updateComponentMember),
-                ...Array.from(generatedDeps).flatMap(it => builder.getProviderDeclaration(it[0], it[1], componentScope)),
+                ...Array.from(generatedDeps.values()).flatMap(it => builder.getProviderDeclaration(it, componentScope)),
                 ...generatedSubcomponents.map(it => it.classElement),
             ]
         )
@@ -283,7 +283,7 @@ export class ComponentGenerator {
 
         const members = [
             ...ts.visitNodes(factory.declaration.members, subcomponentBuilder.updateComponentMember),
-            ...Array.from(generatedDeps).flatMap(it => subcomponentBuilder.getProviderDeclaration(it[0], it[1], scope)),
+            ...Array.from(generatedDeps.values()).flatMap(it => subcomponentBuilder.getProviderDeclaration(it, scope)),
             ...generatedSubcomponents.map(it => it.classElement),
         ]
         return {

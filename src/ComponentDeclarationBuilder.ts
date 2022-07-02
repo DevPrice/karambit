@@ -88,13 +88,13 @@ export class ComponentDeclarationBuilder {
         return member
     }
 
-    getProviderDeclaration(type: QualifiedType, provider: InstanceProvider, componentScope?: ts.Symbol): ts.ClassElement[] {
-        if (isParentProvider(provider)) return [this.getParentProvidedDeclaration(type)]
+    getProviderDeclaration(provider: InstanceProvider, componentScope?: ts.Symbol): ts.ClassElement[] {
+        if (isParentProvider(provider)) return [this.getParentProvidedDeclaration(provider.type)]
         if (isPropertyProvider(provider)) return [this.getComponentProvidedDeclaration(provider)]
         if (isSubcomponentFactory(provider)) return [this.getSubcomponentFactoryDeclaration(provider)]
         if (isProvidesMethod(provider)) return this.getFactoryDeclaration(provider)
         if (isInjectableConstructor(provider)) return this.getConstructorProviderDeclaration(provider, componentScope)
-        return [this.getMissingOptionalDeclaration(type)]
+        return [this.getMissingOptionalDeclaration(provider.type)]
     }
 
     declareSubcomponent(
