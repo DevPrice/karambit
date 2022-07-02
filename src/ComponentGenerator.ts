@@ -3,7 +3,7 @@ import {NameGenerator} from "./NameGenerator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {filterNotNull} from "./Util"
 import {Importer} from "./Importer"
-import {ModuleLocator, Bindings} from "./ModuleLocator"
+import {Bindings, ModuleLocator} from "./ModuleLocator"
 import {ComponentDeclarationBuilder} from "./ComponentDeclarationBuilder"
 import {Dependency, DependencyGraph, DependencyGraphBuilder} from "./DependencyGraphBuilder"
 import {ConstructorHelper} from "./ConstructorHelper"
@@ -12,7 +12,13 @@ import {QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {Inject, Reusable} from "karambit-inject"
-import {PropertyProvider, ProvidesMethod, SubcomponentFactory} from "./Providers"
+import {
+    PropertyProvider,
+    ProviderType,
+    ProvidesMethod,
+    SubcomponentFactory,
+    UndefinedProvider
+} from "./Providers"
 
 interface GeneratedSubcomponent {
     readonly name: string
@@ -50,13 +56,18 @@ export class ComponentGenerator {
             const isInstanceBinding = param.decorators.some(this.nodeDetector.isBindsInstanceDecorator)
             if (isInstanceBinding) {
                 if (dependencyMap.has(type)) throw getDuplicateBindingError(type)
-                dependencyMap.set(type, {name, type})
+                dependencyMap.set(type, {providerType: ProviderType.PROPERTY, name, type})
             } else {
                 this.propertyExtractor.getDeclaredPropertiesForType(type.type).forEach(property => {
                     const propertyType = this.propertyExtractor.typeFromPropertyDeclaration(property)
                     const propertyName = property.name.getText()
                     if (dependencyMap.has(propertyType)) throw getDuplicateBindingError(type)
-                    dependencyMap.set(propertyType, {type: propertyType, name, propertyName})
+                    dependencyMap.set(propertyType, {
+                        providerType: ProviderType.PROPERTY,
+                        type: propertyType,
+                        name,
+                        propertyName
+                    })
                 })
             }
         })
@@ -164,9 +175,11 @@ export class ComponentGenerator {
             throw new Error(`Missing required binding(s) in ${componentType.symbol.name}: ${missingRequired.map(it => qualifiedTypeToString(it.type)).join(", ")}`)
         }
 
-        const missingOptionals = Array.from(mergedGraph.missing.keys()).map(it => it.type)
+        const missingOptionals: [QualifiedType, UndefinedProvider][] = Array.from(mergedGraph.missing.keys()).map(it => {
+            return [it.type, {providerType: ProviderType.UNDEFINED, type: it.type}]
+        })
         const generatedDeps = new Set(
-            Array.from(mergedGraph.resolved.keys()).concat(missingOptionals)
+            Array.from(mergedGraph.resolved.entries()).concat(missingOptionals)
         )
 
         const builder = new ComponentDeclarationBuilder(
@@ -181,8 +194,6 @@ export class ComponentGenerator {
             dependencyMap,
             factories,
             subcomponentFactoryLocator,
-            new Set(),
-            new Set(missingOptionals)
         )
 
         return ts.factory.createClassDeclaration(
@@ -193,7 +204,7 @@ export class ComponentGenerator {
             component.heritageClauses,
             [
                 ...ts.visitNodes(component.members, builder.updateComponentMember),
-                ...Array.from(generatedDeps).flatMap(it => builder.getProviderDeclaration(it, componentScope)),
+                ...Array.from(generatedDeps).flatMap(it => builder.getProviderDeclaration(it[0], it[1], componentScope)),
                 ...generatedSubcomponents.map(it => it.classElement),
             ]
         )
@@ -254,9 +265,11 @@ export class ComponentGenerator {
         }
 
         const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...rootDependencies, ...missingSubcomponentDependencies]))
-        const missingOptionals = Array.from(mergedGraph.missing.keys()).map(it => it.type)
+        const missingOptionals: [QualifiedType, UndefinedProvider][] = Array.from(mergedGraph.missing.keys()).map(it => {
+            return [it.type, {providerType: ProviderType.UNDEFINED, type: it.type}]
+        })
         const generatedDeps = new Set(
-            Array.from(mergedGraph.resolved.keys()).concat(missingOptionals)
+            Array.from(mergedGraph.resolved.entries()).concat(missingOptionals)
         )
 
         const subcomponentBuilder = new ComponentDeclarationBuilder(
@@ -276,7 +289,7 @@ export class ComponentGenerator {
 
         const members = [
             ...ts.visitNodes(factory.declaration.members, subcomponentBuilder.updateComponentMember),
-            ...Array.from(generatedDeps).flatMap(it => subcomponentBuilder.getProviderDeclaration(it, scope)),
+            ...Array.from(generatedDeps).flatMap(it => subcomponentBuilder.getProviderDeclaration(it[0], it[1], scope)),
             ...generatedSubcomponents.map(it => it.classElement),
         ]
         return {

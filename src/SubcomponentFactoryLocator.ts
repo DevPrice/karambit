@@ -3,7 +3,7 @@ import {createQualifiedType} from "./QualifiedType"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Container} from "./Util"
-import {SubcomponentFactory} from "./Providers"
+import {ProviderType, SubcomponentFactory} from "./Providers"
 
 export class SubcomponentFactoryLocator {
 
@@ -55,6 +55,7 @@ export class SubcomponentFactoryLocator {
         if (!params.map(it => it.type.type).every((it, index) => it === factoryParamTypes[index])) return undefined
 
         return {
+            providerType: ProviderType.SUBCOMPONENT_FACTORY,
             subcomponentType: createQualifiedType({type: returnType, qualifier: returnType.symbol}),
             constructorParams: params,
             type: createQualifiedType({type}),

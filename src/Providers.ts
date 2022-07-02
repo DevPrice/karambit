@@ -1,21 +1,31 @@
 import * as ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
 
-export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory
+export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | UndefinedProvider
 export type ProviderParameter = ProvidesMethodParameter | ConstructorParameter
 
 export interface PropertyProvider {
+    readonly providerType: ProviderType.PROPERTY
     readonly name: ts.Identifier | ts.PrivateIdentifier
     readonly propertyName?: string
     readonly type: QualifiedType
 }
 
+export function isPropertyProvider(provider: InstanceProvider): provider is PropertyProvider {
+    return provider.providerType === ProviderType.PROPERTY
+}
+
 export interface ProvidesMethod {
+    readonly providerType: ProviderType.PROVIDES_METHOD
     readonly module: ts.ClassDeclaration
     readonly method: ts.MethodDeclaration
     readonly returnType: QualifiedType
     readonly parameters: ProvidesMethodParameter[]
     readonly scope?: ts.Symbol
+}
+
+export function isProvidesMethod(provider: InstanceProvider): provider is ProvidesMethod {
+    return provider.providerType === ProviderType.PROVIDES_METHOD
 }
 
 export interface ProvidesMethodParameter {
@@ -24,8 +34,13 @@ export interface ProvidesMethodParameter {
 }
 
 export interface InjectableConstructor {
+    readonly providerType: ProviderType.INJECTABLE_CONSTRUCTOR
     readonly type: ts.Type
     readonly parameters: ConstructorParameter[]
+}
+
+export function isInjectableConstructor(provider: InstanceProvider): provider is InjectableConstructor {
+    return provider.providerType === ProviderType.INJECTABLE_CONSTRUCTOR
 }
 
 export interface ConstructorParameter {
@@ -37,9 +52,31 @@ export interface ConstructorParameter {
 }
 
 export interface SubcomponentFactory {
+    readonly providerType: ProviderType.SUBCOMPONENT_FACTORY
     readonly declaration: ts.ClassDeclaration
     readonly decorator: ts.Decorator
     readonly type: QualifiedType
     readonly subcomponentType: QualifiedType
     readonly constructorParams: ConstructorParameter[]
+}
+
+export function isSubcomponentFactory(provider: InstanceProvider): provider is SubcomponentFactory {
+    return provider.providerType === ProviderType.SUBCOMPONENT_FACTORY
+}
+
+export interface UndefinedProvider {
+    readonly providerType: ProviderType.UNDEFINED
+    readonly type: QualifiedType
+}
+
+export function isUndefinedProvider(provider: InstanceProvider): provider is UndefinedProvider {
+    return provider.providerType === ProviderType.UNDEFINED
+}
+
+export enum ProviderType {
+    PROPERTY,
+    PROVIDES_METHOD,
+    INJECTABLE_CONSTRUCTOR,
+    SUBCOMPONENT_FACTORY,
+    UNDEFINED,
 }

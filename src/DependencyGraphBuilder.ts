@@ -11,6 +11,7 @@ import {
     InjectableConstructor,
     InstanceProvider,
     PropertyProvider,
+    ProviderType,
     ProvidesMethod
 } from "./Providers"
 
@@ -107,6 +108,7 @@ export class DependencyGraphBuilder {
         const parameters = this.getInjectableConstructorParams(type)
         if (!parameters) return undefined
         return {
+            providerType: ProviderType.INJECTABLE_CONSTRUCTOR,
             type,
             parameters
         }

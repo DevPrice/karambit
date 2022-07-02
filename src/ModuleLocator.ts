@@ -3,7 +3,7 @@ import {filterNotNull} from "./Util"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-inject"
-import {ProvidesMethodParameter, ProvidesMethod} from "./Providers"
+import {ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
 
 export type Bindings = ReadonlyMap<QualifiedType, QualifiedType>
 
@@ -109,7 +109,7 @@ export class ModuleLocator {
                 })
             const scope = nodeDetector.getScope(method)
 
-            factories.push({module, method, returnType, parameters, scope})
+            factories.push({providerType: ProviderType.PROVIDES_METHOD, module, method, returnType, parameters, scope})
         }
         function visitBinding(method: ts.MethodDeclaration) {
             if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {

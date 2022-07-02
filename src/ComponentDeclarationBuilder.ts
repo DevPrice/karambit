@@ -7,7 +7,14 @@ import {Resolver} from "./Resolver"
 import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {Container} from "./Util"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
-import {PropertyProvider, ProvidesMethod, SubcomponentFactory} from "./Providers"
+import {
+    InstanceProvider, isInjectableConstructor,
+    isPropertyProvider, isProvidesMethod,
+    isSubcomponentFactory, isUndefinedProvider,
+    PropertyProvider, ProviderType,
+    ProvidesMethod,
+    SubcomponentFactory
+} from "./Providers"
 
 export class ComponentDeclarationBuilder {
 
@@ -24,7 +31,6 @@ export class ComponentDeclarationBuilder {
         private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
         private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
         private readonly parentProviders: Container<QualifiedType> = new Set(),
-        private readonly optionalTypes: Container<QualifiedType> = new Set(),
     ) {
         this.updateComponentMember = this.updateComponentMember.bind(this)
         this.getParamExpression = this.getParamExpression.bind(this)
@@ -84,17 +90,15 @@ export class ComponentDeclarationBuilder {
         return member
     }
 
-    getProviderDeclaration(type: QualifiedType, componentScope?: ts.Symbol): ts.ClassElement[] {
-        if (this.nodeDetector.isProvider(type.type)) return []
+    getProviderDeclaration(type: QualifiedType, provider: InstanceProvider, componentScope?: ts.Symbol): ts.ClassElement[] {
         if (this.parentProviders.has(type)) return [this.getParentProvidedDeclaration(type)]
-        const componentProvider = this.dependencyMap.get(type)
-        if (componentProvider) return [this.getComponentProvidedDeclaration(componentProvider)]
-        const sub = this.subcomponentFactoryLocator.asSubcomponentFactory(type.type)
-        if (sub) return [this.getSubcomponentFactoryDeclaration(sub)]
-        const factory = this.factoryMap.get(type)
-        if (factory) return this.getFactoryDeclaration(factory)
-        if (this.optionalTypes.has(type)) return [this.getMissingOptionalDeclaration(type)]
-        return this.getConstructorProviderDeclaration(type, componentScope)
+        if (isPropertyProvider(provider)) return [this.getComponentProvidedDeclaration(provider)]
+        if (isSubcomponentFactory(provider)) return [this.getSubcomponentFactoryDeclaration(provider)]
+        if (isProvidesMethod(provider)) return this.getFactoryDeclaration(provider)
+        if (isUndefinedProvider(provider)) return [this.getMissingOptionalDeclaration(type)]
+        if (isInjectableConstructor(provider)) this.getConstructorProviderDeclaration(type, componentScope)
+
+        throw new Error(`Cannot generate provider declaration for type ${ProviderType[provider.providerType]}!`)
     }
 
     declareSubcomponent(
