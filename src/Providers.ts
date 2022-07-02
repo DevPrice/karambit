@@ -1,7 +1,7 @@
 import * as ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
 
-export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | UndefinedProvider
+export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | UndefinedProvider | ParentProvider
 export type ProviderParameter = ProvidesMethodParameter | ConstructorParameter
 
 export interface PropertyProvider {
@@ -64,6 +64,15 @@ export function isSubcomponentFactory(provider: InstanceProvider): provider is S
     return provider.providerType === ProviderType.SUBCOMPONENT_FACTORY
 }
 
+export interface ParentProvider {
+    readonly providerType: ProviderType.PARENT
+    readonly type: QualifiedType
+}
+
+export function isParentProvider(provider: InstanceProvider): provider is ParentProvider {
+    return provider.providerType === ProviderType.PARENT
+}
+
 export interface UndefinedProvider {
     readonly providerType: ProviderType.UNDEFINED
     readonly type: QualifiedType
@@ -79,4 +88,5 @@ export enum ProviderType {
     INJECTABLE_CONSTRUCTOR,
     SUBCOMPONENT_FACTORY,
     UNDEFINED,
+    PARENT,
 }

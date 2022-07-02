@@ -13,6 +13,7 @@ import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {Inject, Reusable} from "karambit-inject"
 import {
+    ParentProvider,
     PropertyProvider,
     ProviderType,
     ProvidesMethod,
@@ -178,7 +179,7 @@ export class ComponentGenerator {
         const missingOptionals: [QualifiedType, UndefinedProvider][] = Array.from(mergedGraph.missing.keys()).map(it => {
             return [it.type, {providerType: ProviderType.UNDEFINED, type: it.type}]
         })
-        const generatedDeps = new Set(
+        const generatedDeps = new Map(
             Array.from(mergedGraph.resolved.entries()).concat(missingOptionals)
         )
 
@@ -265,10 +266,10 @@ export class ComponentGenerator {
         }
 
         const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...rootDependencies, ...missingSubcomponentDependencies]))
-        const missingOptionals: [QualifiedType, UndefinedProvider][] = Array.from(mergedGraph.missing.keys()).map(it => {
-            return [it.type, {providerType: ProviderType.UNDEFINED, type: it.type}]
+        const missingOptionals: [QualifiedType, ParentProvider][] = Array.from(mergedGraph.missing.keys()).map(it => {
+            return [it.type, {providerType: ProviderType.PARENT, type: it.type}]
         })
-        const generatedDeps = new Set(
+        const generatedDeps = new Map(
             Array.from(mergedGraph.resolved.entries()).concat(missingOptionals)
         )
 
@@ -284,7 +285,6 @@ export class ComponentGenerator {
             dependencyMap,
             factories,
             subcomponentFactoryLocator,
-            new Set(Array.from(mergedGraph.missing.keys()).map(it => it.type)),
         )
 
         const members = [

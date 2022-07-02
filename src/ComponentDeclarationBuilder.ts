@@ -4,14 +4,15 @@ import {NameGenerator} from "./NameGenerator"
 import {Importer} from "./Importer"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Resolver} from "./Resolver"
-import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
+import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Container} from "./Util"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {
-    InstanceProvider, isInjectableConstructor,
+    InjectableConstructor,
+    InstanceProvider, isInjectableConstructor, isParentProvider,
     isPropertyProvider, isProvidesMethod,
-    isSubcomponentFactory, isUndefinedProvider,
-    PropertyProvider, ProviderType,
+    isSubcomponentFactory,
+    PropertyProvider,
     ProvidesMethod,
     SubcomponentFactory
 } from "./Providers"
@@ -91,14 +92,12 @@ export class ComponentDeclarationBuilder {
     }
 
     getProviderDeclaration(type: QualifiedType, provider: InstanceProvider, componentScope?: ts.Symbol): ts.ClassElement[] {
-        if (this.parentProviders.has(type)) return [this.getParentProvidedDeclaration(type)]
+        if (isParentProvider(provider)) return [this.getParentProvidedDeclaration(type)]
         if (isPropertyProvider(provider)) return [this.getComponentProvidedDeclaration(provider)]
         if (isSubcomponentFactory(provider)) return [this.getSubcomponentFactoryDeclaration(provider)]
         if (isProvidesMethod(provider)) return this.getFactoryDeclaration(provider)
-        if (isUndefinedProvider(provider)) return [this.getMissingOptionalDeclaration(type)]
-        if (isInjectableConstructor(provider)) this.getConstructorProviderDeclaration(type, componentScope)
-
-        throw new Error(`Cannot generate provider declaration for type ${ProviderType[provider.providerType]}!`)
+        if (isInjectableConstructor(provider)) return this.getConstructorProviderDeclaration(provider, componentScope)
+        return [this.getMissingOptionalDeclaration(type)]
     }
 
     declareSubcomponent(
@@ -256,9 +255,9 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    private getConstructorProviderDeclaration(type: QualifiedType, componentScope?: ts.Symbol): ts.ClassElement[] {
-        const symbol = type.type.getSymbol() ?? type.type.aliasSymbol
-        if (!symbol) throw new Error(`Couldn't find a constructor for type ${qualifiedTypeToString(type)}`)
+    private getConstructorProviderDeclaration(constructor: InjectableConstructor, componentScope?: ts.Symbol): ts.ClassElement[] {
+        const symbol = constructor.type.getSymbol() ?? constructor.type.aliasSymbol
+        if (!symbol) throw new Error(`Couldn't find a constructor for type ${this.typeChecker.typeToString(constructor.type)}`)
         const self = this
         function constructorCallExpression(): ts.Expression {
             return ts.factory.createNewExpression(
@@ -267,15 +266,16 @@ export class ComponentDeclarationBuilder {
                 params.map(it => it.type).map(self.typeResolver.resolveBoundType).map(self.getParamExpression)
             )
         }
-        const params = this.constructorHelper.getInjectConstructorParams(type.type) ?? []
-        if (!params) throw new Error(`Can't find injectable constructor for type: ${this.typeChecker.typeToString(type.type)}`)
+        const params = this.constructorHelper.getInjectConstructorParams(constructor.type) ?? []
+        if (!params) throw new Error(`Can't find injectable constructor for type: ${this.typeChecker.typeToString(constructor.type)}`)
         const declaration = symbol.getDeclarations()![0]
         const scope = this.nodeDetector.getScope(declaration)
+        const qualifiedType = createQualifiedType({type: constructor.type})
         if (scope) {
             if (!this.nodeDetector.isReusableScope(scope) && scope !== componentScope) {
-                throw new Error(`Invalid scope for ${self.typeChecker.typeToString(type.type)}! Got: ${scope.getName()}, expected: ${componentScope?.getName() ?? "No scope"}`)
+                throw new Error(`Invalid scope for ${self.typeChecker.typeToString(constructor.type)}! Got: ${scope.getName()}, expected: ${componentScope?.getName() ?? "No scope"}`)
             }
-            const propIdentifier = self.nameGenerator.getPropertyIdentifier(type)
+            const propIdentifier = self.nameGenerator.getPropertyIdentifier(qualifiedType)
             return [
                 ts.factory.createPropertyDeclaration(
                     undefined,
@@ -286,7 +286,7 @@ export class ComponentDeclarationBuilder {
                     undefined
                 ),
                 self.getterMethodDeclaration(
-                    type,
+                    qualifiedType,
                     ts.factory.createBinaryExpression(
                         ts.factory.createPropertyAccessExpression(
                             ts.factory.createThis(),
@@ -307,7 +307,7 @@ export class ComponentDeclarationBuilder {
                 )
             ]
         }
-        return [self.getterMethodDeclaration(type, constructorCallExpression())]
+        return [self.getterMethodDeclaration(qualifiedType, constructorCallExpression())]
     }
 
     private getUnsetPropertyExpression(): ts.Expression {
