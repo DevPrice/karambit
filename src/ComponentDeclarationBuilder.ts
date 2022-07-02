@@ -6,8 +6,8 @@ import {ConstructorHelper} from "./ConstructorHelper"
 import {Resolver} from "./Resolver"
 import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {Container} from "./Util"
-import {SubcomponentFactory, SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
-import {PropertyProvider, ProvidesMethod} from "./Providers"
+import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
+import {PropertyProvider, ProvidesMethod, SubcomponentFactory} from "./Providers"
 
 export class ComponentDeclarationBuilder {
 

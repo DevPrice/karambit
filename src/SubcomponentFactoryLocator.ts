@@ -1,16 +1,9 @@
 import * as ts from "typescript"
-import {createQualifiedType, QualifiedType} from "./QualifiedType"
+import {createQualifiedType} from "./QualifiedType"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-import {ConstructorHelper, ConstructorParameter} from "./ConstructorHelper"
+import {ConstructorHelper} from "./ConstructorHelper"
 import {Container} from "./Util"
-
-export interface SubcomponentFactory {
-    declaration: ts.ClassDeclaration
-    decorator: ts.Decorator
-    type: QualifiedType
-    subcomponentType: QualifiedType
-    constructorParams: ConstructorParameter[]
-}
+import {SubcomponentFactory} from "./Providers"
 
 export class SubcomponentFactoryLocator {
 

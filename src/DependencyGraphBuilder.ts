@@ -1,12 +1,18 @@
 import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {Resolver} from "./Resolver"
-import {ConstructorHelper, ConstructorParameter} from "./ConstructorHelper"
+import {ConstructorHelper} from "./ConstructorHelper"
 import {Container, findCycles} from "./Util"
 import * as ts from "typescript"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-import {PropertyProvider, ProviderParameter, ProvidesMethod} from "./Providers"
+import {
+    ConstructorParameter,
+    InjectableConstructor,
+    InstanceProvider,
+    PropertyProvider,
+    ProvidesMethod
+} from "./Providers"
 
 export interface Dependency {
     readonly type: QualifiedType
@@ -14,9 +20,11 @@ export interface Dependency {
 }
 
 export interface DependencyGraph {
-    readonly resolved: Container<QualifiedType>
+    readonly resolved: ReadonlyMap<QualifiedType, InstanceProvider>
     readonly missing: Container<Dependency>
 }
+
+type DependencyProvider = InstanceProvider & { children: ReadonlySet<QualifiedType> }
 
 export class DependencyGraphBuilder {
 
@@ -37,7 +45,7 @@ export class DependencyGraphBuilder {
     buildDependencyGraph(
         dependencies: ReadonlySet<Dependency>
     ): DependencyGraph {
-        const result = new Map<QualifiedType, ReadonlySet<QualifiedType>>()
+        const result = new Map<QualifiedType, DependencyProvider>()
         const missing = new Set<Dependency>()
 
         const todo: Dependency[] = Array.from(dependencies)
@@ -59,17 +67,29 @@ export class DependencyGraphBuilder {
 
             const propertyProvider = this.dependencyMap.get(boundType)
             if (propertyProvider) {
-                result.set(boundType, new Set())
+                result.set(boundType, {...propertyProvider, children: new Set()})
                 continue
             }
 
-            const dependsOn: ProviderParameter[] | undefined = this.factoryMap.get(boundType)?.parameters ??
-                this.getInjectConstructorParams(boundType.type)
-            if (dependsOn !== undefined) {
-                result.set(boundType, new Set(dependsOn.map(it => it.type)))
-                todo.push(...dependsOn)
-            } else if (this.subcomponentFactoryLocator.asSubcomponentFactory(boundType.type)) {
-                result.set(boundType, new Set())
+            const providesMethod: ProvidesMethod | undefined = this.factoryMap.get(boundType)
+            if (providesMethod) {
+                const children = providesMethod.parameters
+                result.set(boundType, {...providesMethod, children: new Set(children.map(it => it.type))})
+                todo.push(...children)
+                continue
+            }
+
+            const injectableConstructor = this.getInjectableConstructor(boundType.type)
+            if (injectableConstructor) {
+                const children = injectableConstructor.parameters
+                result.set(boundType, {...injectableConstructor, children: new Set(children.map(it => it.type))})
+                todo.push(...children)
+                continue
+            }
+
+            const factory = this.subcomponentFactoryLocator.asSubcomponentFactory(boundType.type)
+            if (factory) {
+                result.set(boundType, {...factory, children: new Set()})
             } else {
                 missing.add(next)
             }
@@ -83,7 +103,16 @@ export class DependencyGraphBuilder {
         }
     }
 
-    private getInjectConstructorParams(type: ts.Type): ConstructorParameter[] | undefined {
+    private getInjectableConstructor(type: ts.Type): InjectableConstructor | undefined {
+        const parameters = this.getInjectableConstructorParams(type)
+        if (!parameters) return undefined
+        return {
+            type,
+            parameters
+        }
+    }
+
+    private getInjectableConstructorParams(type: ts.Type): ConstructorParameter[] | undefined {
         if (this.scopeFilter === undefined) return this.constructorHelper.getInjectConstructorParams(type)
 
         const symbol = type.getSymbol()
@@ -102,11 +131,11 @@ export class DependencyGraphBuilder {
         return params
     }
 
-    private assertNoCycles(type: QualifiedType, map: ReadonlyMap<QualifiedType, ReadonlySet<QualifiedType>>) {
+    private assertNoCycles(type: QualifiedType, map: ReadonlyMap<QualifiedType, DependencyProvider>) {
         const cycle = findCycles(type, (item: QualifiedType) => {
             if (this.nodeDetector.isProvider(type.type)) return []
             const boundType = this.typeResolver.resolveBoundType(item)
-            return map.get(boundType) ?? []
+            return map.get(boundType)?.children ?? []
         })
         if (cycle.length > 0) {
             throw new Error(`Found circular dependency! ${cycle.map(it => qualifiedTypeToString(it)).join(" -> ")}`)

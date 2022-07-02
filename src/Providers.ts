@@ -1,8 +1,7 @@
-import {ConstructorParameter} from "./ConstructorHelper"
-import {QualifiedType} from "./QualifiedType"
 import * as ts from "typescript"
+import {QualifiedType} from "./QualifiedType"
 
-export type InstanceProvider = PropertyProvider | ProvidesMethod
+export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory
 export type ProviderParameter = ProvidesMethodParameter | ConstructorParameter
 
 export interface PropertyProvider {
@@ -11,20 +10,36 @@ export interface PropertyProvider {
     readonly type: QualifiedType
 }
 
-export interface InjectableConstructor {
-    readonly type: QualifiedType
-    readonly parameters: ConstructorParameter[]
-}
-
 export interface ProvidesMethod {
-    module: ts.ClassDeclaration
-    method: ts.MethodDeclaration
-    returnType: QualifiedType
-    parameters: ProvidesMethodParameter[]
-    scope?: ts.Symbol
+    readonly module: ts.ClassDeclaration
+    readonly method: ts.MethodDeclaration
+    readonly returnType: QualifiedType
+    readonly parameters: ProvidesMethodParameter[]
+    readonly scope?: ts.Symbol
 }
 
 export interface ProvidesMethodParameter {
-    type: QualifiedType
-    optional: boolean
+    readonly type: QualifiedType
+    readonly optional: boolean
+}
+
+export interface InjectableConstructor {
+    readonly type: ts.Type
+    readonly parameters: ConstructorParameter[]
+}
+
+export interface ConstructorParameter {
+    readonly type: QualifiedType
+    readonly name: string
+    readonly declaration: ts.ParameterDeclaration
+    readonly decorators: ts.Decorator[]
+    readonly optional: boolean
+}
+
+export interface SubcomponentFactory {
+    readonly declaration: ts.ClassDeclaration
+    readonly decorator: ts.Decorator
+    readonly type: QualifiedType
+    readonly subcomponentType: QualifiedType
+    readonly constructorParams: ConstructorParameter[]
 }

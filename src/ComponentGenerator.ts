@@ -9,10 +9,10 @@ import {Dependency, DependencyGraph, DependencyGraphBuilder} from "./DependencyG
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Resolver} from "./Resolver"
 import {QualifiedType, qualifiedTypeToString} from "./QualifiedType"
-import {SubcomponentFactory, SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
+import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {Inject, Reusable} from "karambit-inject"
-import {PropertyProvider, ProvidesMethod} from "./Providers"
+import {PropertyProvider, ProvidesMethod, SubcomponentFactory} from "./Providers"
 
 interface GeneratedSubcomponent {
     readonly name: string

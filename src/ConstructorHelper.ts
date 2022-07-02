@@ -1,15 +1,8 @@
 import * as ts from "typescript"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-import {createQualifiedType, QualifiedType} from "./QualifiedType"
+import {createQualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-inject"
-
-export interface ConstructorParameter {
-    type: QualifiedType
-    name: string
-    declaration: ts.ParameterDeclaration
-    decorators: ts.Decorator[]
-    optional: boolean
-}
+import {ConstructorParameter} from "./Providers"
 
 @Inject
 @Reusable
