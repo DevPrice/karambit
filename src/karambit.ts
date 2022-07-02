@@ -25,11 +25,8 @@ export function Subcomponent(): never {
 }
 
 interface ModuleInfo {
-    includes: Constructor<any>[]
+    includes: unknown[]
 }
-
-type Constructor<T> = abstract new (...args: any[]) => T
-export type Factory<T extends Constructor<any>> = (...args: ConstructorParameters<T>) => InstanceType<T>
 
 export function Module(info: ModuleInfo): ClassDecorator
 export function Module(target: unknown): void

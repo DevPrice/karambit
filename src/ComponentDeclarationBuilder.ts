@@ -2,17 +2,18 @@ import * as ts from "typescript"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {NameGenerator} from "./NameGenerator"
 import {Importer} from "./Importer"
-import {ConstructorHelper} from "./ConstructorHelper"
 import {Resolver} from "./Resolver"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
-import {Container} from "./Util"
-import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {
     InjectableConstructor,
-    InstanceProvider, isInjectableConstructor, isParentProvider,
-    isPropertyProvider, isProvidesMethod,
+    InstanceProvider,
+    isInjectableConstructor,
+    isParentProvider,
+    isPropertyProvider,
+    isProvidesMethod,
     isSubcomponentFactory,
     PropertyProvider,
+    ProviderType,
     ProvidesMethod,
     SubcomponentFactory
 } from "./Providers"
@@ -26,12 +27,8 @@ export class ComponentDeclarationBuilder {
         private readonly nodeDetector: InjectNodeDetector,
         private readonly nameGenerator: NameGenerator,
         private readonly importer: Importer,
-        private readonly constructorHelper: ConstructorHelper,
         private readonly typeResolver: Resolver<QualifiedType>,
-        private readonly dependencyMap: ReadonlyMap<QualifiedType, PropertyProvider>,
-        private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
-        private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
-        private readonly parentProviders: Container<QualifiedType> = new Set(),
+        private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
     ) {
         this.updateComponentMember = this.updateComponentMember.bind(this)
         this.getParamExpression = this.getParamExpression.bind(this)
@@ -163,6 +160,7 @@ export class ComponentDeclarationBuilder {
     }
 
     private getParamExpression(paramType: QualifiedType): ts.Expression {
+        const instanceProvider = this.instanceProviders.get(paramType)
         const providedType = this.nodeDetector.isProvider(paramType.type)
         if (providedType) {
             const qualifiedProvidedType = createQualifiedType({
@@ -178,12 +176,9 @@ export class ComponentDeclarationBuilder {
                 this.getParamExpression(qualifiedProvidedType)
             )
         }
-        if (this.parentProviders.has(paramType)) {
-            return this.accessParentGetter(paramType)
-        }
-        const subcomponentFactory = this.subcomponentFactoryLocator.asSubcomponentFactory(paramType.type)
+        const subcomponentFactory = instanceProvider && instanceProvider.providerType === ProviderType.SUBCOMPONENT_FACTORY
         const identifier = subcomponentFactory ?
-            this.nameGenerator.getSubcomponentFactoryGetterMethodIdentifier(subcomponentFactory.subcomponentType) :
+            this.nameGenerator.getSubcomponentFactoryGetterMethodIdentifier(instanceProvider.subcomponentType) :
             this.nameGenerator.getGetterMethodIdentifier(paramType)
         return ts.factory.createCallExpression(
             ts.factory.createPropertyAccessExpression(ts.factory.createThis(), identifier),
@@ -266,7 +261,7 @@ export class ComponentDeclarationBuilder {
                 params.map(it => it.type).map(self.typeResolver.resolveBoundType).map(self.getParamExpression)
             )
         }
-        const params = this.constructorHelper.getInjectConstructorParams(constructor.type) ?? []
+        const params = constructor.parameters
         if (!params) throw new Error(`Can't find injectable constructor for type: ${this.typeChecker.typeToString(constructor.type)}`)
         const declaration = symbol.getDeclarations()![0]
         const scope = this.nodeDetector.getScope(declaration)

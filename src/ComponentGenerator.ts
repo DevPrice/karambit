@@ -190,11 +190,8 @@ export class ComponentGenerator {
             this.nodeDetector,
             this.nameGenerator,
             this.importer,
-            this.constructorHelper,
             typeResolver,
-            dependencyMap,
-            factories,
-            subcomponentFactoryLocator,
+            mergedGraph.resolved,
         )
 
         return ts.factory.createClassDeclaration(
@@ -280,11 +277,8 @@ export class ComponentGenerator {
             this.nodeDetector,
             this.nameGenerator,
             this.importer,
-            this.constructorHelper,
             typeResolver,
-            dependencyMap,
-            factories,
-            subcomponentFactoryLocator,
+            mergedGraph.resolved,
         )
 
         const members = [
