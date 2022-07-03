@@ -1,4 +1,4 @@
-import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
+import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Resolver} from "./Resolver"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Container, findCycles} from "./Util"
@@ -154,7 +154,7 @@ export class DependencyGraphBuilder {
             return map.get(boundType)?.children ?? []
         })
         if (cycle.length > 0) {
-            throw new Error(`Found circular dependency! ${cycle.map(it => qualifiedTypeToString(it)).join(" -> ")}`)
+            this.errorReporter.reportDependencyCycle(cycle[cycle.length - 1], cycle)
         }
     }
 

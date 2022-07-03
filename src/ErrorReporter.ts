@@ -28,7 +28,16 @@ export class ErrorReporter {
         ErrorReporter.fail(
             KarambitErrorScope.DUPLICATE_PROVIDERS,
             `${qualifiedTypeToString(type)} is provided multiple times!\n\n` +
-                `${filterNotNull(providers.map(providerForDisplay)).map(it => `provided by:\n${it}\n`).join("\n")}`,
+            `${filterNotNull(providers.map(providerForDisplay)).map(it => `provided by:\n${it}\n`).join("\n")}`,
+            this.sourceFile
+        )
+    }
+
+    reportDependencyCycle(type: QualifiedType, chain: QualifiedType[]): never {
+        ErrorReporter.fail(
+            KarambitErrorScope.DEPENDENCY_CYCLE,
+            `${qualifiedTypeToString(type)} causes a dependency cycle (circular dependency)!\n\n` +
+            `${chain.map(qualifiedTypeToString).join(" -> ")}\n`,
             this.sourceFile
         )
     }
