@@ -13,6 +13,7 @@ import {
     ProviderType,
     ProvidesMethod
 } from "./Providers"
+import {ErrorReporter} from "./ErrorReporter"
 
 export interface Dependency {
     readonly type: QualifiedType
@@ -36,6 +37,7 @@ export class DependencyGraphBuilder {
         private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly constructorHelper: ConstructorHelper,
+        private readonly errorReporter: ErrorReporter,
         private readonly scopeFilter?: { filterOnly?: ts.Symbol },
         private readonly parentGraph?: (type: QualifiedType) => boolean,
     ) {
@@ -160,13 +162,13 @@ export class DependencyGraphBuilder {
         const allBoundTypes = [...this.dependencyMap.keys(), ...this.factoryMap.keys()]
         const boundTypeSet = new Set(allBoundTypes)
         if (allBoundTypes.length !== boundTypeSet.size) {
-            const duplicates: QualifiedType[] = []
             for (const type of boundTypeSet) {
-                if (this.dependencyMap.has(type) && this.factoryMap.has(type)) {
-                    duplicates.push(type)
+                const propertyProvider = this.dependencyMap.get(type)
+                const factoryProvider = this.factoryMap.get(type)
+                if (propertyProvider && factoryProvider) {
+                    this.errorReporter.reportDuplicateProviders(type, [propertyProvider, factoryProvider])
                 }
             }
-            throw new Error(`Duplicate providers for type(s): ${duplicates.map(qualifiedTypeToString).join(", ")}`)
         }
     }
 }

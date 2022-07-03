@@ -9,6 +9,7 @@ export interface PropertyProvider {
     readonly name: ts.Identifier | ts.PrivateIdentifier
     readonly propertyName?: string
     readonly type: QualifiedType
+    readonly declaration: ts.ParameterDeclaration
 }
 
 export function isPropertyProvider(provider: InstanceProvider): provider is PropertyProvider {

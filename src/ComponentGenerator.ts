@@ -11,7 +11,6 @@ import {Resolver} from "./Resolver"
 import {QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
-import {Inject, Reusable} from "karambit-inject"
 import {
     ParentProvider,
     PropertyProvider,
@@ -20,6 +19,8 @@ import {
     SubcomponentFactory,
     UndefinedProvider
 } from "./Providers"
+import {ErrorReporter} from "./ErrorReporter"
+import {Inject, Reusable} from "karambit-inject"
 
 interface GeneratedSubcomponent {
     readonly name: string
@@ -41,6 +42,7 @@ export class ComponentGenerator {
         private readonly moduleLocator: ModuleLocator,
         private readonly constructorHelper: ConstructorHelper,
         private readonly propertyExtractor: PropertyExtractor,
+        private readonly errorReporter: ErrorReporter,
     ) {
         this.generateComponents = this.generateComponents.bind(this)
     }
@@ -48,27 +50,29 @@ export class ComponentGenerator {
     private getDependencyMap(component: ts.ClassLikeDeclaration): ReadonlyMap<QualifiedType, PropertyProvider> {
         const dependencyParams = this.constructorHelper.getConstructorParamsForDeclaration(component) ?? []
         const dependencyMap = new Map<QualifiedType, PropertyProvider>()
-        function getDuplicateBindingError (type: QualifiedType): Error {
-            return new Error(`Duplicate component dependency binding for ${qualifiedTypeToString(type)}!`)
-        }
         dependencyParams.forEach(param => {
             const name = this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)
             const type = param.type
             const isInstanceBinding = param.decorators.some(this.nodeDetector.isBindsInstanceDecorator)
             if (isInstanceBinding) {
-                if (dependencyMap.has(type)) throw getDuplicateBindingError(type)
-                dependencyMap.set(type, {providerType: ProviderType.PROPERTY, name, type})
+                const provider: PropertyProvider = {providerType: ProviderType.PROPERTY, declaration: param.declaration, name, type}
+                const existing = dependencyMap.get(type)
+                if (existing) throw this.errorReporter.reportDuplicateProviders(type, [existing, provider])
+                dependencyMap.set(type, provider)
             } else {
                 this.propertyExtractor.getDeclaredPropertiesForType(type.type).forEach(property => {
                     const propertyType = this.propertyExtractor.typeFromPropertyDeclaration(property)
                     const propertyName = property.name.getText()
-                    if (dependencyMap.has(propertyType)) throw getDuplicateBindingError(type)
-                    dependencyMap.set(propertyType, {
+                    const provider: PropertyProvider = {
                         providerType: ProviderType.PROPERTY,
+                        declaration: param.declaration,
                         type: propertyType,
                         name,
                         propertyName
-                    })
+                    }
+                    const existing = dependencyMap.get(type)
+                    if (existing) throw this.errorReporter.reportDuplicateProviders(type, [existing, provider])
+                    dependencyMap.set(propertyType, provider)
                 })
             }
         })
@@ -99,7 +103,8 @@ export class ComponentGenerator {
             if (factory.scope && !this.nodeDetector.isReusableScope(factory.scope) && factory.scope != componentScope) {
                 throw new Error(`Invalid scope for ${factory.module.name?.getText()}.${factory.method.name.getText()}! Got: ${factory.scope.getName()}, expected: ${componentScope?.getName()}`)
             }
-            if (factories.has(factory.returnType)) throw new Error(`Duplicate provider for ${this.typeChecker.typeToString(factory.returnType.type)}`)
+            const existing = factories.get(factory.returnType)
+            if (existing) throw this.errorReporter.reportDuplicateProviders(factory.returnType, [existing, factory])
             factories.set(factory.returnType, factory)
         })
         const bindings = new Map<QualifiedType, QualifiedType>()
@@ -137,6 +142,7 @@ export class ComponentGenerator {
             subcomponentFactoryLocator,
             this.propertyExtractor,
             this.constructorHelper,
+            this.errorReporter,
         )
         const graph = graphBuilder.buildDependencyGraph(new Set(rootDependencies))
         const missingDependencies = Array.from(graph.missing.keys()).filter(it => !it.optional)
@@ -144,10 +150,8 @@ export class ComponentGenerator {
             throw new Error(`No provider in ${componentType.symbol.name} for required types: ${missingDependencies.map(it => qualifiedTypeToString(it.type))}`)
         }
 
-        const dependencies = graph.resolved
-
         const subcomponents = filterNotNull(
-            Array.from(dependencies.keys()).map(it => it.type)
+            Array.from(graph.resolved.keys()).map(it => it.type)
                 .map(subcomponentFactoryLocator.asSubcomponentFactory)
         )
         const canBind = (type: QualifiedType) => {
@@ -160,10 +164,10 @@ export class ComponentGenerator {
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
         const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...rootDependencies, ...missingSubcomponentDependencies]))
         generatedSubcomponents.forEach(it => {
-            const duplicateProviders = Array.from(it.graph.resolved.keys()).filter(it => dependencies.has(it))
-            if (duplicateProviders.length > 0) {
-                throw new Error(`Provider(s) of ${it.name} already bound in parent (${componentType.symbol.name}) for: ${duplicateProviders.map(qualifiedTypeToString).join(", ")}`)
-            }
+            Array.from(it.graph.resolved.entries()).forEach(it => {
+                const duplicate = graph.resolved.get(it[0])
+                if (duplicate) this.errorReporter.reportDuplicateProviders(it[0], [duplicate, it[1]])
+            })
             const missingSubcomponentDependencies = Array.from(it.graph.missing.keys()).filter(it => !it.optional && !mergedGraph.resolved.has(it.type))
             if (missingSubcomponentDependencies.length > 0) {
                 throw new Error(`No provider in ${componentType.symbol.name} for required types of subcomponent ${it.name}: ${missingSubcomponentDependencies.map(it => qualifiedTypeToString(it.type))}`)
@@ -233,6 +237,7 @@ export class ComponentGenerator {
             subcomponentFactoryLocator,
             this.propertyExtractor,
             this.constructorHelper,
+            this.errorReporter,
             {filterOnly: scope},
             parentCanBind,
         )
@@ -253,13 +258,14 @@ export class ComponentGenerator {
         const generatedSubcomponents = subcomponents.map(it =>
             this.generateSubcomponent(it, typeResolver, scope ? new Map([...ancestorScopes.entries(), [scope, subcomponentName]]) : ancestorScopes, graphResolver)
         )
-        const resolvedSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.resolved.keys()))
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
 
-        const duplicateProviders = Array.from(resolvedSubcomponentDependencies).filter(it => graph.resolved.has(it))
-        if (duplicateProviders.length > 0) {
-            throw new Error(`Provider(s) of ${subcomponentName} already bound in parent (${subcomponentName}): ${duplicateProviders.map(qualifiedTypeToString).join(", ")}`)
-        }
+        generatedSubcomponents.forEach(it => {
+            Array.from(it.graph.resolved.entries()).forEach(it => {
+                const duplicate = graph.resolved.get(it[0])
+                if (duplicate) this.errorReporter.reportDuplicateProviders(it[0], [duplicate, it[1]])
+            })
+        })
 
         const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...rootDependencies, ...missingSubcomponentDependencies]))
         const missingOptionals: [QualifiedType, ParentProvider][] = Array.from(mergedGraph.missing.keys()).map(it => {
