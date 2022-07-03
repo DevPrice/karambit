@@ -12,6 +12,8 @@ import {filterNotNull} from "./Util"
 
 export enum KarambitErrorScope {
     TRANSFORM = "NotTransformed",
+    PARSE = "Parse",
+    INVALID_BINDING = "InvalidBinding",
     DUPLICATE_PROVIDERS = "DuplicateProviders",
     DUPLICATE_BINDINGS = "DuplicateBindings",
     DEPENDENCY_CYCLE = "DependencyCycle",
@@ -22,7 +24,53 @@ export enum KarambitErrorScope {
 @Reusable
 export class ErrorReporter {
 
-    constructor(private readonly sourceFile: ts.SourceFile) { }
+    constructor(
+        private readonly typeChecker: ts.TypeChecker,
+        private readonly sourceFile: ts.SourceFile
+    ) { }
+
+    reportCompileTimeConstantRequired(identifierName: string): never {
+        ErrorReporter.fail(
+            KarambitErrorScope.PARSE,
+            `'${identifierName}' must be a compile-time constant (array literal)!\n`,
+            this.sourceFile
+        )
+    }
+
+    reportBindingMustBeAssignable(context: ts.Node, parameterType: ts.Type, returnType: ts.Type): never {
+        ErrorReporter.fail(
+            KarambitErrorScope.INVALID_BINDING,
+            "Binding parameter must be assignable to the return type! " +
+            `${this.typeChecker.typeToString(parameterType)} is not assignable to ${this.typeChecker.typeToString(returnType)}\n\n` +
+            nodeForDisplay(context) + "\n",
+            this.sourceFile
+        )
+    }
+
+    reportTypeBoundToSelf(context: ts.Node): never {
+        ErrorReporter.fail(
+            KarambitErrorScope.INVALID_BINDING,
+            "Cannot bind a type to itself!\n\n" + nodeForDisplay(context) + "\n",
+            this.sourceFile
+        )
+    }
+
+
+    reportBindingNotAbstract(context: ts.Node): never {
+        ErrorReporter.fail(
+            KarambitErrorScope.INVALID_BINDING,
+            "@Binds method must be abstract!\n\n" + nodeForDisplay(context) + "\n",
+            this.sourceFile
+        )
+    }
+
+    reportInvalidBindingArguments(context: ts.Node): never {
+        ErrorReporter.fail(
+            KarambitErrorScope.INVALID_BINDING,
+            "Binding method must have exactly one argument!\n\n" + nodeForDisplay(context) + "\n",
+            this.sourceFile
+        )
+    }
 
     reportDuplicateProviders(type: QualifiedType, providers: InstanceProvider[]): never {
         ErrorReporter.fail(

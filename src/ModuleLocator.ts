@@ -4,6 +4,7 @@ import {InjectNodeDetector} from "./InjectNodeDetector"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-inject"
 import {ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
+import {ErrorReporter} from "./ErrorReporter"
 
 export type Bindings = ReadonlyMap<QualifiedType, QualifiedType>
 
@@ -21,6 +22,7 @@ export class ModuleLocator {
         private readonly typeChecker: ts.TypeChecker,
         private readonly context: ts.TransformationContext,
         private readonly nodeDetector: InjectNodeDetector,
+        private readonly errorReporter: ErrorReporter,
     ) { }
 
     getInstalledModules(decorator: ts.Decorator): Module[] {
@@ -84,6 +86,7 @@ export class ModuleLocator {
         const nodeDetector = this.nodeDetector
         const ctx = this.context
         const bindings = new Map<QualifiedType, QualifiedType>()
+        const errorReporter = this.errorReporter
         const factories: ProvidesMethod[] = []
         function visitFactory(method: ts.MethodDeclaration) {
             if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.StaticKeyword)) {
@@ -113,7 +116,7 @@ export class ModuleLocator {
         }
         function visitBinding(method: ts.MethodDeclaration) {
             if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-                throw Error(`Binds method must be abstract! Binding: ${module.name?.getText()}.${method.name?.getText()}`)
+                errorReporter.reportBindingNotAbstract(method)
             }
             const signature = typeChecker.getSignatureFromDeclaration(method)!
             const returnType = createQualifiedType({
@@ -124,15 +127,15 @@ export class ModuleLocator {
                 .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
                 .filter(ts.isParameter)
                 .map(it => it as ts.ParameterDeclaration)
-            if (parameters.length != 1) throw new Error("Binding method must have exactly one argument!")
+            if (parameters.length != 1) throw errorReporter.reportInvalidBindingArguments(method)
             const parameterType = createQualifiedType({
                 type: typeChecker.getTypeAtLocation(parameters[0].type ?? parameters[0]),
                 qualifier: nodeDetector.getQualifier(parameters[0])
             })
-            if (parameterType === returnType) throw new Error(`Cannot bind a type to itself! Binding: ${module.name?.getText()}.${method.name?.getText()}`)
+            if (parameterType === returnType) throw errorReporter.reportTypeBoundToSelf(method)
             // @ts-ignore
             const assignable: boolean = typeChecker.isTypeAssignableTo(parameterType.type, returnType.type)
-            if (!assignable) throw Error(`Binding parameter must be assignable to the return type! ${typeChecker.typeToString(parameterType.type)} is not assignable to ${typeChecker.typeToString(returnType.type)}`)
+            if (!assignable) throw errorReporter.reportBindingMustBeAssignable(method, parameterType.type, returnType.type)
 
             if (bindings.has(returnType)) throw new Error(`Type ${typeChecker.typeToString(returnType.type)} bound twice in ${module.name?.getText()}!`)
             bindings.set(returnType, parameterType)
@@ -156,13 +159,14 @@ export class ModuleLocator {
         let moduleSymbols: ts.Symbol[] = []
         const ctx = this.context
         const typeChecker = this.typeChecker
+        const errorReporter = this.errorReporter
         function visit(node: ts.Node): ts.Node {
             if (ts.isPropertyAssignment(node)) {
                 const identifier = node.getChildren()
                     .find(it => ts.isIdentifier(it) && it.getText() === identifierName)
                 if (identifier) {
                     const includesArrayLiteral = node.getChildren().find(it => ts.isArrayLiteralExpression(it))
-                    if (!includesArrayLiteral) throw new Error(`'${identifierName}' must be a compile-time constant (array literal)!`)
+                    if (!includesArrayLiteral) throw errorReporter.reportCompileTimeConstantRequired(identifierName)
                     moduleSymbols = filterNotNull(
                         includesArrayLiteral.getChildren()
                             .flatMap(it => it.getChildren())

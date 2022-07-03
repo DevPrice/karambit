@@ -1,5 +1,18 @@
 import * as assert from "assert"
-import {Inject, Provides, Scope, Provider, Module, Component, Subcomponent, Reusable, Named, Qualifier, BindsInstance} from "karambit-inject"
+import {
+    Inject,
+    Provides,
+    Scope,
+    Provider,
+    Module,
+    Component,
+    Subcomponent,
+    Reusable,
+    Named,
+    Qualifier,
+    BindsInstance,
+    Binds
+} from "karambit-inject"
 
 describe("Injection", () => {
     describe("Scope", () => {
@@ -44,6 +57,11 @@ describe("Injection", () => {
     describe("Modules", () => {
         it("includes modules in a parent module", () => {
             assert.strictEqual(includesComponent.includedValue, 1337)
+        })
+    })
+    describe("Bindings", () => {
+        it("bound type returns concrete instance", () => {
+            assert.strictEqual(parentComponent.parentClassInterface.child, childInstance)
         })
     })
     describe("Qualifiers", () => {
@@ -156,7 +174,7 @@ const scopedComponent = new ScopedComponent()
 class ChildClass { }
 
 @Inject
-class ParentClass {
+class ParentClass implements ParentClassInterface {
     constructor(readonly child: ChildClass) { }
 }
 
@@ -246,12 +264,20 @@ abstract class ScopedSubcomponent {
 interface ParentInterface { }
 
 @Module
-class ParentModule {
+abstract class ParentModule {
 
     @Provides
     static provideParentInterface(): ParentInterface {
         return {}
     }
+
+    // @ts-ignore
+    @Binds
+    abstract bindParentClassInterface(concrete: ParentClass): ParentClassInterface
+}
+
+interface ParentClassInterface {
+    readonly child: ChildClass
 }
 
 @Component({modules: [ParentModule], subcomponents: [ChildSubcomponent, ScopedSubcomponent]})
@@ -261,6 +287,7 @@ class ParentComponent {
 
     readonly value: symbol
     readonly parentClass: ParentClass
+    readonly parentClassInterface: ParentClassInterface
     readonly providerHolder: ProviderHolder
 
     readonly subcomponentFactory: (values: number[]) => ChildSubcomponent

@@ -72,7 +72,7 @@ export function Qualifier(): QualifierDecorator {
 
 export function Named(name: string): NamedQualifierDecorator {
     return (): never => {
-        throw new Error("Decorated code was not processed by transformer!")
+        ErrorReporter.reportCodeNotTransformed()
     }
 }
 
