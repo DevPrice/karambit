@@ -164,9 +164,9 @@ export class ComponentGenerator {
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
         const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...rootDependencies, ...missingSubcomponentDependencies]))
         generatedSubcomponents.forEach(it => {
-            Array.from(it.graph.resolved.entries()).forEach(it => {
-                const duplicate = graph.resolved.get(it[0])
-                if (duplicate) this.errorReporter.reportDuplicateProviders(it[0], [duplicate, it[1]])
+            Array.from(it.graph.resolved.entries()).forEach(([type, provider]) => {
+                const duplicate = graph.resolved.get(type) ?? dependencyMap.get(type) ?? factories.get(type)
+                if (duplicate) this.errorReporter.reportDuplicateProviders(type, [duplicate, provider])
             })
             const missingSubcomponentDependencies = Array.from(it.graph.missing.keys()).filter(it => !it.optional && !mergedGraph.resolved.has(it.type))
             if (missingSubcomponentDependencies.length > 0) {
@@ -261,9 +261,9 @@ export class ComponentGenerator {
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
 
         generatedSubcomponents.forEach(it => {
-            Array.from(it.graph.resolved.entries()).forEach(it => {
-                const duplicate = graph.resolved.get(it[0])
-                if (duplicate) this.errorReporter.reportDuplicateProviders(it[0], [duplicate, it[1]])
+            Array.from(it.graph.resolved.entries()).forEach(([type, provider]) => {
+                const duplicate = graph.resolved.get(type) ?? dependencyMap.get(type) ?? factories.get(type)
+                if (duplicate) this.errorReporter.reportDuplicateProviders(type, [duplicate, provider])
             })
         })
 
