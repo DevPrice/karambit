@@ -84,7 +84,13 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: ${{ github.repository_owner }}
       - uses: actions/checkout@v3
-      - run: npm ci
+      - id: node-cache
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ hashFiles('package-lock.json') }}
+      - if: ${{ steps.node-cache.outputs.cache-hit != 'true' }}
+        run: npm ci
       - id: build-cache
         uses: actions/cache@v3
         with:
