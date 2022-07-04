@@ -3,8 +3,8 @@ import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {Inject, Reusable} from "karambit-inject"
 
-type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
-type ElementLike = ts.ClassElement | ts.TypeElement
+export type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
+export type ElementLike = ts.ClassElement | ts.TypeElement
 
 @Inject
 @Reusable

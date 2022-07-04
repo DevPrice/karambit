@@ -1,18 +1,21 @@
 import * as ts from "typescript"
 import {Inject, Reusable} from "karambit-inject"
-import {QualifiedType, qualifiedTypeToString} from "./QualifiedType"
+import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {
+    InjectableConstructor,
     InstanceProvider,
     isInjectableConstructor,
     isPropertyProvider,
     isProvidesMethod,
-    isSubcomponentFactory
+    isSubcomponentFactory, ProvidesMethod
 } from "./Providers"
 import {filterNotNull} from "./Util"
+import {PropertyLike} from "./PropertyExtractor"
 
 export enum KarambitErrorScope {
     TRANSFORM = "NotTransformed",
     PARSE = "Parse",
+    INVALID_SCOPE = "InvalidScope",
     INVALID_BINDING = "InvalidBinding",
     DUPLICATE_PROVIDERS = "DuplicateProviders",
     DUPLICATE_BINDINGS = "DuplicateBindings",
@@ -26,13 +29,39 @@ export class ErrorReporter {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
-        private readonly sourceFile: ts.SourceFile
+        private readonly sourceFile: ts.SourceFile,
     ) { }
 
-    reportCompileTimeConstantRequired(identifierName: string): never {
+    reportCompileTimeConstantRequired(context: ts.Node, identifierName: string): never {
         ErrorReporter.fail(
             KarambitErrorScope.PARSE,
-            `'${identifierName}' must be a compile-time constant (array literal)!\n`,
+            `'${identifierName}' must be a compile-time constant (array literal)!\n\n${nodeForDisplay(context)}\n`,
+            this.sourceFile
+        )
+    }
+
+    reportComponentPropertyMustBeReadOnly(property: ts.Node): never {
+        ErrorReporter.fail(
+            KarambitErrorScope.PARSE,
+            `Generated component properties must be read-only!\n\n${nodeForDisplay(property)}\n`,
+            this.sourceFile
+        )
+    }
+
+    reportDuplicateScope(subcomponentName: string, ancestorName: string): never {
+        ErrorReporter.fail(
+            KarambitErrorScope.INVALID_SCOPE,
+            `Subcomponent may not share a scope with an ancestor! ${subcomponentName} has the same scope as its ancestor ${ancestorName}.\n`,
+            this.sourceFile
+        )
+    }
+
+    reportInvalidScope(provider: ProvidesMethod | InjectableConstructor, expected?: ts.Symbol): never {
+        const type = isProvidesMethod(provider) ? provider.returnType : createQualifiedType({type: provider.type})
+        ErrorReporter.fail(
+            KarambitErrorScope.INVALID_SCOPE,
+            `Invalid scope for type ${qualifiedTypeToString(type)}! ` +
+            `Got: ${provider.scope?.name ?? "no scope"}, expected: ${expected?.name ?? "no scope"}.\n\n${providerForDisplay(provider)}\n`,
             this.sourceFile
         )
     }
@@ -54,7 +83,6 @@ export class ErrorReporter {
             this.sourceFile
         )
     }
-
 
     reportBindingNotAbstract(context: ts.Node): never {
         ErrorReporter.fail(

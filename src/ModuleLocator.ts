@@ -166,7 +166,7 @@ export class ModuleLocator {
                     .find(it => ts.isIdentifier(it) && it.getText() === identifierName)
                 if (identifier) {
                     const includesArrayLiteral = node.getChildren().find(it => ts.isArrayLiteralExpression(it))
-                    if (!includesArrayLiteral) throw errorReporter.reportCompileTimeConstantRequired(identifierName)
+                    if (!includesArrayLiteral) throw errorReporter.reportCompileTimeConstantRequired(decorator, identifierName)
                     moduleSymbols = filterNotNull(
                         includesArrayLiteral.getChildren()
                             .flatMap(it => it.getChildren())

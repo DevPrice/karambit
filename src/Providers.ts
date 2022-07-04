@@ -22,7 +22,7 @@ export interface ProvidesMethod {
     readonly method: ts.MethodDeclaration
     readonly returnType: QualifiedType
     readonly parameters: ProvidesMethodParameter[]
-    readonly scope?: ts.Symbol
+    readonly scope: ts.Symbol | undefined
 }
 
 export function isProvidesMethod(provider: InstanceProvider): provider is ProvidesMethod {

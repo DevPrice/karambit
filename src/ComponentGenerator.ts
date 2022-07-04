@@ -84,7 +84,7 @@ export class ComponentGenerator {
             .filter(property => property.initializer === undefined)
             .map(property => {
                 if (!property.modifiers || !property.modifiers.some(it => it.kind === ts.SyntaxKind.ReadonlyKeyword)) {
-                    throw new Error("Generated component properties must be read-only!")
+                    this.errorReporter.reportComponentPropertyMustBeReadOnly(property)
                 }
                 return {
                     type: this.propertyExtractor.typeFromPropertyDeclaration(property),
@@ -101,7 +101,7 @@ export class ComponentGenerator {
         const factories = new Map<QualifiedType, ProvidesMethod>()
         installedModules.flatMap(module => module.factories).forEach(factory => {
             if (factory.scope && !this.nodeDetector.isReusableScope(factory.scope) && factory.scope != componentScope) {
-                throw new Error(`Invalid scope for ${factory.module.name?.getText()}.${factory.method.name.getText()}! Got: ${factory.scope.getName()}, expected: ${componentScope?.getName()}`)
+                this.errorReporter.reportInvalidScope(factory, componentScope)
             }
             const existing = factories.get(factory.returnType)
             if (existing) throw this.errorReporter.reportDuplicateProviders(factory.returnType, [existing, factory])
@@ -193,6 +193,7 @@ export class ComponentGenerator {
             this.nodeDetector,
             this.nameGenerator,
             this.importer,
+            this.errorReporter,
             typeResolver,
             mergedGraph.resolved,
         )
@@ -249,8 +250,9 @@ export class ComponentGenerator {
                 .map(subcomponentFactoryLocator.asSubcomponentFactory)
         )
         const subcomponentName = factory.subcomponentType.type.symbol.name
-        if (scope && ancestorScopes.has(scope)) {
-            throw new Error(`Subcomponent may not share a scope with an ancestor! ${subcomponentName} has the same scope as its ancestor ${ancestorScopes.get(scope)}`)
+        const duplicateScope = scope && ancestorScopes.get(scope)
+        if (duplicateScope) {
+            this.errorReporter.reportDuplicateScope(subcomponentName, duplicateScope)
         }
         const graphResolver = (type: QualifiedType) => {
             return parentCanBind(type) || graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
@@ -281,6 +283,7 @@ export class ComponentGenerator {
             this.nodeDetector,
             this.nameGenerator,
             this.importer,
+            this.errorReporter,
             typeResolver,
             mergedGraph.resolved,
         )

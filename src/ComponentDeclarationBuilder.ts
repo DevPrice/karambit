@@ -17,6 +17,7 @@ import {
     ProvidesMethod,
     SubcomponentFactory
 } from "./Providers"
+import {ErrorReporter} from "./ErrorReporter"
 
 export class ComponentDeclarationBuilder {
 
@@ -26,6 +27,7 @@ export class ComponentDeclarationBuilder {
         private readonly nodeDetector: InjectNodeDetector,
         private readonly nameGenerator: NameGenerator,
         private readonly importer: Importer,
+        private readonly errorReporter: ErrorReporter,
         private readonly typeResolver: Resolver<QualifiedType>,
         private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
     ) {
@@ -262,7 +264,7 @@ export class ComponentDeclarationBuilder {
         const qualifiedType = createQualifiedType({type: constructor.type})
         if (scope) {
             if (!this.nodeDetector.isReusableScope(scope) && scope !== componentScope) {
-                throw new Error(`Invalid scope for ${self.typeChecker.typeToString(constructor.type)}! Got: ${scope.getName()}, expected: ${componentScope?.getName() ?? "No scope"}`)
+                this.errorReporter.reportInvalidScope(constructor, componentScope)
             }
             const propIdentifier = self.nameGenerator.getPropertyIdentifier(qualifiedType)
             return [
