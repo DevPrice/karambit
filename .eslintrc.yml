@@ -6,3 +6,5 @@ extends:
 parserOptions:
   ecmaVersion: 2021
   sourceType: module
+ignorePatterns:
+  - "build/**"
