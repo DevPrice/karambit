@@ -110,6 +110,12 @@ describe("Injection", () => {
             const grandchildComponent = subcomponent.grandChildSubcomponentFactory({})
             assert.deepStrictEqual([2], grandchildComponent.grandChildClass.values)
         })
+        it("subcomponent factory can be aliased", () => {
+            assert.strictEqual(parentComponent.aliasedSubcomponentFactory([2, 2]).sum, 4)
+        })
+        it("subcomponent factory is available within graph", () => {
+            assert.strictEqual(parentComponent.parentClass.subcomponentFactory([2, 2]).sum, 4)
+        })
     })
 })
 
@@ -175,7 +181,7 @@ class ChildClass { }
 
 @Inject
 class ParentClass implements ParentClassInterface {
-    constructor(readonly child: ChildClass) { }
+    constructor(readonly child: ChildClass, readonly subcomponentFactory: (values: number[]) => ChildSubcomponent) { }
 }
 
 const childInstance = new ChildClass()
@@ -223,8 +229,14 @@ abstract class GrandChildSubcomponent {
     readonly grandChildClass: GrandChildClass
 }
 
+interface ChildSubcomponentInterface {
+    readonly sum: number
+    readonly parentClass: ParentClass
+    readonly grandChildSubcomponentFactory: (dep: GrandChildDependency) => GrandChildSubcomponent
+}
+
 @Subcomponent({modules: [SubcomponentModule], subcomponents: [GrandChildSubcomponent]})
-abstract class ChildSubcomponent {
+abstract class ChildSubcomponent implements ChildSubcomponentInterface {
 
     protected constructor(@BindsInstance values: number[]) { }
 
@@ -232,6 +244,7 @@ abstract class ChildSubcomponent {
     readonly parentClass: ParentClass
     readonly grandChildSubcomponentFactory: (dep: GrandChildDependency) => GrandChildSubcomponent
 }
+type ChildSubcomponentFactory = (values: number[]) => ChildSubcomponentInterface
 
 @Inject
 @TestSubcomponentScope
@@ -274,6 +287,10 @@ abstract class ParentModule {
     // @ts-ignore
     @Binds
     abstract bindParentClassInterface(concrete: ParentClass): ParentClassInterface
+
+    // @ts-ignore
+    @Binds
+    abstract bindChildSubcomponentFactory(factory: (values: number[]) => ChildSubcomponent): ChildSubcomponentFactory
 }
 
 interface ParentClassInterface {
@@ -292,6 +309,7 @@ class ParentComponent {
 
     readonly subcomponentFactory: (values: number[]) => ChildSubcomponent
     readonly scopedSubcomponentFactory: () => ScopedSubcomponent
+    readonly aliasedSubcomponentFactory: ChildSubcomponentFactory
 }
 
 const parentComponent = new ParentComponent(new ChildComponent(), {value: Symbol.for("value")}, "bound")

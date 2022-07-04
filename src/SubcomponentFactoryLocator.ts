@@ -51,14 +51,13 @@ export class SubcomponentFactoryLocator {
             .map(it => this.typeChecker.getTypeAtLocation(it.type ?? it))
         if (factoryParamTypes.length != constructorParams.length) return undefined
 
-        const params = constructorParams
-        if (!params.map(it => it.type.type).every((it, index) => it === factoryParamTypes[index])) return undefined
+        if (!constructorParams.map(it => it.type.type).every((it, index) => it === factoryParamTypes[index])) return undefined
 
         return {
             providerType: ProviderType.SUBCOMPONENT_FACTORY,
             subcomponentType: createQualifiedType({type: returnType, qualifier: returnType.symbol}),
-            constructorParams: params,
             type: createQualifiedType({type}),
+            constructorParams,
             declaration,
             decorator
         }
