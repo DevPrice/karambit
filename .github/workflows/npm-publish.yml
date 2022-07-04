@@ -14,8 +14,20 @@ jobs:
         with:
           node-version: 18.x
           cache: 'npm'
-      - run: npm ci
-      - run: npm --prefix integration ci
+      - id: node-cache
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ hashFiles('package-lock.json') }}
+      - if: ${{ steps.node-cache.outputs.cache-hit != 'true' }}
+        run: npm ci
+      - id: tests-node-cache
+        uses: actions/cache@v3
+        with:
+          path: integration/node_modules
+          key: ${{ hashFiles('integration/package-lock.json') }}
+      - if: ${{ steps.tests-node-cache.outputs.cache-hit != 'true' }}
+        run: npm --prefix integration ci
       - id: build-cache
         uses: actions/cache@v3
         with:
@@ -33,7 +45,13 @@ jobs:
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
-      - run: npm ci
+      - id: node-cache
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ hashFiles('package-lock.json') }}
+      - if: ${{ steps.node-cache.outputs.cache-hit != 'true' }}
+        run: npm ci
       - id: build-cache
         uses: actions/cache@v3
         with:
@@ -61,7 +79,13 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: ${{ github.repository_owner }}
       - uses: actions/checkout@v3
-      - run: npm ci
+      - id: node-cache
+        uses: actions/cache@v3
+        with:
+          path: node_modules
+          key: ${{ hashFiles('package-lock.json') }}
+      - if: ${{ steps.node-cache.outputs.cache-hit != 'true' }}
+        run: npm ci
       - id: build-cache
         uses: actions/cache@v3
         with:
