@@ -32,7 +32,7 @@ export interface ComponentGeneratorDependencies {
     readonly generator: ComponentGenerator
 }
 
-export type ComponentGeneratorDependenciesFactory = (componentDeclaration: ts.ClassLikeDeclaration) => ComponentGeneratorDependencies
+export type ComponentGeneratorDependenciesFactory = (componentDeclaration: ts.ClassDeclaration) => ComponentGeneratorDependencies
 
 @Inject
 @Reusable
@@ -49,7 +49,7 @@ export class ComponentGenerator {
         private readonly constructorHelper: ConstructorHelper,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly errorReporter: ErrorReporter,
-        private readonly component: ts.ClassLikeDeclaration,
+        private readonly component: ts.ClassDeclaration,
     ) { }
 
     private getDependencyMap(component: ts.ClassLikeDeclaration): ReadonlyMap<QualifiedType, PropertyProvider> {
@@ -204,7 +204,8 @@ export class ComponentGenerator {
             mergedGraph.resolved,
         )
 
-        return ts.factory.createClassDeclaration(
+        return ts.factory.updateClassDeclaration(
+            component,
             component.decorators,
             component.modifiers,
             component.name,

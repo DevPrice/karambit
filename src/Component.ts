@@ -15,7 +15,7 @@ import {
 @ComponentGenerationScope
 abstract class ComponentGenerationSubcomponent implements ComponentGeneratorDependencies {
 
-    protected constructor(@BindsInstance componentDeclaration: ts.ClassLikeDeclaration) { }
+    protected constructor(@BindsInstance componentDeclaration: ts.ClassDeclaration) { }
 
     readonly generator: ComponentGenerator
 }
@@ -42,7 +42,7 @@ abstract class SourceFileModule {
     // @ts-ignore
     @Binds
     abstract bindComponentGeneratorDependenciesFactory(
-        factory: (componentDeclaration: ts.ClassLikeDeclaration) => ComponentGenerationSubcomponent
+        factory: (componentDeclaration: ts.ClassDeclaration) => ComponentGenerationSubcomponent
     ): ComponentGeneratorDependenciesFactory
 }
 
