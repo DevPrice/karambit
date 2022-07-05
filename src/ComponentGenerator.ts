@@ -28,6 +28,12 @@ interface GeneratedSubcomponent {
     readonly graph: DependencyGraph
 }
 
+export interface ComponentGeneratorDependencies {
+    readonly generator: ComponentGenerator
+}
+
+export type ComponentGeneratorDependenciesFactory = (componentDeclaration: ts.ClassLikeDeclaration) => ComponentGeneratorDependencies
+
 @Inject
 @Reusable
 export class ComponentGenerator {
@@ -43,9 +49,8 @@ export class ComponentGenerator {
         private readonly constructorHelper: ConstructorHelper,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly errorReporter: ErrorReporter,
-    ) {
-        this.generateComponents = this.generateComponents.bind(this)
-    }
+        private readonly component: ts.ClassLikeDeclaration,
+    ) { }
 
     private getDependencyMap(component: ts.ClassLikeDeclaration): ReadonlyMap<QualifiedType, PropertyProvider> {
         const dependencyParams = this.constructorHelper.getConstructorParamsForDeclaration(component) ?? []
@@ -117,11 +122,12 @@ export class ComponentGenerator {
         return {factories, bindings}
     }
 
-    private updateComponent(component: ts.ClassLikeDeclaration): ts.ClassDeclaration {
+    updateComponent(): ts.ClassDeclaration {
+        const component = this.component
         const componentDecorator = component.decorators!.find(this.nodeDetector.isComponentDecorator)!
         const componentScope = this.nodeDetector.getScope(component)
         const {factories, bindings} = this.getFactoriesAndBindings(componentDecorator, componentScope)
-        const dependencyMap = this.getDependencyMap(component)
+        const dependencyMap = this.getDependencyMap(this.component)
 
         const componentType = this.typeChecker.getTypeAtLocation(component)
 
@@ -170,7 +176,7 @@ export class ComponentGenerator {
             })
             const missingSubcomponentDependencies = Array.from(it.graph.missing.keys()).filter(it => !it.optional && !mergedGraph.resolved.has(it.type))
             if (missingSubcomponentDependencies.length > 0) {
-                throw new Error(`No provider in ${componentType.symbol.name} for required types of subcomponent ${it.name}: ${missingSubcomponentDependencies.map(it => qualifiedTypeToString(it.type))}`)
+                throw new Error(`No provider in ${componentType.symbol.name} for required types of subcomponent ${it.name}: ${missingSubcomponentDependencies.map(it => qualifiedTypeToString(it.type)).join(", ")}`)
             }
         })
 
@@ -297,15 +303,6 @@ export class ComponentGenerator {
             classElement: subcomponentBuilder.declareSubcomponent(factory, members),
             graph: mergedGraph,
             name: subcomponentName
-        }
-    }
-
-    generateComponents(sourceFile: ts.SourceFile): ts.SourceFile
-    generateComponents(node: ts.Node): ts.Node {
-        if (ts.isClassDeclaration(node) && node.decorators?.some(this.nodeDetector.isComponentDecorator)) {
-            return this.updateComponent(node)
-        } else {
-            return ts.visitEachChild(node, this.generateComponents, this.context)
         }
     }
 }

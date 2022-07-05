@@ -1,10 +1,24 @@
 import * as ts from "typescript"
-import {BindsInstance, Component, Module, Provides, Reusable, Subcomponent} from "karambit-inject"
+import {Binds, BindsInstance, Component, Module, Provides, Reusable, Subcomponent} from "karambit-inject"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {InjectConstructorExporter} from "./InjectConstructorExporter"
-import {ComponentGenerator} from "./ComponentGenerator"
+import {ComponentVisitor} from "./ComponentVisitor"
 import {Importer} from "./Importer"
-import {SourceFileScope} from "./Scopes"
+import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
+import {
+    ComponentGenerator,
+    ComponentGeneratorDependencies,
+    ComponentGeneratorDependenciesFactory
+} from "./ComponentGenerator"
+
+@Subcomponent
+@ComponentGenerationScope
+abstract class ComponentGenerationSubcomponent implements ComponentGeneratorDependencies {
+
+    protected constructor(@BindsInstance componentDeclaration: ts.ClassLikeDeclaration) { }
+
+    readonly generator: ComponentGenerator
+}
 
 @Module
 abstract class SourceFileModule {
@@ -12,21 +26,27 @@ abstract class SourceFileModule {
     @Provides
     static provideTransformers(
         classExporter: InjectConstructorExporter,
-        componentGenerator: ComponentGenerator,
+        componentVisitor: ComponentVisitor,
         nodeDetector: InjectNodeDetector,
         importer: Importer,
         ctx: ts.TransformationContext,
     ): ts.Transformer<ts.SourceFile>[] {
         return [
             classExporter.exportProviders,
-            componentGenerator.generateComponents,
+            componentVisitor.visitComponents,
             node => nodeDetector.eraseInjectRuntime(node, ctx),
             importer.addImportsToSourceFile,
         ]
     }
+
+    // @ts-ignore
+    @Binds
+    abstract bindComponentGeneratorDependenciesFactory(
+        factory: (componentDeclaration: ts.ClassLikeDeclaration) => ComponentGenerationSubcomponent
+    ): ComponentGeneratorDependenciesFactory
 }
 
-@Subcomponent({modules: [SourceFileModule]})
+@Subcomponent({modules: [SourceFileModule], subcomponents: [ComponentGenerationSubcomponent]})
 @SourceFileScope
 abstract class SourceFileSubcomponent {
 
@@ -54,6 +74,7 @@ abstract class ProgramModule {
 }
 
 @Component({modules: [ProgramModule], subcomponents: [TransformationContextSubcomponent]})
+@ProgramScope
 export class ProgramComponent {
 
     constructor(@BindsInstance program: ts.Program) { }
