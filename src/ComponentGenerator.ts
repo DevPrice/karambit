@@ -11,6 +11,7 @@ import {QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {
+    isSubcomponentFactory,
     ParentProvider,
     PropertyProvider,
     ProviderType,
@@ -158,6 +159,7 @@ export class ComponentGenerator {
         const subcomponents = Array.from(graph.resolved.keys()).map(it => it.type)
             .map(subcomponentFactoryLocator.asSubcomponentFactory)
             .filterNotNull()
+            .distinctBy(it => it.subcomponentType)
         const canBind = (type: QualifiedType) => {
             return graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
         }
@@ -184,13 +186,6 @@ export class ComponentGenerator {
             throw new Error(`Missing required binding(s) in ${componentType.symbol.name}: ${missingRequired.map(it => qualifiedTypeToString(it.type)).join(", ")}`)
         }
 
-        const missingOptionals: [QualifiedType, UndefinedProvider][] = Array.from(mergedGraph.missing.keys()).map(it => {
-            return [it.type, {providerType: ProviderType.UNDEFINED, type: it.type}]
-        })
-        const generatedDeps = new Map(
-            Array.from(mergedGraph.resolved.entries()).concat(missingOptionals)
-        )
-
         const builder = new ComponentDeclarationBuilder(
             this.typeChecker,
             this.sourceFile,
@@ -202,6 +197,13 @@ export class ComponentGenerator {
             mergedGraph.resolved,
         )
 
+        const missingOptionals: [QualifiedType, UndefinedProvider][] = Array.from(mergedGraph.missing.keys()).map(it => {
+            return [it.type, {providerType: ProviderType.UNDEFINED, type: it.type}]
+        })
+        const generatedDeps = new Map(
+            Array.from(mergedGraph.resolved.entries()).concat(missingOptionals)
+                .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
+        )
         return ts.factory.updateClassDeclaration(
             component,
             component.decorators,
@@ -252,6 +254,7 @@ export class ComponentGenerator {
         const subcomponents = Array.from(graph.resolved.keys()).map(it => it.type)
             .map(subcomponentFactoryLocator.asSubcomponentFactory)
             .filterNotNull()
+            .distinctBy(it => it.subcomponentType)
         const subcomponentName = factory.subcomponentType.type.symbol.name
         const duplicateScope = scope && ancestorScopes.get(scope)
         if (duplicateScope) {
@@ -273,12 +276,6 @@ export class ComponentGenerator {
         })
 
         const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...rootDependencies, ...missingSubcomponentDependencies]))
-        const missingOptionals: [QualifiedType, ParentProvider][] = Array.from(mergedGraph.missing.keys()).map(it => {
-            return [it.type, {providerType: ProviderType.PARENT, type: it.type}]
-        })
-        const generatedDeps = new Map(
-            Array.from(mergedGraph.resolved.entries()).concat(missingOptionals)
-        )
 
         const subcomponentBuilder = new ComponentDeclarationBuilder(
             this.typeChecker,
@@ -291,6 +288,13 @@ export class ComponentGenerator {
             mergedGraph.resolved,
         )
 
+        const missingOptionals: [QualifiedType, ParentProvider][] = Array.from(mergedGraph.missing.keys()).map(it => {
+            return [it.type, {providerType: ProviderType.PARENT, type: it.type}]
+        })
+        const generatedDeps = new Map(
+            Array.from(mergedGraph.resolved.entries()).concat(missingOptionals)
+                .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
+        )
         const members = [
             ...ts.visitNodes(factory.declaration.members, subcomponentBuilder.updateComponentMember),
             ...Array.from(generatedDeps.values()).flatMap(it => subcomponentBuilder.getProviderDeclaration(it, scope)),
