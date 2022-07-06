@@ -1,5 +1,4 @@
 import * as ts from "typescript"
-import {filterNotNull} from "./Util"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-inject"
@@ -167,11 +166,10 @@ export class ModuleLocator {
                 if (identifier) {
                     const includesArrayLiteral = node.getChildren().find(it => ts.isArrayLiteralExpression(it))
                     if (!includesArrayLiteral) throw errorReporter.reportCompileTimeConstantRequired(decorator, identifierName)
-                    moduleSymbols = filterNotNull(
-                        includesArrayLiteral.getChildren()
-                            .flatMap(it => it.getChildren())
-                            .map(it => typeChecker.getTypeAtLocation(it).getSymbol())
-                    )
+                    moduleSymbols = includesArrayLiteral.getChildren()
+                        .flatMap(it => it.getChildren())
+                        .map(it => typeChecker.getTypeAtLocation(it).getSymbol())
+                        .filterNotNull()
                 }
                 return node
             }

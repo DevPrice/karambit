@@ -1,11 +1,11 @@
-import {filterNotNull, findCycles} from "./Util"
+import {findCycles} from "./Util"
 
 export class Resolver<T> {
 
     constructor(private readonly bindings: ReadonlyMap<T, T>, private readonly toString?: (binding: T) => string) {
         this.resolveBoundType = this.resolveBoundType.bind(this)
         for (const binding of bindings.keys()) {
-            const cycle = findCycles(binding, (b) => filterNotNull([bindings.get(b)]))
+            const cycle = findCycles(binding, (b) => [bindings.get(b)].filterNotNull())
             if (cycle.length > 0) {
                 throw new Error(`Binding cycle detected! ${cycle.map(it => (toString && toString(it)) ?? it).join(" -> ")}`)
             }

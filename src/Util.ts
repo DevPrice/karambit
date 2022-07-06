@@ -1,9 +1,19 @@
+declare global {
+    export interface Array<T> {
+        filterNotNull(): NonNullable<T>[]
+        distinctBy(predicate: (item: T) => unknown): T[]
+    }
+}
+
+Array.prototype.filterNotNull = function <T> (this: Array<T>) { return filterNotNull(this) }
+Array.prototype.distinctBy = function <T> (this: Array<T>, predicate: (item: T) => unknown) { return distinctBy(this, predicate) }
+
 export function filterNotNull<T>(items: T[]): NonNullable<T>[] {
     return items.filter(it => it !== undefined && it !== null) as NonNullable<T>[]
 }
 
-export function distinctBy<T>(items: T[], predicate: (item: T) => any): T[] {
-    const set = new Set<T>()
+export function distinctBy<T>(items: Iterable<T>, predicate: (item: T) => unknown): T[] {
+    const set = new Set<unknown>()
     const result: T[] = []
     for (const item of items) {
         const discriminator = predicate(item)

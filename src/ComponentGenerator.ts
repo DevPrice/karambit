@@ -1,7 +1,6 @@
 import * as ts from "typescript"
 import {NameGenerator} from "./NameGenerator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-import {distinctBy, filterNotNull} from "./Util"
 import {Importer} from "./Importer"
 import {Bindings, ModuleLocator} from "./ModuleLocator"
 import {ComponentDeclarationBuilder} from "./ComponentDeclarationBuilder"
@@ -156,15 +155,14 @@ export class ComponentGenerator {
             throw new Error(`No provider in ${componentType.symbol.name} for required types: ${missingDependencies.map(it => qualifiedTypeToString(it.type))}`)
         }
 
-        const subcomponents = filterNotNull(
-            Array.from(graph.resolved.keys()).map(it => it.type)
-                .map(subcomponentFactoryLocator.asSubcomponentFactory)
-        )
+        const subcomponents = Array.from(graph.resolved.keys()).map(it => it.type)
+            .map(subcomponentFactoryLocator.asSubcomponentFactory)
+            .filterNotNull()
+            .distinctBy(it => it.subcomponentType)
         const canBind = (type: QualifiedType) => {
             return graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
         }
-        const distinctSubcomponents = distinctBy(subcomponents, it => it.subcomponentType)
-        const generatedSubcomponents = distinctSubcomponents.map(it =>
+        const generatedSubcomponents = subcomponents.map(it =>
             this.generateSubcomponent(it, typeResolver, componentScope ? new Map([[componentScope, componentType.symbol.name]]) : new Map(), canBind)
         )
 
@@ -252,10 +250,10 @@ export class ComponentGenerator {
         )
         const graph = graphBuilder.buildDependencyGraph(new Set(rootDependencies))
 
-        const subcomponents = filterNotNull(
-            Array.from(graph.resolved.keys()).map(it => it.type)
-                .map(subcomponentFactoryLocator.asSubcomponentFactory)
-        )
+        const subcomponents = Array.from(graph.resolved.keys()).map(it => it.type)
+            .map(subcomponentFactoryLocator.asSubcomponentFactory)
+            .filterNotNull()
+            .distinctBy(it => it.subcomponentType)
         const subcomponentName = factory.subcomponentType.type.symbol.name
         const duplicateScope = scope && ancestorScopes.get(scope)
         if (duplicateScope) {
@@ -264,8 +262,7 @@ export class ComponentGenerator {
         const graphResolver = (type: QualifiedType) => {
             return parentCanBind(type) || graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
         }
-        const distinctSubcomponents = distinctBy(subcomponents, it => it.subcomponentType)
-        const generatedSubcomponents = distinctSubcomponents.map(it =>
+        const generatedSubcomponents = subcomponents.map(it =>
             this.generateSubcomponent(it, typeResolver, scope ? new Map([...ancestorScopes.entries(), [scope, subcomponentName]]) : ancestorScopes, graphResolver)
         )
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))

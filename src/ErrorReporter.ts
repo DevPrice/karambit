@@ -9,7 +9,6 @@ import {
     isProvidesMethod,
     isSubcomponentFactory, ProvidesMethod
 } from "./Providers"
-import {filterNotNull} from "./Util"
 
 export enum KarambitErrorScope {
     TRANSFORM = "NotTransformed",
@@ -103,7 +102,7 @@ export class ErrorReporter {
         ErrorReporter.fail(
             KarambitErrorScope.DUPLICATE_PROVIDERS,
             `${qualifiedTypeToString(type)} is provided multiple times!\n\n` +
-            `${filterNotNull(providers.map(providerForDisplay)).map(it => `provided by:\n${it}\n`).join("\n")}`,
+            `${providers.map(providerForDisplay).filterNotNull().map(it => `provided by:\n${it}\n`).join("\n")}`,
             this.component
         )
     }

@@ -1,5 +1,4 @@
 import * as ts from "typescript"
-import {filterNotNull} from "./Util"
 import {Inject, Reusable} from "karambit-inject"
 
 const injectModuleName = require("../package.json").name
@@ -38,7 +37,7 @@ export class InjectNodeDetector {
     }
 
     getScope(item: Decorated): ts.Symbol | undefined {
-        const scopeDecorators = filterNotNull(item.decorators?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)) ?? [])
+        const scopeDecorators = item.decorators?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)).filterNotNull() ?? []
         if (scopeDecorators.length > 1) throw new Error(`Scoped element may only have one scope! ${item.name?.getText()} has ${scopeDecorators.length}.`)
         const [symbol] = scopeDecorators
         return this.getAliasedSymbol(symbol)
@@ -139,7 +138,7 @@ export class InjectNodeDetector {
                 if (ts.isPropertyAccessExpression(child.expression)) {
                     return child.expression.getChildren().filter(ts.isIdentifier) as any
                 }
-                return filterNotNull([child.getChildren().find(ts.isIdentifier)]) as any
+                return [child.getChildren().find(ts.isIdentifier)].filterNotNull() as any
             }
         }
         return []

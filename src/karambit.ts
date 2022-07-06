@@ -1,3 +1,4 @@
+import "./Util"
 import * as ts from "typescript"
 import {ProgramComponent} from "./Component"
 import {ErrorReporter} from "./ErrorReporter"
