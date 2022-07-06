@@ -1,7 +1,7 @@
 import * as ts from "typescript"
 import {NameGenerator} from "./NameGenerator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-import {filterNotNull} from "./Util"
+import {distinctBy, filterNotNull} from "./Util"
 import {Importer} from "./Importer"
 import {Bindings, ModuleLocator} from "./ModuleLocator"
 import {ComponentDeclarationBuilder} from "./ComponentDeclarationBuilder"
@@ -163,7 +163,8 @@ export class ComponentGenerator {
         const canBind = (type: QualifiedType) => {
             return graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
         }
-        const generatedSubcomponents = subcomponents.map(it =>
+        const distinctSubcomponents = distinctBy(subcomponents, it => it.subcomponentType)
+        const generatedSubcomponents = distinctSubcomponents.map(it =>
             this.generateSubcomponent(it, typeResolver, componentScope ? new Map([[componentScope, componentType.symbol.name]]) : new Map(), canBind)
         )
 
@@ -250,10 +251,9 @@ export class ComponentGenerator {
             parentCanBind,
         )
         const graph = graphBuilder.buildDependencyGraph(new Set(rootDependencies))
-        const dependencies = graph.resolved
 
         const subcomponents = filterNotNull(
-            Array.from(dependencies.keys()).map(it => it.type)
+            Array.from(graph.resolved.keys()).map(it => it.type)
                 .map(subcomponentFactoryLocator.asSubcomponentFactory)
         )
         const subcomponentName = factory.subcomponentType.type.symbol.name
@@ -264,7 +264,8 @@ export class ComponentGenerator {
         const graphResolver = (type: QualifiedType) => {
             return parentCanBind(type) || graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
         }
-        const generatedSubcomponents = subcomponents.map(it =>
+        const distinctSubcomponents = distinctBy(subcomponents, it => it.subcomponentType)
+        const generatedSubcomponents = distinctSubcomponents.map(it =>
             this.generateSubcomponent(it, typeResolver, scope ? new Map([...ancestorScopes.entries(), [scope, subcomponentName]]) : ancestorScopes, graphResolver)
         )
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))

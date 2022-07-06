@@ -2,6 +2,19 @@ export function filterNotNull<T>(items: T[]): NonNullable<T>[] {
     return items.filter(it => it !== undefined && it !== null) as NonNullable<T>[]
 }
 
+export function distinctBy<T>(items: T[], predicate: (item: T) => any): T[] {
+    const set = new Set<T>()
+    const result: T[] = []
+    for (const item of items) {
+        const discriminator = predicate(item)
+        if (!set.has(discriminator)) {
+            result.push(item)
+            set.add(discriminator)
+        }
+    }
+    return result
+}
+
 export interface Container<T> {
     keys(): IterableIterator<T>
     has(value: T): boolean
