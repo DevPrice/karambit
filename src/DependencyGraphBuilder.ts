@@ -67,7 +67,9 @@ export class DependencyGraphBuilder {
             }
         }
 
-        dependencies.forEach(dep => this.assertNoCycles(dep.type, result))
+        for (const dep of dependencies) {
+            this.assertNoCycles(dep.type, result)
+        }
 
         return {
             resolved: result,

@@ -45,3 +45,45 @@ export function findCycles<T>(
     }
     return []
 }
+
+export function printTree<T>(
+    root: T,
+    getChildren: (item: T) => Iterable<T>,
+    toString: (item: T) => string = defaultToString
+): string {
+    return printTreeInternal(root, getChildren, toString, false).trimEnd()
+}
+
+function printTreeInternal<T>(
+    root: T,
+    getChildren: (item: T) => Iterable<T>,
+    toString: (item: T) => string = defaultToString,
+    prefix: boolean = true,
+): string {
+    const children = Array.from(getChildren(root))
+
+    const prefixStr = children.length > 0 ? "┬ " : "─ "
+    let result = `${prefix ? prefixStr : ""}${toString(root)}\n`
+
+    children.forEach((next, index) => {
+        const childTree = printTreeInternal(next, getChildren, toString)
+        result += prefixLines(childTree, index < children.length - 1 ? "├─" : "└─", "│ ")
+    })
+
+    return result
+}
+
+function prefixLines(str: string, first: string, rest: string): string {
+    const lines = str.split("\n")
+    if (lines.length > 1) {
+        return first + lines[0] + "\n" + lines.slice(1).map(it => it.length > 0 ? rest + it : it).join("\n")
+    }
+    return "└─" + str
+}
+
+function defaultToString(item: any): string {
+    if (item.toString && typeof item.toString === "function") {
+        return item.toString()
+    }
+    return ""
+}
