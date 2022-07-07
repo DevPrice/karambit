@@ -1,3 +1,7 @@
+import type {Chalk} from "chalk"
+
+const chalk: Chalk = require("chalk")
+
 declare global {
     export interface Array<T> {
         filterNotNull(): NonNullable<T>[]
@@ -80,7 +84,7 @@ export function printTree<T>(
     getChildren: (item: T) => Iterable<T>,
     toString: (item: T) => string = defaultToString
 ): string {
-    return printTreeInternal(root, getChildren, toString, false).trimEnd()
+    return printTreeInternal(root, getChildren, toString, false).result.trimEnd()
 }
 
 function printTreeInternal<T>(
@@ -88,18 +92,26 @@ function printTreeInternal<T>(
     getChildren: (item: T) => Iterable<T>,
     toString: (item: T) => string = defaultToString,
     prefix: boolean = true,
-): string {
+    visited: Container<T> = new Set(),
+): { result: string, visited: Container<T> } {
     const children = Array.from(getChildren(root))
 
     const prefixStr = children.length > 0 ? "┬ " : "─ "
+
+    if (visited.has(root) && children.length > 0) {
+        return {result: `${prefix ? prefixStr : ""}${toString(root)} ${chalk.bgYellow("de-duped")}\n`, visited: new Set()}
+    }
+
     let result = `${prefix ? prefixStr : ""}${toString(root)}\n`
-
+    const alsoVisited = new Set<T>([root])
     children.forEach((next, index) => {
-        const childTree = printTreeInternal(next, getChildren, toString)
-        result += prefixLines(childTree, index < children.length - 1 ? "├─" : "└─", "│ ")
+        const childTree = printTreeInternal(next, getChildren, toString, true, new Set([...visited.keys(), ...alsoVisited]))
+        for (const v of childTree.visited.keys()) {
+            alsoVisited.add(v)
+        }
+        result += prefixLines(childTree.result, index < children.length - 1 ? "├─" : "└─", "│ ")
     })
-
-    return result
+    return {result, visited: alsoVisited}
 }
 
 function prefixLines(str: string, first: string, rest: string): string {
