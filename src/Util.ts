@@ -1,11 +1,13 @@
 declare global {
     export interface Array<T> {
         filterNotNull(): NonNullable<T>[]
+        distinct(): T[]
         distinctBy(predicate: (item: T) => unknown): T[]
     }
 }
 
 Array.prototype.filterNotNull = function <T> (this: Array<T>) { return filterNotNull(this) }
+Array.prototype.distinct = function <T> (this: Array<T>) { return distinctBy(this, it => it) }
 Array.prototype.distinctBy = function <T> (this: Array<T>, predicate: (item: T) => unknown) { return distinctBy(this, predicate) }
 
 export function filterNotNull<T>(items: T[]): NonNullable<T>[] {

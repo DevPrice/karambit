@@ -2,7 +2,7 @@ import * as ts from "typescript"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {NameGenerator} from "./NameGenerator"
 import {Importer} from "./Importer"
-import {Resolver} from "./Resolver"
+import {TypeResolver} from "./TypeResolver"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {
     InjectableConstructor,
@@ -28,7 +28,7 @@ export class ComponentDeclarationBuilder {
         private readonly nameGenerator: NameGenerator,
         private readonly importer: Importer,
         private readonly errorReporter: ErrorReporter,
-        private readonly typeResolver: Resolver<QualifiedType>,
+        private readonly typeResolver: TypeResolver,
         private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
     ) {
         this.updateComponentMember = this.updateComponentMember.bind(this)

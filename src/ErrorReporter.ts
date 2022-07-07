@@ -11,6 +11,7 @@ import {
 } from "./Providers"
 import {filterTree, printTreeMap} from "./Util"
 import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
+import {Binding} from "./ModuleLocator"
 
 export enum KarambitErrorScope {
     TRANSFORM = "NotTransformed",
@@ -120,16 +121,16 @@ export class ErrorReporter {
         ErrorReporter.fail(
             KarambitErrorScope.DUPLICATE_PROVIDERS,
             `${qualifiedTypeToString(type)} is provided multiple times!\n\n` +
-            `${providers.map(providerForDisplay).filterNotNull().map(it => `provided by:\n${it}\n`).join("\n")}`,
+            providers.map(providerForDisplay).filterNotNull().map(it => `provided by:\n${it}\n`).join("\n") + "\n",
             this.component
         )
     }
 
-    // TODO: Include binding source nodes
-    reportGenericDuplicateBindings<T>(types: T[], toString?: (binding: T) => string): never {
+    reportDuplicateBindings(type: QualifiedType, bindings: Binding[]): never {
         ErrorReporter.fail(
-            KarambitErrorScope.DUPLICATE_PROVIDERS,
-            `Duplicate binding(s) found when merging bindings: ${types.map(it => (toString && toString(it)) ?? it).join(", ")}`,
+            KarambitErrorScope.DUPLICATE_BINDINGS,
+            `${qualifiedTypeToString(type)} is bound multiple times!\n\n` +
+            bindings.map(it => it.declaration).map(nodeForDisplay).filterNotNull().map(it => `bound at:\n${it}\n`).join("\n") + "\n",
             this.component
         )
     }
@@ -143,11 +144,11 @@ export class ErrorReporter {
         )
     }
 
-    reportGenericBindingCycle<T>(type: T, chain: T[], toString?: (binding: T) => string): never {
+    reportBindingCycle(type: QualifiedType, chain: QualifiedType[]): never {
         ErrorReporter.fail(
             KarambitErrorScope.BINDING_CYCLE,
             "Binding cycle detected!\n\n" +
-            `${chain.map(it => (toString && toString(it)) ?? it).join(" -> ")}\n`,
+            `${chain.map(qualifiedTypeToString).join(" -> ")}\n`,
             this.component
         )
     }

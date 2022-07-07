@@ -2,12 +2,12 @@ import * as ts from "typescript"
 import {NameGenerator} from "./NameGenerator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {Importer} from "./Importer"
-import {Bindings, ModuleLocator} from "./ModuleLocator"
+import {Binding, ModuleLocator} from "./ModuleLocator"
 import {ComponentDeclarationBuilder} from "./ComponentDeclarationBuilder"
 import {Dependency, DependencyGraph, DependencyGraphBuilder} from "./DependencyGraphBuilder"
 import {ConstructorHelper} from "./ConstructorHelper"
-import {Resolver} from "./Resolver"
-import {createQualifiedType, internalQualifier, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
+import {TypeResolver} from "./TypeResolver"
+import {createQualifiedType, internalQualifier, QualifiedType} from "./QualifiedType"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {
@@ -104,7 +104,7 @@ export class ComponentGenerator {
     private getFactoriesAndBindings(
         componentDecorator: ts.Decorator,
         componentScope?: ts.Symbol
-    ): {factories: ReadonlyMap<QualifiedType, ProvidesMethod>, bindings: Bindings} {
+    ): {factories: ReadonlyMap<QualifiedType, ProvidesMethod>, bindings: Iterable<Binding>} {
         const installedModules = this.moduleLocator.getInstalledModules(componentDecorator)
         const factories = new Map<QualifiedType, ProvidesMethod>()
         installedModules.flatMap(module => module.factories).forEach(factory => {
@@ -115,14 +115,7 @@ export class ComponentGenerator {
             if (existing) throw this.errorReporter.reportDuplicateProviders(factory.returnType, [existing, factory])
             factories.set(factory.returnType, factory)
         })
-        const bindings = new Map<QualifiedType, QualifiedType>()
-        installedModules.forEach(module => {
-            module.bindings.forEach((value, key) => {
-                if (bindings.has(key)) this.errorReporter.reportGenericDuplicateBindings([key], qualifiedTypeToString)
-                bindings.set(key, value)
-            })
-        })
-        return {factories, bindings}
+        return {factories, bindings: installedModules.flatMap(it => it.bindings)}
     }
 
     updateComponent(): ts.ClassDeclaration {
@@ -136,7 +129,7 @@ export class ComponentGenerator {
 
         const rootDependencies = this.getRootDependencies(componentType)
 
-        const typeResolver = new Resolver<QualifiedType>(this.errorReporter, bindings, qualifiedTypeToString)
+        const typeResolver = new TypeResolver(this.errorReporter, bindings)
         const subcomponentFactoryLocator = new SubcomponentFactoryLocator(
             this.typeChecker,
             this.nodeDetector,
@@ -236,14 +229,14 @@ export class ComponentGenerator {
 
     private generateSubcomponent(
         factory: SubcomponentFactory,
-        resolver: Resolver<QualifiedType>,
+        resolver: TypeResolver,
         ancestorScopes: ReadonlyMap<ts.Symbol, string>,
         parentCanBind: (type: QualifiedType) => boolean,
     ): GeneratedSubcomponent {
         const dependencyMap = this.getDependencyMap(factory.declaration)
         const subcomponentScope = this.nodeDetector.getScope(factory.declaration)
         const {factories, bindings} = this.getFactoriesAndBindings(factory.decorator, subcomponentScope)
-        const typeResolver = Resolver.merge(resolver, bindings)
+        const typeResolver = TypeResolver.merge(resolver, bindings)
         const rootDependencies = this.getRootDependencies(factory.subcomponentType.type)
         const subcomponentFactoryLocator = new SubcomponentFactoryLocator(
             this.typeChecker,

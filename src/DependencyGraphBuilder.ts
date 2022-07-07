@@ -1,5 +1,5 @@
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
-import {Resolver} from "./Resolver"
+import {TypeResolver} from "./TypeResolver"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Container, findCycles} from "./Util"
 import * as ts from "typescript"
@@ -30,7 +30,7 @@ export type DependencyProvider = InstanceProvider & { dependencies: ReadonlySet<
 export class DependencyGraphBuilder {
 
     constructor(
-        private readonly typeResolver: Resolver<QualifiedType>,
+        private readonly typeResolver: TypeResolver,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly dependencyMap:  ReadonlyMap<QualifiedType, PropertyProvider>,
         private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,

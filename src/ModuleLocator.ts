@@ -1,16 +1,20 @@
 import * as ts from "typescript"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
+import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-inject"
 import {ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 
-export type Bindings = ReadonlyMap<QualifiedType, QualifiedType>
+export interface Binding {
+    paramType: QualifiedType
+    returnType: QualifiedType
+    declaration: ts.Declaration
+}
 
 export interface Module {
     includes: ts.Symbol[]
     factories: ProvidesMethod[]
-    bindings: Bindings
+    bindings: Binding[]
 }
 
 @Inject
@@ -81,11 +85,11 @@ export class ModuleLocator {
         return modules
     }
 
-    private getFactoriesAndBindings(module: ts.ClassDeclaration): {factories: ProvidesMethod[], bindings: Bindings} {
+    private getFactoriesAndBindings(module: ts.ClassDeclaration): {factories: ProvidesMethod[], bindings: Binding[]} {
         const typeChecker = this.typeChecker
         const nodeDetector = this.nodeDetector
         const ctx = this.context
-        const bindings = new Map<QualifiedType, QualifiedType>()
+        const bindings: Binding[] = []
         const errorReporter = this.errorReporter
         const factories: ProvidesMethod[] = []
         function visitFactory(method: ts.MethodDeclaration) {
@@ -128,17 +132,16 @@ export class ModuleLocator {
                 .filter(ts.isParameter)
                 .map(it => it as ts.ParameterDeclaration)
             if (parameters.length != 1) throw errorReporter.reportInvalidBindingArguments(method)
-            const parameterType = createQualifiedType({
+            const paramType = createQualifiedType({
                 type: typeChecker.getTypeAtLocation(parameters[0].type ?? parameters[0]),
                 qualifier: nodeDetector.getQualifier(parameters[0])
             })
-            if (parameterType === returnType) throw errorReporter.reportTypeBoundToSelf(method)
+            if (paramType === returnType) throw errorReporter.reportTypeBoundToSelf(method)
             // @ts-ignore
-            const assignable: boolean = typeChecker.isTypeAssignableTo(parameterType.type, returnType.type)
-            if (!assignable) throw errorReporter.reportBindingMustBeAssignable(method, parameterType.type, returnType.type)
+            const assignable: boolean = typeChecker.isTypeAssignableTo(paramType.type, returnType.type)
+            if (!assignable) throw errorReporter.reportBindingMustBeAssignable(method, paramType.type, returnType.type)
 
-            if (bindings.has(returnType)) errorReporter.reportGenericDuplicateBindings([returnType], qualifiedTypeToString)
-            bindings.set(returnType, parameterType)
+            bindings.push({paramType, returnType, declaration: method})
         }
         function visit(node: ts.Node): ts.Node {
             if (ts.isMethodDeclaration(node) && node.decorators?.some(nodeDetector.isProvidesDecorator)) {
