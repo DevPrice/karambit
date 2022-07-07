@@ -136,7 +136,7 @@ export class ComponentGenerator {
 
         const rootDependencies = this.getRootDependencies(componentType)
 
-        const typeResolver = new Resolver<QualifiedType>(bindings, qualifiedTypeToString)
+        const typeResolver = new Resolver<QualifiedType>(this.errorReporter, bindings, qualifiedTypeToString)
         const subcomponentFactoryLocator = new SubcomponentFactoryLocator(
             this.typeChecker,
             this.nodeDetector,

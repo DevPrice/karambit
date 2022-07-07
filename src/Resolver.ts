@@ -1,13 +1,18 @@
 import {findCycles} from "./Util"
+import {ErrorReporter} from "./ErrorReporter"
 
 export class Resolver<T> {
 
-    constructor(private readonly bindings: ReadonlyMap<T, T>, private readonly toString?: (binding: T) => string) {
+    constructor(
+        private readonly errorReporter: ErrorReporter,
+        private readonly bindings: ReadonlyMap<T, T>,
+        private readonly toString?: (binding: T) => string
+    ) {
         this.resolveBoundType = this.resolveBoundType.bind(this)
         for (const binding of bindings.keys()) {
             const cycle = findCycles(binding, (b) => [bindings.get(b)].filterNotNull())
             if (cycle.length > 0) {
-                throw new Error(`Binding cycle detected! ${cycle.map(it => (toString && toString(it)) ?? it).join(" -> ")}`)
+                throw this.errorReporter.reportGenericBindingCycle(cycle[cycle.length - 1], cycle, toString)
             }
         }
     }
@@ -23,6 +28,6 @@ export class Resolver<T> {
         if (duplicateBindings.length > 0) {
             throw new Error(`Duplicate binding(s) found when merging bindings: ${duplicateBindings.map(it => (original.toString && original.toString(it)) ?? it).join(", ")}`)
         }
-        return new Resolver(new Map([...original.bindings, ...additionalBindings]), original.toString)
+        return new Resolver(original.errorReporter, new Map([...original.bindings, ...additionalBindings]), original.toString)
     }
 }

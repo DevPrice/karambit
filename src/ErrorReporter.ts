@@ -134,6 +134,15 @@ export class ErrorReporter {
         )
     }
 
+    reportGenericBindingCycle<T>(type: T, chain: T[], toString?: (binding: T) => string): never {
+        ErrorReporter.fail(
+            KarambitErrorScope.BINDING_CYCLE,
+            "Binding cycle detected!\n\n" +
+            `${chain.map(it => (toString && toString(it)) ?? it).join(" -> ")}\n`,
+            this.component
+        )
+    }
+
     static reportCodeNotTransformed(): never {
         ErrorReporter.fail(
             KarambitErrorScope.TRANSFORM,
