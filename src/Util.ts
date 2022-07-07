@@ -96,11 +96,11 @@ function printTreeInternal<T>(
 ): { result: string, visited: Container<T> } {
     const children = Array.from(getChildren(root))
 
-    const prefixStr = children.length > 0 ? "┬ " : "─ "
-
     if (visited.has(root) && children.length > 0) {
-        return {result: `${prefix ? prefixStr : ""}${toString(root)} ${chalk.bgYellow("de-duped")}\n`, visited: new Set()}
+        return {result: `─ ${toString(root)} ${chalk.bgYellow("de-duped")}\n`, visited: new Set()}
     }
+
+    const prefixStr = children.length > 0 ? "┬ " : "─ "
 
     let result = `${prefix ? prefixStr : ""}${toString(root)}\n`
     const alsoVisited = new Set<T>([root])
@@ -109,7 +109,8 @@ function printTreeInternal<T>(
         for (const v of childTree.visited.keys()) {
             alsoVisited.add(v)
         }
-        result += prefixLines(childTree.result, index < children.length - 1 ? "├─" : "└─", "│ ")
+        const last = index >= children.length - 1
+        result += prefixLines(childTree.result, last ? "└─" : "├─", last ? "  " : "│ ")
     })
     return {result, visited: alsoVisited}
 }
