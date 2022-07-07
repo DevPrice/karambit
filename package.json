@@ -40,5 +40,8 @@
   },
   "lint-staged": {
     "*.ts": "eslint --fix"
+  },
+  "dependencies": {
+    "chalk": "^4.1.2"
   }
 }

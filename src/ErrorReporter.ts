@@ -12,6 +12,8 @@ import {
 import {filterTree, printTreeMap} from "./Util"
 import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
 import {Binding} from "./ModuleLocator"
+import {Chalk} from "chalk"
+const chalk: Chalk = require("chalk")
 
 export enum KarambitErrorScope {
     TRANSFORM = "NotTransformed",
@@ -109,10 +111,14 @@ export class ErrorReporter {
     reportMissingProviders(missingTypes: Iterable<QualifiedType>, component: {type: QualifiedType, rootDependencies: Iterable<Dependency>}, graph: ReadonlyMap<QualifiedType, DependencyProvider>): never {
         const missingSet = new Set(missingTypes)
         const getChildren = (item: QualifiedType) => item === component.type ? Array.from(component.rootDependencies).map(it => it.type) : graph.get(item)?.dependencies ?? []
+        const typeToString = (item: QualifiedType) => {
+            if (missingSet.has(item)) return chalk.blue(qualifiedTypeToString(item))
+            return qualifiedTypeToString(item)
+        }
         ErrorReporter.fail(
             KarambitErrorScope.MISSING_PROVIDER,
-            `No provider in ${qualifiedTypeToString(component.type)} for required types: ${Array.from(missingSet.keys()).map(qualifiedTypeToString).join(", ")}\n\n` +
-            `${printTreeMap(component.type, filterTree(component.type, getChildren, item => missingSet.has(item), qualifiedTypeToString), qualifiedTypeToString)}\n`,
+            `No provider in ${qualifiedTypeToString(component.type)} for required types: ${Array.from(missingSet.keys()).map(typeToString).join(", ")}\n\n` +
+            `${printTreeMap(component.type, filterTree(component.type, getChildren, item => missingSet.has(item), typeToString), typeToString)}\n`,
             this.component
         )
     }
@@ -172,7 +178,7 @@ export class ErrorReporter {
 export class KarambitError extends Error {
 
     constructor(description: string, readonly scope: KarambitErrorScope, component?: ts.ClassLikeDeclaration) {
-        super(`[Karambit/${scope}] ${component && component.name ? `${component.name.getText()}: ` : ""}${description}`)
+        super(`${chalk.red(`[Karambit/${scope}]`)} ${component && component.name ? `${component.name.getText()}: ` : ""}${description}`)
     }
 }
 
@@ -187,7 +193,7 @@ function providerForDisplay(provider: InstanceProvider): string | undefined {
 function nodeForDisplay(node: ts.Node): string {
     const sf = node.getSourceFile()
     const {line, character} = sf.getLineAndCharacterOfPosition(node.pos)
-    return `${sf.fileName}:${line}:${character}` + "\n" +
+    return chalk.yellow(`${sf.fileName}:${line}:${character}`) + "\n" +
         normalizeWhitespace(node.getText())
 }
 
