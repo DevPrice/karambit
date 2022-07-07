@@ -35,9 +35,10 @@ export class ModuleLocator {
 
     private withIncludedModules(symbols: ts.Symbol[]): Module[] {
         const directlyReferencedModules = this.getModuleMap(symbols)
+        const errorReporter = this.errorReporter
         function withIncludedModules(symbol: ts.Symbol): Module[] {
             const module = directlyReferencedModules.get(symbol)
-            if (!module) throw new Error(`Module missing for symbol: ${symbol.getName()}`)
+            if (!module) throw errorReporter.reportParseFailed(`Module missing for symbol: ${symbol.getName()}`)
             return [module, ...module.includes.flatMap(it => withIncludedModules(it))]
         }
         return symbols.flatMap(it => withIncludedModules(it))

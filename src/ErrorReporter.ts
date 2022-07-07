@@ -9,7 +9,7 @@ import {
     isProvidesMethod,
     isSubcomponentFactory, ProvidesMethod
 } from "./Providers"
-import {Container, filterTree, printTree, printTreeMap} from "./Util"
+import {filterTree, printTreeMap} from "./Util"
 import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
 
 export enum KarambitErrorScope {
@@ -47,6 +47,10 @@ export class ErrorReporter {
             `Generated component properties must be read-only!\n\n${nodeForDisplay(property)}\n`,
             this.component
         )
+    }
+
+    reportParseFailed(message: string): never {
+        return ErrorReporter.reportParseFailed(message)
     }
 
     reportDuplicateScope(subcomponentName: string, ancestorName: string): never {
@@ -135,6 +139,10 @@ export class ErrorReporter {
             KarambitErrorScope.TRANSFORM,
             "Decorated code was not processed by transformer! Ensure this project is configured to use the Karambit compiler plugin.",
         )
+    }
+
+    static reportParseFailed(message: string, component?: ts.ClassLikeDeclaration): never {
+        ErrorReporter.fail(KarambitErrorScope.PARSE, message, component)
     }
 
     static fail(scope: KarambitErrorScope, message: string, component?: ts.ClassLikeDeclaration): never {

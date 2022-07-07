@@ -1,6 +1,7 @@
 import * as ts from "typescript"
 import {Inject, Reusable} from "karambit-inject"
 import {TypeQualifier} from "./QualifiedType"
+import {ErrorReporter} from "./ErrorReporter"
 
 const injectModuleName = require("../package.json").name
 const injectSourceFileName = require("../package.json").main
@@ -39,7 +40,7 @@ export class InjectNodeDetector {
 
     getScope(item: Decorated): ts.Symbol | undefined {
         const scopeDecorators = item.decorators?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)).filterNotNull() ?? []
-        if (scopeDecorators.length > 1) throw new Error(`Scoped element may only have one scope! ${item.name?.getText()} has ${scopeDecorators.length}.`)
+        if (scopeDecorators.length > 1) ErrorReporter.reportParseFailed(`Scoped element may only have one scope! ${item.name?.getText()} has ${scopeDecorators.length}.`)
         const [symbol] = scopeDecorators
         return this.getAliasedSymbol(symbol)
     }
@@ -57,7 +58,7 @@ export class InjectNodeDetector {
 
     getQualifier(item: Decorated): TypeQualifier | undefined {
         const qualifierDecorators = item.decorators?.filter(this.isQualifierDecorator) ?? []
-        if (qualifierDecorators.length > 1) throw new Error(`Qualified element may only have one qualifier! ${item.name?.getText()} has ${qualifierDecorators.length}.`)
+        if (qualifierDecorators.length > 1) ErrorReporter.reportParseFailed(`Qualified element may only have one qualifier! ${item.name?.getText()} has ${qualifierDecorators.length}.`)
         if (qualifierDecorators.length === 0) return undefined
         const qualifier = qualifierDecorators[0]
         const type = this.typeChecker.getTypeAtLocation(qualifier.expression)
@@ -86,7 +87,7 @@ export class InjectNodeDetector {
                 .flatMap(it => it.kind === ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
                 .find(ts.isStringLiteral)
             if (literal) {
-                return resolveStringLiteral(literal)
+                return this.resolveStringLiteral(literal)
             }
         }
         return undefined
@@ -124,7 +125,7 @@ export class InjectNodeDetector {
         const symbol = type.getSymbol()
         if (symbol?.getName() === "Provider" && this.isInjectSymbol(symbol)) {
             const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
-            if (typeArguments.length != 1) throw new Error("Invalid Provider type!")
+            if (typeArguments.length != 1) ErrorReporter.reportParseFailed("Invalid Provider type!")
             return typeArguments[0]
         }
     }
@@ -153,7 +154,7 @@ export class InjectNodeDetector {
     }
 
     isInjectionModuleImport(node: ts.Node) {
-        return ts.isImportDeclaration(node) && node.getChildren().some(child => ts.isStringLiteral(child) && resolveStringLiteral(child) === injectModuleName)
+        return ts.isImportDeclaration(node) && node.getChildren().some(child => ts.isStringLiteral(child) && this.resolveStringLiteral(child) === injectModuleName)
     }
 
     isEraseable(node: ts.Node) {
@@ -230,10 +231,10 @@ export class InjectNodeDetector {
             return symbol
         }
     }
-}
 
-function resolveStringLiteral(literal: ts.StringLiteral): string {
-    const match = literal.getText().match(/^['"](.*)['"]$/)
-    if (!match || match.length < 2) throw new Error(`Failed to resolve string literal: ${literal.getText()}`)
-    return match[1]
+    resolveStringLiteral(literal: ts.StringLiteral): string {
+        const match = literal.getText().match(/^['"](.*)['"]$/)
+        if (!match || match.length < 2) throw ErrorReporter.reportParseFailed(`Failed to resolve string literal: ${literal.getText()}`)
+        return match[1]
+    }
 }
