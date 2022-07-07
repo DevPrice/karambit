@@ -296,7 +296,15 @@ export class ComponentGenerator {
             mergedGraph.resolved,
         )
 
-        const missingOptionals: [QualifiedType, ParentProvider][] = Array.from(mergedGraph.missing.keys()).map(it => {
+        const missing = Array.from(mergedGraph.missing.keys())
+        const missingRequired = missing.filter(it => !it.optional && !parentCanBind(it.type))
+            .map(it => it.type)
+
+        if (missingRequired.length > 0) {
+            this.errorReporter.reportMissingProviders(missingRequired, {type: factory.subcomponentType, rootDependencies}, mergedGraph.resolved)
+        }
+
+        const missingOptionals: [QualifiedType, ParentProvider][] = missing.map(it => {
             return [it.type, {providerType: ProviderType.PARENT, type: it.type}]
         })
         const generatedDeps = new Map(
