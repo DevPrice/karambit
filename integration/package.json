@@ -4,7 +4,8 @@
   "description": "Integration tests",
   "scripts": {
     "build": "ttsc",
-    "test": "jest --clear-cache && jest"
+    "pretest": "jest --clear-cache",
+    "test": "jest"
   },
   "author": "DevPrice",
   "devDependencies": {
