@@ -125,6 +125,15 @@ export class ErrorReporter {
         )
     }
 
+    // TODO: Include binding source nodes
+    reportGenericDuplicateBindings<T>(types: T[], toString?: (binding: T) => string): never {
+        ErrorReporter.fail(
+            KarambitErrorScope.DUPLICATE_PROVIDERS,
+            `Duplicate binding(s) found when merging bindings: ${types.map(it => (toString && toString(it)) ?? it).join(", ")}`,
+            this.component
+        )
+    }
+
     reportDependencyCycle(type: QualifiedType, chain: QualifiedType[]): never {
         ErrorReporter.fail(
             KarambitErrorScope.DEPENDENCY_CYCLE,

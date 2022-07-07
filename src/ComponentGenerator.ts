@@ -118,7 +118,7 @@ export class ComponentGenerator {
         const bindings = new Map<QualifiedType, QualifiedType>()
         installedModules.forEach(module => {
             module.bindings.forEach((value, key) => {
-                if (bindings.has(key)) throw new Error(`Found multiple bindings for ${this.typeChecker.typeToString(key.type)}!`)
+                if (bindings.has(key)) this.errorReporter.reportGenericDuplicateBindings([key], qualifiedTypeToString)
                 bindings.set(key, value)
             })
         })

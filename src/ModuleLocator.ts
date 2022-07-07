@@ -1,6 +1,6 @@
 import * as ts from "typescript"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-import {createQualifiedType, QualifiedType} from "./QualifiedType"
+import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-inject"
 import {ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
@@ -137,7 +137,7 @@ export class ModuleLocator {
             const assignable: boolean = typeChecker.isTypeAssignableTo(parameterType.type, returnType.type)
             if (!assignable) throw errorReporter.reportBindingMustBeAssignable(method, parameterType.type, returnType.type)
 
-            if (bindings.has(returnType)) throw new Error(`Type ${typeChecker.typeToString(returnType.type)} bound twice in ${module.name?.getText()}!`)
+            if (bindings.has(returnType)) errorReporter.reportGenericDuplicateBindings([returnType], qualifiedTypeToString)
             bindings.set(returnType, parameterType)
         }
         function visit(node: ts.Node): ts.Node {

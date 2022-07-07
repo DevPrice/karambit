@@ -26,7 +26,7 @@ export class Resolver<T> {
     static merge<T>(original: Resolver<T>, additionalBindings: ReadonlyMap<T, T>): Resolver<T> {
         const duplicateBindings = Array.from(original.bindings.keys()).filter(it => additionalBindings.has(it))
         if (duplicateBindings.length > 0) {
-            throw new Error(`Duplicate binding(s) found when merging bindings: ${duplicateBindings.map(it => (original.toString && original.toString(it)) ?? it).join(", ")}`)
+            throw original.errorReporter.reportGenericDuplicateBindings(duplicateBindings)
         }
         return new Resolver(original.errorReporter, new Map([...original.bindings, ...additionalBindings]), original.toString)
     }
