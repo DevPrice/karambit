@@ -1,5 +1,6 @@
 import * as ts from "typescript"
 import {Inject, Reusable} from "karambit-inject"
+import {TypeQualifier} from "./QualifiedType"
 
 const injectModuleName = require("../package.json").name
 const injectSourceFileName = require("../package.json").main
@@ -54,7 +55,7 @@ export class InjectNodeDetector {
         return this.isQualifier(type) || this.isNamedQualifier(type)
     }
 
-    getQualifier(item: Decorated): ts.Symbol | string | undefined {
+    getQualifier(item: Decorated): TypeQualifier | undefined {
         const qualifierDecorators = item.decorators?.filter(this.isQualifierDecorator) ?? []
         if (qualifierDecorators.length > 1) throw new Error(`Qualified element may only have one qualifier! ${item.name?.getText()} has ${qualifierDecorators.length}.`)
         if (qualifierDecorators.length === 0) return undefined

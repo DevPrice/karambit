@@ -7,10 +7,11 @@ import {ComponentDeclarationBuilder} from "./ComponentDeclarationBuilder"
 import {Dependency, DependencyGraph, DependencyGraphBuilder} from "./DependencyGraphBuilder"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Resolver} from "./Resolver"
-import {QualifiedType, qualifiedTypeToString} from "./QualifiedType"
+import {createQualifiedType, internalQualifier, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {
+    InstanceProvider,
     isSubcomponentFactory,
     ParentProvider,
     PropertyProvider,
@@ -26,6 +27,8 @@ interface GeneratedSubcomponent {
     readonly name: string
     readonly classElement: ts.ClassElement
     readonly graph: DependencyGraph
+    readonly type: QualifiedType
+    readonly rootDependencies: Iterable<Dependency>
 }
 
 export interface ComponentGeneratorDependencies {
@@ -153,7 +156,11 @@ export class ComponentGenerator {
         const graph = graphBuilder.buildDependencyGraph(new Set(rootDependencies))
         const missingDependencies = Array.from(graph.missing.keys()).filter(it => !it.optional)
         if (missingDependencies.length > 0) {
-            throw new Error(`No provider in ${componentType.symbol.name} for required types: ${missingDependencies.map(it => qualifiedTypeToString(it.type))}`)
+            this.errorReporter.reportMissingProviders(
+                missingDependencies.map(it => it.type),
+                {type: createQualifiedType({type: componentType, qualifier: internalQualifier}), rootDependencies},
+                graph.resolved
+            )
         }
 
         const subcomponents = Array.from(graph.resolved.keys()).map(it => it.type)
@@ -176,14 +183,22 @@ export class ComponentGenerator {
             })
             const missingSubcomponentDependencies = Array.from(it.graph.missing.keys()).filter(it => !it.optional && !mergedGraph.resolved.has(it.type))
             if (missingSubcomponentDependencies.length > 0) {
-                throw new Error(`No provider in ${componentType.symbol.name} for required types of subcomponent ${it.name}: ${missingSubcomponentDependencies.map(it => qualifiedTypeToString(it.type)).join(", ")}`)
+                this.errorReporter.reportMissingProviders(
+                    missingSubcomponentDependencies.map(it => it.type),
+                    {type: it.type, rootDependencies: it.rootDependencies},
+                    graph.resolved
+                )
             }
         })
 
         const missing = Array.from(mergedGraph.missing.keys())
         const missingRequired = missing.filter(it => !it.optional)
         if (missingRequired.length > 0) {
-            throw new Error(`Missing required binding(s) in ${componentType.symbol.name}: ${missingRequired.map(it => qualifiedTypeToString(it.type)).join(", ")}`)
+            this.errorReporter.reportMissingProviders(
+                missingRequired.map(it => it.type),
+                {type: createQualifiedType({type: componentType, qualifier: internalQualifier}), rootDependencies},
+                graph.resolved
+            )
         }
 
         const builder = new ComponentDeclarationBuilder(
@@ -201,7 +216,7 @@ export class ComponentGenerator {
             return [it.type, {providerType: ProviderType.UNDEFINED, type: it.type}]
         })
         const generatedDeps = new Map(
-            Array.from(mergedGraph.resolved.entries()).concat(missingOptionals)
+            Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals)
                 .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
         )
         return ts.factory.updateClassDeclaration(
@@ -292,7 +307,7 @@ export class ComponentGenerator {
             return [it.type, {providerType: ProviderType.PARENT, type: it.type}]
         })
         const generatedDeps = new Map(
-            Array.from(mergedGraph.resolved.entries()).concat(missingOptionals)
+            Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals)
                 .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
         )
         const members = [
@@ -302,8 +317,10 @@ export class ComponentGenerator {
         ]
         return {
             classElement: subcomponentBuilder.declareSubcomponent(factory, members),
+            type: factory.subcomponentType,
             graph: mergedGraph,
-            name: subcomponentName
+            name: subcomponentName,
+            rootDependencies,
         }
     }
 }

@@ -1,6 +1,8 @@
 import * as ts from "typescript"
 
-export type TypeQualifier = ts.Symbol | string
+export const internalQualifier = Symbol("internal-qualifier")
+
+export type TypeQualifier = ts.Symbol | symbol | string
 export interface QualifiedType {
     readonly type: ts.Type
     readonly qualifier?: TypeQualifier
@@ -24,7 +26,7 @@ export function qualifiedTypeToString(qualifiedType: QualifiedType): string {
     const checker = (qualifiedType.type as any).checker as ts.TypeChecker | undefined
     const qualifierString = typeof qualifiedType.qualifier === "string" ?
         `named "${qualifiedType.qualifier}"` :
-        qualifiedType.qualifier?.getName()
+        typeof qualifiedType.qualifier === "object" ? qualifiedType.qualifier?.getName() : undefined
     const qualifierInfo = qualifierString ? ` with qualifier ${qualifierString}` : ""
     return (checker?.typeToString(qualifiedType.type) ?? "unknown type") + qualifierInfo
 }

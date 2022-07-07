@@ -46,6 +46,33 @@ export function findCycles<T>(
     return []
 }
 
+export function filterTree<T>(
+    root: T,
+    getChildren: (item: T) => Iterable<T>,
+    predicate: (item: T) => boolean,
+    toString: (item: T) => string = defaultToString,
+): ReadonlyMap<T, Iterable<T>> {
+    const result = new Map<T, Iterable<T>>()
+    if (predicate(root)) {
+        result.set(root, new Set())
+    } else {
+        const children = Array.from(getChildren(root))
+        const filteredChildren = children.flatMap(it => Array.from(filterTree(it, getChildren, predicate, toString).entries()))
+        if (filteredChildren.length > 0) {
+            return new Map([...filteredChildren, [root, filteredChildren.map(it => it[0])]])
+        }
+    }
+    return result
+}
+
+export function printTreeMap<T>(
+    root: T,
+    map: ReadonlyMap<T, Iterable<T>>,
+    toString: (item: T) => string = defaultToString
+): string {
+    return printTree(root, item => map.get(item) ?? [], toString)
+}
+
 export function printTree<T>(
     root: T,
     getChildren: (item: T) => Iterable<T>,

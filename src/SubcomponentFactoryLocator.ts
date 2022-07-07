@@ -1,5 +1,5 @@
 import * as ts from "typescript"
-import {createQualifiedType} from "./QualifiedType"
+import {createQualifiedType, internalQualifier} from "./QualifiedType"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Container} from "./Util"
@@ -55,7 +55,7 @@ export class SubcomponentFactoryLocator {
 
         return {
             providerType: ProviderType.SUBCOMPONENT_FACTORY,
-            subcomponentType: createQualifiedType({type: returnType, qualifier: returnType.symbol}),
+            subcomponentType: createQualifiedType({type: returnType, qualifier: internalQualifier}),
             type: createQualifiedType({type}),
             constructorParams,
             declaration,

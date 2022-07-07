@@ -21,11 +21,11 @@ export interface Dependency {
 }
 
 export interface DependencyGraph {
-    readonly resolved: ReadonlyMap<QualifiedType, InstanceProvider>
+    readonly resolved: ReadonlyMap<QualifiedType, DependencyProvider>
     readonly missing: Container<Dependency>
 }
 
-type DependencyProvider = InstanceProvider & { children: ReadonlySet<QualifiedType> }
+export type DependencyProvider = InstanceProvider & { dependencies: ReadonlySet<QualifiedType> }
 
 export class DependencyGraphBuilder {
 
@@ -92,7 +92,7 @@ export class DependencyGraphBuilder {
         const propertyProvider = this.dependencyMap.get(boundType)
         if (propertyProvider) {
             return {
-                provider: {...propertyProvider, children: new Set()}
+                provider: {...propertyProvider, dependencies: new Set()}
             }
         }
 
@@ -101,7 +101,7 @@ export class DependencyGraphBuilder {
         if (provider) {
             const dependencies = provider.parameters
             return {
-                provider: {...provider, children: new Set(dependencies.map(it => it.type))},
+                provider: {...provider, dependencies: new Set(dependencies.map(it => it.type))},
                 dependencies
             }
         }
@@ -109,7 +109,7 @@ export class DependencyGraphBuilder {
         const factory = this.subcomponentFactoryLocator.asSubcomponentFactory(boundType.type)
         if (factory) {
             return {
-                provider: {...factory, children: new Set()}
+                provider: {...factory, dependencies: new Set()}
             }
         }
 
@@ -153,7 +153,7 @@ export class DependencyGraphBuilder {
         const cycle = findCycles(type, (item: QualifiedType) => {
             if (this.nodeDetector.isProvider(type.type)) return []
             const boundType = this.typeResolver.resolveBoundType(item)
-            return map.get(boundType)?.children ?? []
+            return map.get(boundType)?.dependencies ?? []
         })
         if (cycle.length > 0) {
             this.errorReporter.reportDependencyCycle(cycle[cycle.length - 1], cycle)

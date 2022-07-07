@@ -9,12 +9,15 @@ import {
     isProvidesMethod,
     isSubcomponentFactory, ProvidesMethod
 } from "./Providers"
+import {Container, filterTree, printTree, printTreeMap} from "./Util"
+import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
 
 export enum KarambitErrorScope {
     TRANSFORM = "NotTransformed",
     PARSE = "Parse",
     INVALID_SCOPE = "InvalidScope",
     INVALID_BINDING = "InvalidBinding",
+    MISSING_PROVIDER = "MissingProviders",
     DUPLICATE_PROVIDERS = "DuplicateProviders",
     DUPLICATE_BINDINGS = "DuplicateBindings",
     DEPENDENCY_CYCLE = "DependencyCycle",
@@ -94,6 +97,17 @@ export class ErrorReporter {
         ErrorReporter.fail(
             KarambitErrorScope.INVALID_BINDING,
             "Binding method must have exactly one argument!\n\n" + nodeForDisplay(context) + "\n",
+            this.component
+        )
+    }
+
+    reportMissingProviders(missingTypes: Iterable<QualifiedType>, component: {type: QualifiedType, rootDependencies: Iterable<Dependency>}, graph: ReadonlyMap<QualifiedType, DependencyProvider>): never {
+        const missingSet = new Set(missingTypes)
+        const getChildren = (item: QualifiedType) => item === component.type ? Array.from(component.rootDependencies).map(it => it.type) : graph.get(item)?.dependencies ?? []
+        ErrorReporter.fail(
+            KarambitErrorScope.MISSING_PROVIDER,
+            `No provider in ${qualifiedTypeToString(component.type)} for required types: ${Array.from(missingSet.keys()).map(qualifiedTypeToString).join(", ")}\n\n` +
+            `${printTreeMap(component.type, filterTree(component.type, getChildren, item => missingSet.has(item), qualifiedTypeToString), qualifiedTypeToString)}\n`,
             this.component
         )
     }
