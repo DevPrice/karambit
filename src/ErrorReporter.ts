@@ -185,7 +185,10 @@ function providerForDisplay(provider: InstanceProvider): string | undefined {
 }
 
 function nodeForDisplay(node: ts.Node): string {
-    return normalizeWhitespace(node.getText())
+    const sf = node.getSourceFile()
+    const {line, character} = sf.getLineAndCharacterOfPosition(node.pos)
+    return `${sf.fileName}:${line}:${character}` + "\n" +
+        normalizeWhitespace(node.getText())
 }
 
 function normalizeWhitespace(text: string): string {
