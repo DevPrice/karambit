@@ -193,8 +193,9 @@ function providerForDisplay(provider: InstanceProvider): string | undefined {
 function nodeForDisplay(node: ts.Node): string {
     const sf = node.getSourceFile()
     const {line, character} = sf.getLineAndCharacterOfPosition(node.pos)
-    return chalk.yellow(`${sf.fileName}:${line}:${character}`) + "\n" +
+    const nodeText = chalk.yellow(`${sf.fileName}:${line}:${character}`) + "\n" +
         normalizeWhitespace(node.getText())
+    return nodeText.split(" {\n")[0]
 }
 
 function normalizeWhitespace(text: string): string {
