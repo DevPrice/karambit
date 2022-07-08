@@ -49,7 +49,7 @@ describe("Util", () => {
                 ])
             )
         })
-        it("filters a tree will duplicate matches", () => {
+        it("filters a tree with duplicate matches", () => {
             const tree = new Map<string, Iterable<string>>()
             tree.set("root", ["a", "c"])
             tree.set("a", ["b"])
