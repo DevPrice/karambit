@@ -1,7 +1,8 @@
 import * as assert from "assert"
-import {printTreeMap} from "../src/Util"
+import {filterTreeMap, printTreeMap} from "../src/Util"
 
 import type {Chalk} from "chalk"
+import {filterTree} from "../build/Util"
 const chalk: Chalk = require("chalk")
 
 describe("Util", () => {
@@ -31,6 +32,22 @@ describe("Util", () => {
             tree.set("a", ["b"])
             tree.set("c", ["a"])
             assert.strictEqual(printTreeMap("root", tree), treeWithDuplicates)
+        })
+    })
+    describe("Filter trees", () => {
+        it("filters a tree", () => {
+            const tree = new Map<string, Iterable<string>>()
+            tree.set("root", ["a", "c"])
+            tree.set("a", ["b"])
+            tree.set("c", ["a"])
+            assert.deepStrictEqual(
+                filterTreeMap("root", tree, it => it === "a"),
+                new Map([
+                    ["a", []],
+                    ["c", ["a"]],
+                    ["root", ["a", "c"]],
+                ])
+            )
         })
     })
 })

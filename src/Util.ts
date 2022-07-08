@@ -57,18 +57,27 @@ export function filterTree<T>(
     getChildren: (item: T) => Iterable<T>,
     predicate: (item: T) => boolean,
     toString: (item: T) => string = defaultToString,
-): ReadonlyMap<T, Iterable<T>> {
-    const result = new Map<T, Iterable<T>>()
+): ReadonlyMap<T, T[]> {
+    const result = new Map<T, T[]>()
     if (predicate(root)) {
-        result.set(root, new Set())
+        result.set(root, [])
     } else {
         const children = Array.from(getChildren(root))
         const filteredChildren = children.flatMap(it => Array.from(filterTree(it, getChildren, predicate, toString).entries()))
         if (filteredChildren.length > 0) {
-            return new Map([...filteredChildren, [root, filteredChildren.map(it => it[0])]])
+            return new Map([...filteredChildren, [root, filteredChildren.map(it => it[0]).distinct()]])
         }
     }
     return result
+}
+
+export function filterTreeMap<T>(
+    root: T,
+    map: ReadonlyMap<T, Iterable<T>>,
+    predicate: (item: T) => boolean,
+    toString: (item: T) => string = defaultToString,
+): ReadonlyMap<T, T[]> {
+    return filterTree(root, item => map.get(item) ?? [], predicate, toString)
 }
 
 export function printTreeMap<T>(
