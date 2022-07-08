@@ -94,6 +94,7 @@ jobs:
       - if: ${{ steps.build-cache.outputs.cache-hit != 'true' }}
         name: Require cache
         run: exit 1
+      - run: npm init -y --scope ${{ github.repository_owner }}
       - run: npm config set registry 'https://npm.pkg.github.com'
       - run: echo '//npm.pkg.github.com/:_authToken=${{ github.token  }}' > ${{ github.workspace }}/.npmrc
       - run: npm publish
