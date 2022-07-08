@@ -67,8 +67,7 @@ export class InjectNodeDetector {
         }
 
         const qualifierSymbol = this.typeChecker.getSymbolAtLocation(qualifier.expression)
-        const aliasedSymbol = qualifierSymbol && this.getAliasedSymbol(qualifierSymbol)
-        return aliasedSymbol?.getName()
+        return qualifierSymbol && this.getAliasedSymbol(qualifierSymbol)
     }
 
     private isQualifier(type: ts.Type): boolean {
