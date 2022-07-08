@@ -112,7 +112,7 @@ export class ErrorReporter {
         const missingSet = new Set(missingTypes)
         const getChildren = (item: QualifiedType) => item === component.type ? Array.from(component.rootDependencies).map(it => it.type) : graph.get(item)?.dependencies ?? []
         const typeToString = (item: QualifiedType) => {
-            if (missingSet.has(item)) return chalk.blue(qualifiedTypeToString(item))
+            if (missingSet.has(item)) return chalk.yellow(qualifiedTypeToString(item))
             return qualifiedTypeToString(item)
         }
         ErrorReporter.fail(
