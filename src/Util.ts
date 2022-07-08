@@ -63,9 +63,10 @@ export function filterTree<T>(
         result.set(root, [])
     } else {
         const children = Array.from(getChildren(root))
-        const filteredChildren = children.flatMap(it => Array.from(filterTree(it, getChildren, predicate, toString).entries()))
-        if (filteredChildren.length > 0) {
-            return new Map([...filteredChildren, [root, filteredChildren.map(it => it[0]).distinct()]])
+        const filteredChildren: [T, ReadonlyMap<T, T[]>][] = children.map(it => [it, filterTree(it, getChildren, predicate, toString)])
+        const entries = filteredChildren.flatMap(it => Array.from(it[1].entries()))
+        if (entries.length > 0) {
+            return new Map([...entries, [root, filteredChildren.filter(it => it[1].size > 0).map(it => it[0]).distinct()]])
         }
     }
     return result

@@ -49,6 +49,22 @@ describe("Util", () => {
                 ])
             )
         })
+        it("filters a tree will duplicate matches", () => {
+            const tree = new Map<string, Iterable<string>>()
+            tree.set("root", ["a", "c"])
+            tree.set("a", ["b"])
+            tree.set("c", ["b"])
+            tree.set("d", ["e"])
+            assert.deepStrictEqual(
+                filterTreeMap("root", tree, it => it === "b"),
+                new Map([
+                    ["b", []],
+                    ["a", ["b"]],
+                    ["c", ["b"]],
+                    ["root", ["a", "c"]],
+                ])
+            )
+        })
     })
 })
 
