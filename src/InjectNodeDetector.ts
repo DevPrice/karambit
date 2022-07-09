@@ -2,6 +2,7 @@ import * as ts from "typescript"
 import {Inject, Reusable} from "karambit-inject"
 import {TypeQualifier} from "./QualifiedType"
 import {ErrorReporter} from "./ErrorReporter"
+import type {KarambitTransformOptions} from "./karambit"
 
 const injectModuleName = require("../package.json").name
 const injectSourceFileName = require("../package.json").main
@@ -16,7 +17,7 @@ interface Decorated {
 @Reusable
 export class InjectNodeDetector {
 
-    constructor(private readonly typeChecker: ts.TypeChecker) {
+    constructor(private readonly typeChecker: ts.TypeChecker, private readonly karambitOptions: KarambitTransformOptions) {
         this.isScopeDecorator = this.isScopeDecorator.bind(this)
         this.isScope = this.isScope.bind(this)
         this.isQualifier = this.isQualifier.bind(this)
@@ -159,7 +160,7 @@ export class InjectNodeDetector {
     isEraseable(node: ts.Node) {
         return this.isScopeDecorator(node) ||
             this.isQualifierDecorator(node) ||
-            this.isInjectionModuleImport(node) ||
+            (this.karambitOptions.stripImports && this.isInjectionModuleImport(node)) ||
             (ts.isDecorator(node) && this.getKarambitDecoratorName(node) !== undefined)
     }
 

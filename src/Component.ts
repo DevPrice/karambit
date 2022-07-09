@@ -10,6 +10,7 @@ import {
     ComponentGeneratorDependencies,
     ComponentGeneratorDependenciesFactory
 } from "./ComponentGenerator"
+import type {KarambitTransformOptions} from "./karambit"
 
 @Subcomponent
 @ComponentGenerationScope
@@ -77,7 +78,7 @@ abstract class ProgramModule {
 @ProgramScope
 export class ProgramComponent {
 
-    constructor(@BindsInstance program: ts.Program) { }
+    constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitTransformOptions) { }
 
     readonly transformationContextSubcomponentFactory: (transformationContext: ts.TransformationContext) => TransformationContextSubcomponent
 }

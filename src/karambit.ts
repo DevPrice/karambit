@@ -93,8 +93,12 @@ export interface Provider<T> {
     (): T
 }
 
-export default function(program: ts.Program) {
-    const programComponent = new ProgramComponent(program)
+export interface KarambitTransformOptions {
+    stripImports: boolean
+}
+
+export default function(program: ts.Program, options?: Partial<KarambitTransformOptions>) {
+    const programComponent = new ProgramComponent(program, {...defaultOptions, ...options})
     return (ctx: ts.TransformationContext) => {
         const transformationContextComponent = programComponent.transformationContextSubcomponentFactory(ctx)
         return (sourceFile: ts.SourceFile) => {
@@ -109,4 +113,8 @@ function runTransformers<T extends ts.Node>(
     ...transformers: ts.Transformer<T>[]
 ): T {
     return transformers.reduce((n, transformer) => transformer(n), node)
+}
+
+const defaultOptions: KarambitTransformOptions = {
+    stripImports: true,
 }
