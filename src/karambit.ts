@@ -62,19 +62,19 @@ export function BindsInstance(): never {
 }
 
 export function Scope(): ScopeDecorator {
-    return ErrorReporter.reportCodeNotTransformed
+    ErrorReporter.reportCodeNotTransformed()
 }
 
-export const Reusable: ReusableScopeDecorator = Scope()
+export const Reusable: ReusableScopeDecorator = () => {
+    ErrorReporter.reportCodeNotTransformed()
+}
 
 export function Qualifier(): QualifierDecorator {
-    return ErrorReporter.reportCodeNotTransformed
+    ErrorReporter.reportCodeNotTransformed()
 }
 
 export function Named(name: string): NamedQualifierDecorator {
-    return (): never => {
-        ErrorReporter.reportCodeNotTransformed()
-    }
+    ErrorReporter.reportCodeNotTransformed()
 }
 
 export interface ScopeDecorator {
