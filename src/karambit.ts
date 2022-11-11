@@ -1,6 +1,6 @@
 import "./Util"
 import * as ts from "typescript"
-import {ProgramComponent} from "./BootstrapComponent"
+import {ProgramComponent} from "./Component"
 import {ErrorReporter} from "./ErrorReporter"
 
 interface ComponentLikeInfo {
