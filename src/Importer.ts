@@ -37,7 +37,6 @@ export class Importer {
         const importLiteral = relativePath.match(/^[./]/) ? relativePath : "./" + relativePath
         return ts.factory.createImportDeclaration(
             undefined,
-            undefined,
             ts.factory.createImportClause(
                 false,
                 undefined,

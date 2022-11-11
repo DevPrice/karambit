@@ -67,12 +67,10 @@ export class ComponentDeclarationBuilder {
             )
             return ts.factory.updateConstructorDeclaration(
                 member,
-                member.decorators,
                 member.modifiers,
                 member.parameters.map(param =>
                     ts.factory.createParameterDeclaration(
-                        param.decorators,
-                        undefined, // see above comment
+                        ts.getDecorators(param), // see above comment
                         param.dotDotDotToken,
                         param.name,
                         param.questionToken,
@@ -105,12 +103,10 @@ export class ComponentDeclarationBuilder {
         const declaration = symbol.declarations![0]
         return ts.factory.createPropertyDeclaration(
             undefined,
-            undefined,
             this.nameGenerator.getPropertyIdentifier(factory.subcomponentType),
             undefined,
             undefined,
             ts.factory.createClassExpression(
-                undefined,
                 undefined,
                 undefined,
                 undefined,
@@ -124,9 +120,7 @@ export class ComponentDeclarationBuilder {
                 [
                     ts.factory.createConstructorDeclaration(
                         undefined,
-                        undefined,
                         [ts.factory.createParameterDeclaration(
-                            undefined,
                             [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword), ts.factory.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
                             undefined,
                             this.nameGenerator.parentName,
@@ -135,7 +129,6 @@ export class ComponentDeclarationBuilder {
                             undefined
                         ), ...factory.constructorParams.map(param =>
                             ts.factory.createParameterDeclaration(
-                                undefined,
                                 [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword), ts.factory.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
                                 undefined,
                                 this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
@@ -191,7 +184,6 @@ export class ComponentDeclarationBuilder {
         return ts.factory.createMethodDeclaration(
             undefined,
             undefined,
-            undefined,
             this.nameGenerator.getGetterMethodIdentifier(factory.subcomponentType),
             undefined,
             undefined,
@@ -205,7 +197,6 @@ export class ComponentDeclarationBuilder {
                             undefined,
                             factory.constructorParams.map(it =>
                                 ts.factory.createParameterDeclaration(
-                                    undefined,
                                     undefined,
                                     undefined,
                                     it.name,
@@ -239,7 +230,6 @@ export class ComponentDeclarationBuilder {
     private getterMethodDeclaration(type: QualifiedType, expression: ts.Expression): ts.MethodDeclaration {
         return ts.factory.createMethodDeclaration(
             [],
-            [],
             undefined,
             this.nameGenerator.getGetterMethodIdentifier(type),
             undefined,
@@ -268,7 +258,6 @@ export class ComponentDeclarationBuilder {
             const propIdentifier = self.nameGenerator.getPropertyIdentifier(qualifiedType)
             return [
                 ts.factory.createPropertyDeclaration(
-                    undefined,
                     undefined,
                     propIdentifier,
                     undefined,
@@ -389,7 +378,6 @@ export class ComponentDeclarationBuilder {
         const nullable = this.isTypeNullable(factory.returnType.type)
         return [
             ts.factory.createPropertyDeclaration(
-                undefined,
                 undefined,
                 propIdentifier,
                 undefined,
