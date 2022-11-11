@@ -10,7 +10,7 @@ const injectSourceFileNameWithoutExtension = injectSourceFileName.replace(/\..*$
 
 interface Decorated {
     name?: { getText: () => string }
-    decorators?: ts.NodeArray<ts.Decorator>
+    modifiers?: ts.NodeArray<ts.ModifierLike>
 }
 
 @Inject
@@ -33,14 +33,14 @@ export class InjectNodeDetector {
         this.eraseInjectRuntime = this.eraseInjectRuntime.bind(this)
     }
 
-    isScopeDecorator(decorator: ts.Node): boolean {
+    isScopeDecorator(decorator: ts.Node): decorator is ts.Decorator {
         if (!ts.isDecorator(decorator)) return false
         const type = this.typeChecker.getTypeAtLocation(decorator.expression)
         return this.isScope(type)
     }
 
     getScope(item: Decorated): ts.Symbol | undefined {
-        const scopeDecorators = item.decorators?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)).filterNotNull() ?? []
+        const scopeDecorators = item.modifiers?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)).filterNotNull() ?? []
         if (scopeDecorators.length > 1) ErrorReporter.reportParseFailed(`Scoped element may only have one scope! ${item.name?.getText()} has ${scopeDecorators.length}.`)
         const [symbol] = scopeDecorators
         return this.getAliasedSymbol(symbol)
@@ -51,14 +51,14 @@ export class InjectNodeDetector {
         return (symbol?.getName() === "ScopeDecorator" || symbol?.getName() === "ReusableScopeDecorator") && this.isInjectSymbol(symbol)
     }
 
-    isQualifierDecorator(decorator: ts.Node): boolean {
+    isQualifierDecorator(decorator: ts.Node): decorator is ts.Decorator {
         if (!ts.isDecorator(decorator)) return false
         const type = this.typeChecker.getTypeAtLocation(decorator.expression)
         return this.isQualifier(type) || this.isNamedQualifier(type)
     }
 
     getQualifier(item: Decorated): TypeQualifier | undefined {
-        const qualifierDecorators = item.decorators?.filter(this.isQualifierDecorator) ?? []
+        const qualifierDecorators = item.modifiers?.filter(this.isQualifierDecorator) ?? []
         if (qualifierDecorators.length > 1) ErrorReporter.reportParseFailed(`Qualified element may only have one qualifier! ${item.name?.getText()} has ${qualifierDecorators.length}.`)
         if (qualifierDecorators.length === 0) return undefined
         const qualifier = qualifierDecorators[0]
@@ -93,31 +93,31 @@ export class InjectNodeDetector {
         return undefined
     }
 
-    isComponentDecorator(decorator: ts.Node): boolean {
+    isComponentDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "Component"
     }
 
-    isSubcomponentDecorator(decorator: ts.Node): boolean {
+    isSubcomponentDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "Subcomponent"
     }
 
-    isProvidesDecorator(decorator: ts.Node): boolean {
+    isProvidesDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "Provides"
     }
 
-    isBindsDecorator(decorator: ts.Node): boolean {
+    isBindsDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "Binds"
     }
 
-    isBindsInstanceDecorator(decorator: ts.Node): boolean {
+    isBindsInstanceDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "BindsInstance"
     }
 
-    isInjectDecorator(decorator: ts.Node): boolean {
+    isInjectDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "Inject"
     }
 
-    isModuleDecorator(decorator: ts.Node): boolean {
+    isModuleDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "Module"
     }
 

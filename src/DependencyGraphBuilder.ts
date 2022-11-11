@@ -121,7 +121,7 @@ export class DependencyGraphBuilder {
         const declarations = symbol?.getDeclarations()?.filter(ts.isClassDeclaration)
         const declaration = declarations && declarations.length > 0 ? declarations[0] : undefined
         if (!declaration) return undefined
-        if (!declaration.decorators?.some(this.nodeDetector.isInjectDecorator)) return undefined
+        if (!declaration.modifiers?.some(this.nodeDetector.isInjectDecorator)) return undefined
         const parameters = this.constructorHelper.getConstructorParamsForDeclaration(declaration)
         if (!parameters) return undefined
 

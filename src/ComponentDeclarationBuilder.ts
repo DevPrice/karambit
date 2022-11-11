@@ -44,7 +44,6 @@ export class ComponentDeclarationBuilder {
             const resolvedType = this.typeResolver.resolveBoundType(type)
             const expression = this.getParamExpression(resolvedType)
             return ts.factory.createGetAccessorDeclaration(
-                undefined,
                 member.modifiers,
                 member.name,
                 [],

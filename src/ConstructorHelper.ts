@@ -29,7 +29,7 @@ export class ConstructorHelper {
                     }),
                     name: param.name.getText(),
                     declaration: param,
-                    decorators: Array.from(param.decorators ?? []),
+                    decorators: Array.from(ts.getDecorators(param) ?? []),
                     optional: param.questionToken !== undefined || param.initializer !== undefined
                 }
             })

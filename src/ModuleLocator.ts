@@ -61,7 +61,7 @@ export class ModuleLocator {
         const self = this
         function visitModule(node: ts.ClassDeclaration): ts.Node {
             const symbol = self.typeChecker.getTypeAtLocation(node).getSymbol()!
-            const moduleDecorator = node.decorators!.find(self.nodeDetector.isModuleDecorator)!
+            const moduleDecorator = node.modifiers!.find(self.nodeDetector.isModuleDecorator)!
             const includes = self.getSymbolList(moduleDecorator, "includes")
             const {factories, bindings} = self.getFactoriesAndBindings(node)
             modules.set(symbol, {includes, factories, bindings})
@@ -75,7 +75,7 @@ export class ModuleLocator {
             return node
         }
         function visit(node: ts.Node): ts.Node {
-            if (ts.isClassDeclaration(node) && node.decorators?.some(self.nodeDetector.isModuleDecorator)) {
+            if (ts.isClassDeclaration(node) && node.modifiers?.some(self.nodeDetector.isModuleDecorator)) {
                 return visitModule(node)
             } else {
                 return ts.visitEachChild(node, visit, self.context)
@@ -144,10 +144,10 @@ export class ModuleLocator {
             bindings.push({paramType, returnType, declaration: method})
         }
         function visit(node: ts.Node): ts.Node {
-            if (ts.isMethodDeclaration(node) && node.decorators?.some(nodeDetector.isProvidesDecorator)) {
+            if (ts.isMethodDeclaration(node) && node.modifiers?.some(nodeDetector.isProvidesDecorator)) {
                 visitFactory(node)
                 return node
-            } else if (ts.isMethodDeclaration(node) && node.decorators?.some(nodeDetector.isBindsDecorator)) {
+            } else if (ts.isMethodDeclaration(node) && node.modifiers?.some(nodeDetector.isBindsDecorator)) {
                 visitBinding(node)
                 return node
             } else {

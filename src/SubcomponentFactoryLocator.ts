@@ -41,7 +41,7 @@ export class SubcomponentFactoryLocator {
         const declaration = declarations[0]
         if (!ts.isClassDeclaration(declaration)) return undefined
 
-        const decorator = declaration.decorators?.find(this.nodeDetector.isSubcomponentDecorator)
+        const decorator = declaration.modifiers?.find(this.nodeDetector.isSubcomponentDecorator)
         if (!decorator) return undefined
 
         const constructorParams = this.constructorHelper.getConstructorParamsForDeclaration(declaration)

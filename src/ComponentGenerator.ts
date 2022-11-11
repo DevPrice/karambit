@@ -68,6 +68,8 @@ export class ComponentGenerator {
                 if (existing) throw this.errorReporter.reportDuplicateProviders(type, [existing, provider])
                 dependencyMap.set(type, provider)
             } else {
+                // TODO: Handle non-objects here as an error
+                // if (!(type.type.flags & ts.TypeFlags.Object)) throw Error("???")
                 this.propertyExtractor.getDeclaredPropertiesForType(type.type).forEach(property => {
                     const propertyType = this.propertyExtractor.typeFromPropertyDeclaration(property)
                     const propertyName = property.name.getText()
@@ -120,7 +122,7 @@ export class ComponentGenerator {
 
     updateComponent(): ts.ClassDeclaration {
         const component = this.component
-        const componentDecorator = component.decorators!.find(this.nodeDetector.isComponentDecorator)!
+        const componentDecorator = component.modifiers?.find(this.nodeDetector.isComponentDecorator)!
         const componentScope = this.nodeDetector.getScope(component)
         const {factories, bindings} = this.getFactoriesAndBindings(componentDecorator, componentScope)
         const dependencyMap = this.getDependencyMap(this.component)
@@ -214,7 +216,6 @@ export class ComponentGenerator {
         )
         return ts.factory.updateClassDeclaration(
             component,
-            component.decorators,
             component.modifiers,
             component.name,
             component.typeParameters,

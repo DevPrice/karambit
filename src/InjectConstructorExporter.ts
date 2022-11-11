@@ -18,7 +18,6 @@ export class InjectConstructorExporter {
         if (ts.isClassDeclaration(node) && this.isModuleOrInjectConstructor(node)) {
             return ts.factory.updateClassDeclaration(
                 node,
-                node.decorators,
                 [...(node.modifiers ?? []), ts.factory.createModifier(ts.SyntaxKind.ExportKeyword)],
                 node.name,
                 node.typeParameters,
@@ -31,10 +30,10 @@ export class InjectConstructorExporter {
     }
 
     private isModuleOrInjectConstructor(node: ts.ClassDeclaration): boolean {
-        return node.decorators !== undefined &&
+        return node.modifiers !== undefined &&
             (
-                node.decorators.some(this.nodeDetector.isInjectDecorator) ||
-                node.decorators.some(this.nodeDetector.isModuleDecorator)
+                node.modifiers.some(this.nodeDetector.isInjectDecorator) ||
+                node.modifiers.some(this.nodeDetector.isModuleDecorator)
             )
     }
 }
