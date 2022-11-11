@@ -9,6 +9,7 @@
     "strictNullChecks": true,
     "sourceMap": true,
     "experimentalDecorators": true,
+    "allowJs": true,
     "plugins": [
       { "transform": "karambit-inject" }
     ]
