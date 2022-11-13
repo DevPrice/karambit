@@ -62,6 +62,12 @@ export function BindsInstance(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
+export function IntoSet(): MethodDecorator
+export function IntoSet(target: unknown, propertyKey: string | symbol): void
+export function IntoSet(): never {
+    ErrorReporter.reportCodeNotTransformed()
+}
+
 export function Scope(): ScopeDecorator {
     ErrorReporter.reportCodeNotTransformed()
 }
@@ -74,6 +80,7 @@ export function Qualifier(): QualifierDecorator {
     ErrorReporter.reportCodeNotTransformed()
 }
 
+// noinspection JSUnusedLocalSymbols
 export function Named(name: string): NamedQualifierDecorator {
     ErrorReporter.reportCodeNotTransformed()
 }
