@@ -1,7 +1,8 @@
 import * as ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
 
-export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | UndefinedProvider | ParentProvider
+export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | UndefinedProvider | ParentProvider | SetMultibinding
+export type MultibindingProvider = SetMultibinding
 export type ProviderParameter = ProvidesMethodParameter | ConstructorParameter
 
 export interface PropertyProvider {
@@ -74,18 +75,16 @@ export interface ParentProvider {
     readonly declaration?: undefined
 }
 
-export function isParentProvider(provider: InstanceProvider): provider is ParentProvider {
-    return provider.providerType === ProviderType.PARENT
-}
-
 export interface UndefinedProvider {
     readonly providerType: ProviderType.UNDEFINED
     readonly type: QualifiedType
     readonly declaration?: undefined
 }
 
-export function isUndefinedProvider(provider: InstanceProvider): provider is UndefinedProvider {
-    return provider.providerType === ProviderType.UNDEFINED
+export interface SetMultibinding {
+    readonly providerType: ProviderType.SET_MULTIBINDING
+    readonly type: QualifiedType
+    readonly elementProviders: InstanceProvider[]
 }
 
 export enum ProviderType {
@@ -95,4 +94,5 @@ export enum ProviderType {
     SUBCOMPONENT_FACTORY,
     UNDEFINED,
     PARENT,
+    SET_MULTIBINDING,
 }

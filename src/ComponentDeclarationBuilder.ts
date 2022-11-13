@@ -7,11 +7,6 @@ import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {
     InjectableConstructor,
     InstanceProvider,
-    isInjectableConstructor,
-    isParentProvider,
-    isPropertyProvider,
-    isProvidesMethod,
-    isSubcomponentFactory,
     PropertyProvider,
     ProviderType,
     ProvidesMethod,
@@ -92,11 +87,12 @@ export class ComponentDeclarationBuilder {
     }
 
     getProviderDeclaration(provider: InstanceProvider, componentScope?: ts.Symbol): ts.ClassElement[] {
-        if (isParentProvider(provider)) return [this.getParentProvidedDeclaration(provider.type)]
-        if (isPropertyProvider(provider)) return [this.getComponentProvidedDeclaration(provider)]
-        if (isSubcomponentFactory(provider)) return [this.getSubcomponentFactoryDeclaration(provider)]
-        if (isProvidesMethod(provider)) return this.getFactoryDeclaration(provider)
-        if (isInjectableConstructor(provider)) return this.getConstructorProviderDeclaration(provider, componentScope)
+        if (provider.providerType == ProviderType.PARENT) return [this.getParentProvidedDeclaration(provider.type)]
+        if (provider.providerType == ProviderType.PROPERTY) return [this.getComponentProvidedDeclaration(provider)]
+        if (provider.providerType == ProviderType.SUBCOMPONENT_FACTORY) return [this.getSubcomponentFactoryDeclaration(provider)]
+        if (provider.providerType == ProviderType.PROVIDES_METHOD) return this.getFactoryDeclaration(provider)
+        if (provider.providerType == ProviderType.INJECTABLE_CONSTRUCTOR) return this.getConstructorProviderDeclaration(provider, componentScope)
+        if (provider.providerType == ProviderType.SET_MULTIBINDING) throw Error("TODO")
         return [this.getMissingOptionalDeclaration(provider.type)]
     }
 
@@ -350,7 +346,6 @@ export class ComponentDeclarationBuilder {
                 propIdentifier
             )
         )
-
     }
 
     private factoryCallExpression(factory: ProvidesMethod): ts.Expression {
