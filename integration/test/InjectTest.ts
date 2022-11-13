@@ -12,7 +12,8 @@ import {
     Named,
     Qualifier,
     BindsInstance,
-    Binds
+    Binds,
+    IntoSet,
 } from "karambit-inject"
 
 describe("Injection", () => {
@@ -124,6 +125,14 @@ describe("Injection", () => {
         })
         it("subcomponent factory helper type can be used", () => {
             assert.strictEqual(parentComponent.builtInTypeSubcomponentFactory([2, 2]).sum, 4)
+        })
+    })
+    describe("Multibindings", () => {
+        it("multibinding provides all elements", () => {
+            assert.strictEqual(multibindingComponent.numberSet.size, 3)
+            assert.ok(multibindingComponent.numberSet.has(1))
+            assert.ok(multibindingComponent.numberSet.has(2))
+            assert.ok(multibindingComponent.numberSet.has(3))
         })
     })
 })
@@ -422,3 +431,33 @@ class OptionalComponent {
 }
 
 const optionalComponent = new OptionalComponent()
+
+@Module
+class MultibindingSetModule {
+
+    @Provides
+    @IntoSet
+    static provideOne(): number {
+        return 1
+    }
+
+    @Provides
+    @IntoSet
+    static provideTwo(): number {
+        return 2
+    }
+
+    @Provides
+    @IntoSet
+    static provideThree(): number {
+        return 3
+    }
+}
+
+@Component({modules: [MultibindingSetModule]})
+class MultibindingsComponent {
+
+    readonly numberSet: ReadonlySet<number>
+}
+
+const multibindingComponent = new MultibindingsComponent()
