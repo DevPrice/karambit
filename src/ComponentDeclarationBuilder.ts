@@ -352,7 +352,7 @@ export class ComponentDeclarationBuilder {
         return ts.factory.createCallExpression(
             ts.factory.createPropertyAccessExpression(
                 this.getExpressionForDeclaration(factory.module),
-                ts.factory.createIdentifier(factory.method.name.getText())
+                ts.factory.createIdentifier(factory.declaration.name.getText())
             ),
             undefined,
             factory.parameters.map(it => it.type).map(this.typeResolver.resolveBoundType).map(this.getParamExpression)
@@ -361,7 +361,7 @@ export class ComponentDeclarationBuilder {
 
     private getFactoryDeclaration(factory: ProvidesMethod): ts.ClassElement[] {
         if (factory.scope) return this.getCachedFactoryDeclaration(factory)
-        return [this.getterMethodDeclaration(factory.returnType, this.factoryCallExpression(factory))]
+        return [this.getterMethodDeclaration(factory.type, this.factoryCallExpression(factory))]
     }
 
     private getMissingOptionalDeclaration(type: QualifiedType): ts.ClassElement {
@@ -374,8 +374,8 @@ export class ComponentDeclarationBuilder {
     }
 
     private getCachedFactoryDeclaration(factory: ProvidesMethod): ts.ClassElement[] {
-        const propIdentifier = this.nameGenerator.getPropertyIdentifier(factory.returnType)
-        const nullable = this.isTypeNullable(factory.returnType.type)
+        const propIdentifier = this.nameGenerator.getPropertyIdentifier(factory.type)
+        const nullable = this.isTypeNullable(factory.type.type)
         return [
             ts.factory.createPropertyDeclaration(
                 undefined,
@@ -385,7 +385,7 @@ export class ComponentDeclarationBuilder {
                 nullable ? this.getUnsetPropertyExpression() : undefined
             ),
             this.getterMethodDeclaration(
-                factory.returnType,
+                factory.type,
                 nullable ?
                     this.createScopedNullableExpression(propIdentifier, this.factoryCallExpression(factory)) :
                     this.createScopedExpression(propIdentifier, this.factoryCallExpression(factory))

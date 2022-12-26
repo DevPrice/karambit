@@ -10,6 +10,7 @@ export interface PropertyProvider {
     readonly propertyName?: string
     readonly type: QualifiedType
     readonly declaration: ts.ParameterDeclaration
+    readonly optional: boolean
 }
 
 export function isPropertyProvider(provider: InstanceProvider): provider is PropertyProvider {
@@ -19,8 +20,8 @@ export function isPropertyProvider(provider: InstanceProvider): provider is Prop
 export interface ProvidesMethod {
     readonly providerType: ProviderType.PROVIDES_METHOD
     readonly module: ts.ClassDeclaration
-    readonly method: ts.MethodDeclaration
-    readonly returnType: QualifiedType
+    readonly declaration: ts.MethodDeclaration
+    readonly type: QualifiedType
     readonly parameters: ProvidesMethodParameter[]
     readonly scope: ts.Symbol | undefined
 }
@@ -70,6 +71,7 @@ export function isSubcomponentFactory(provider: InstanceProvider): provider is S
 export interface ParentProvider {
     readonly providerType: ProviderType.PARENT
     readonly type: QualifiedType
+    readonly declaration?: undefined
 }
 
 export function isParentProvider(provider: InstanceProvider): provider is ParentProvider {
@@ -79,6 +81,7 @@ export function isParentProvider(provider: InstanceProvider): provider is Parent
 export interface UndefinedProvider {
     readonly providerType: ProviderType.UNDEFINED
     readonly type: QualifiedType
+    readonly declaration?: undefined
 }
 
 export function isUndefinedProvider(provider: InstanceProvider): provider is UndefinedProvider {

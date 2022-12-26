@@ -7,7 +7,7 @@ import {
     isInjectableConstructor,
     isPropertyProvider,
     isProvidesMethod,
-    isSubcomponentFactory, ProvidesMethod
+    isSubcomponentFactory, ProviderType, ProvidesMethod
 } from "./Providers"
 import {filterTree, printTreeMap} from "./Util"
 import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
@@ -52,6 +52,14 @@ export class ErrorReporter {
         )
     }
 
+    reportComponentDependencyMayNotBeOptional(property: ts.Node): never {
+        ErrorReporter.fail(
+            KarambitErrorScope.PARSE,
+            `Non-instance dependencies may not be optional!\n\n${nodeForDisplay(property)}\n`,
+            this.component
+        )
+    }
+
     reportParseFailed(message: string): never {
         return ErrorReporter.reportParseFailed(message)
     }
@@ -65,7 +73,7 @@ export class ErrorReporter {
     }
 
     reportInvalidScope(provider: ProvidesMethod | InjectableConstructor, expected?: ts.Symbol): never {
-        const type = isProvidesMethod(provider) ? provider.returnType : createQualifiedType({type: provider.type})
+        const type = isProvidesMethod(provider) ? provider.type : createQualifiedType({type: provider.type})
         ErrorReporter.fail(
             KarambitErrorScope.INVALID_SCOPE,
             `Invalid scope for type ${qualifiedTypeToString(type)}! ` +
@@ -119,6 +127,21 @@ export class ErrorReporter {
             KarambitErrorScope.MISSING_PROVIDER,
             `No provider in ${qualifiedTypeToString(component.type)} for required types: ${Array.from(missingSet.keys()).map(typeToString).join(", ")}\n\n` +
             `${printTreeMap(component.type, filterTree(component.type, getChildren, item => missingSet.has(item), typeToString), typeToString)}\n`,
+            this.component
+        )
+    }
+
+    reportMissingRequiredProviders(parentProvider: InstanceProvider, missingProvider: Iterable<InstanceProvider>): never {
+        const parentDeclarationContext = parentProvider.declaration ? nodeForDisplay(parentProvider.declaration) : ""
+        const declarations = Array.from(missingProvider).map(it => it.declaration).filterNotNull()
+        const parentType = parentProvider.providerType === ProviderType.INJECTABLE_CONSTRUCTOR
+            ? createQualifiedType({type: parentProvider.type})
+            : parentProvider.type
+        ErrorReporter.fail(
+            KarambitErrorScope.MISSING_PROVIDER,
+            `Required type(s) of ${qualifiedTypeToString(parentType)} may not be provided by optional binding(s): \n\n` +
+            parentDeclarationContext + "\n\n" +
+            declarations.map(nodeForDisplay).join("\n"),
             this.component
         )
     }
@@ -184,7 +207,7 @@ export class KarambitError extends Error {
 
 function providerForDisplay(provider: InstanceProvider): string | undefined {
     if (isPropertyProvider(provider)) return nodeForDisplay(provider.declaration)
-    if (isProvidesMethod(provider)) return nodeForDisplay(provider.method)
+    if (isProvidesMethod(provider)) return nodeForDisplay(provider.declaration)
     if (isInjectableConstructor(provider)) return nodeForDisplay(provider.declaration)
     if (isSubcomponentFactory(provider)) return nodeForDisplay(provider.declaration)
     return undefined

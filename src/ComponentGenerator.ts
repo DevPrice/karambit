@@ -63,13 +63,23 @@ export class ComponentGenerator {
             const type = param.type
             const isInstanceBinding = param.decorators.some(this.nodeDetector.isBindsInstanceDecorator)
             if (isInstanceBinding) {
-                const provider: PropertyProvider = {providerType: ProviderType.PROPERTY, declaration: param.declaration, name, type}
+                const provider: PropertyProvider = {
+                    providerType: ProviderType.PROPERTY,
+                    declaration: param.declaration,
+                    optional: param.optional,
+                    name,
+                    type,
+                }
                 const existing = dependencyMap.get(type)
                 if (existing) throw this.errorReporter.reportDuplicateProviders(type, [existing, provider])
                 dependencyMap.set(type, provider)
             } else {
                 // TODO: Handle non-objects here as an error
                 // if (!(type.type.flags & ts.TypeFlags.Object)) throw Error("???")
+
+                // TODO: Maybe treat this as a bag of optional types instead of failing
+                if (param.optional) this.errorReporter.reportComponentDependencyMayNotBeOptional(param.declaration)
+
                 this.propertyExtractor.getDeclaredPropertiesForType(type.type).forEach(property => {
                     const propertyType = this.propertyExtractor.typeFromPropertyDeclaration(property)
                     const propertyName = property.name.getText()
@@ -77,8 +87,9 @@ export class ComponentGenerator {
                         providerType: ProviderType.PROPERTY,
                         declaration: param.declaration,
                         type: propertyType,
+                        optional: property.questionToken !== undefined,
                         name,
-                        propertyName
+                        propertyName,
                     }
                     const existing = dependencyMap.get(type)
                     if (existing) throw this.errorReporter.reportDuplicateProviders(type, [existing, provider])
@@ -113,9 +124,9 @@ export class ComponentGenerator {
             if (factory.scope && !this.nodeDetector.isReusableScope(factory.scope) && factory.scope != componentScope) {
                 this.errorReporter.reportInvalidScope(factory, componentScope)
             }
-            const existing = factories.get(factory.returnType)
-            if (existing) throw this.errorReporter.reportDuplicateProviders(factory.returnType, [existing, factory])
-            factories.set(factory.returnType, factory)
+            const existing = factories.get(factory.type)
+            if (existing) throw this.errorReporter.reportDuplicateProviders(factory.type, [existing, factory])
+            factories.set(factory.type, factory)
         })
         return {factories, bindings: installedModules.flatMap(it => it.bindings)}
     }

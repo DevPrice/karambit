@@ -71,6 +71,21 @@ export class DependencyGraphBuilder {
             this.assertNoCycles(dep.type, result)
         }
 
+        for (const dep of dependencies) {
+            if (!dep.optional) {
+                const provider = result.get(dep.type)
+                if (provider) {
+                    const missing = Array.from(provider.dependencies)
+                        .map(it => result.get(it))
+                        .filterNotNull()
+                        .filter(it => it.providerType === ProviderType.PROPERTY && it.optional)
+                    if (missing.length > 0) {
+                        this.errorReporter.reportMissingRequiredProviders(provider, missing)
+                    }
+                }
+            }
+        }
+
         return {
             resolved: result,
             missing,

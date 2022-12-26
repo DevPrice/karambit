@@ -116,7 +116,7 @@ export class ModuleLocator {
                 })
             const scope = nodeDetector.getScope(method)
 
-            factories.push({providerType: ProviderType.PROVIDES_METHOD, module, method, returnType, parameters, scope})
+            factories.push({providerType: ProviderType.PROVIDES_METHOD, module, declaration: method, type: returnType, parameters, scope})
         }
         function visitBinding(method: ts.MethodDeclaration) {
             if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {

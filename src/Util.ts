@@ -1,6 +1,4 @@
-import type {Chalk} from "chalk"
-
-const chalk: Chalk = require("chalk")
+import chalk = require("chalk")
 
 declare global {
     export interface Array<T> {
