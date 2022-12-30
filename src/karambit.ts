@@ -1,5 +1,6 @@
-import "./Util"
+import {time} from "./Util"
 import * as ts from "typescript"
+import * as Path from "path"
 import {ProgramComponent} from "./Component"
 import {ErrorReporter} from "./ErrorReporter"
 
@@ -95,15 +96,25 @@ export interface Provider<T> {
 
 export interface KarambitTransformOptions {
     stripImports: boolean
+    printTransformDuration: boolean
 }
 
 export default function(program: ts.Program, options?: Partial<KarambitTransformOptions>) {
-    const programComponent = new ProgramComponent(program, {...defaultOptions, ...options})
+    const transformOptions = {...defaultOptions, ...options}
+    const programComponent = new ProgramComponent(program, transformOptions)
     return (ctx: ts.TransformationContext) => {
         const transformationContextComponent = programComponent.transformationContextSubcomponentFactory(ctx)
         return (sourceFile: ts.SourceFile) => {
-            const sourceFileComponent = transformationContextComponent.sourceFileSubcomponentFactory(sourceFile)
-            return runTransformers(sourceFile, ...sourceFileComponent.transformers)
+            const {result, durationMs} = time(() => {
+                const sourceFileComponent = transformationContextComponent.sourceFileSubcomponentFactory(sourceFile)
+                return runTransformers(sourceFile, ...sourceFileComponent.transformers)
+            })
+            if (transformOptions.printTransformDuration) {
+                const durationString = durationMs < 1 ? "<1" : durationMs.toString()
+                const relativePath = Path.relative(".", sourceFile.fileName)
+                console.info(`Transformed ${relativePath} in ${durationString}ms.`)
+            }
+            return result
         }
     }
 }
@@ -117,4 +128,5 @@ function runTransformers<T extends ts.Node>(
 
 const defaultOptions: KarambitTransformOptions = {
     stripImports: true,
+    printTransformDuration: false,
 }

@@ -137,3 +137,9 @@ function defaultToString(item: any): string {
     }
     return ""
 }
+
+export function time<T>(fun: () => T): { durationMs: number, result: T } {
+    const startTime = Date.now()
+    const result = fun()
+    return {durationMs: Date.now() - startTime, result}
+}
