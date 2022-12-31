@@ -36,7 +36,6 @@ export class ComponentDeclarationBuilder {
         this.getParamExpression = this.getParamExpression.bind(this)
     }
 
-
     updateComponentMember(member: ts.ClassElement): ts.Node {
         return this.updateSubcomponentMember(member) ?? member
     }
