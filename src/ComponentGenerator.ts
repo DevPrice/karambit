@@ -324,7 +324,7 @@ export class ComponentGenerator {
                 .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
         )
         const members = [
-            ...ts.visitNodes(factory.declaration.members, subcomponentBuilder.updateComponentMember),
+            ...ts.visitNodes(factory.declaration.members, subcomponentBuilder.updateSubcomponentMember).filter(it => it !== null && it !== undefined),
             ...Array.from(generatedDeps.values()).flatMap(it => subcomponentBuilder.getProviderDeclaration(it, scope)),
             ...generatedSubcomponents.map(it => it.classElement),
         ]

@@ -32,10 +32,16 @@ export class ComponentDeclarationBuilder {
         private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
     ) {
         this.updateComponentMember = this.updateComponentMember.bind(this)
+        this.updateSubcomponentMember = this.updateSubcomponentMember.bind(this)
         this.getParamExpression = this.getParamExpression.bind(this)
     }
 
+
     updateComponentMember(member: ts.ClassElement): ts.Node {
+        return this.updateSubcomponentMember(member) ?? member
+    }
+
+    updateSubcomponentMember(member: ts.ClassElement): ts.Node | undefined {
         if (ts.isPropertyDeclaration(member) && !member.initializer) {
             const type = createQualifiedType({
                 type: this.typeChecker.getTypeAtLocation(member.type ?? member),
@@ -83,7 +89,7 @@ export class ComponentDeclarationBuilder {
                     ts.factory.createBlock(initializerStatements)
             )
         }
-        return member
+        return undefined
     }
 
     getProviderDeclaration(provider: InstanceProvider, componentScope?: ts.Symbol): ts.ClassElement[] {
