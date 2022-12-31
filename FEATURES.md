@@ -268,14 +268,14 @@ A Subcomponent can itself have its own Subcomponents, as well as its own [compon
 abstract class MySubcomponent { /* ... */ }
 ```
 
-However, a subcomponent must be installed in a parent to be used. To install it, simplify add it to the array of Subcomponents in another Component or Subcomponent:
+However, a subcomponent must be installed in a parent to be used. To install it, simply add it to the array of Subcomponents in another Component or Subcomponent:
 ```typescript
 @Component({subcomponents: [MySubcomponent]})
 class ParentComponent {
-    readonly subcomponentFactory: () => MySubcomponent
+    readonly subcomponentFactory: SubcomponentFactory<typeof MySubcomponent> // equivalent to () => MySubcomponent
 }
 ```
 
-Installing a subcomponent adds a factory binding to your graph. The factory binding is function type with the same argument types as the Subcomponent constructor which returns the type of the Subcomponent.
+Installing a subcomponent adds a factory binding to your graph. The factory binding is function type with the same argument types as the Subcomponent constructor which returns an instance of the Subcomponent. Karambit includes a helper type, `SubcomponentFactory<T>` which has represents the factory type for a Subcomponent of type `T`.
 
 This type can be injected anywhere within the parent graph, and can be called to return a new instance of the Subcomponent.

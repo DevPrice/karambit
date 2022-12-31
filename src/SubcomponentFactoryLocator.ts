@@ -21,7 +21,7 @@ export class SubcomponentFactoryLocator {
     asSubcomponentFactory(type: ts.Type): SubcomponentFactory | undefined {
         const cached = this.#cache.get(type)
         if (cached) return cached
-        const located = this.locateSubcomponentFactory(type)
+        const located = this.locateAliasedSubcomponentFactory(type) ?? this.locateSubcomponentFactory(type)
         this.#cache.set(type, located)
         return located
     }
@@ -56,6 +56,32 @@ export class SubcomponentFactoryLocator {
         return {
             providerType: ProviderType.SUBCOMPONENT_FACTORY,
             subcomponentType: createQualifiedType({type: returnType, qualifier: internalQualifier}),
+            type: createQualifiedType({type}),
+            constructorParams,
+            declaration,
+            decorator
+        }
+    }
+
+    private locateAliasedSubcomponentFactory(type: ts.Type): SubcomponentFactory | undefined {
+        const aliasedType = this.nodeDetector.isSubcomponentFactory(type)
+        if (!aliasedType) return undefined
+
+        const declarations = aliasedType.symbol.declarations
+        if (!declarations || declarations.length === 0) return undefined
+
+        const declaration = declarations[0]
+        if (!ts.isClassDeclaration(declaration)) return undefined
+
+        const decorator = declaration.modifiers?.find(this.nodeDetector.isSubcomponentDecorator)
+        if (!decorator) return undefined
+
+        const constructorParams = this.constructorHelper.getConstructorParamsForDeclaration(declaration)
+        if (!constructorParams) return undefined
+
+        return {
+            providerType: ProviderType.SUBCOMPONENT_FACTORY,
+            subcomponentType: createQualifiedType({type: aliasedType, qualifier: internalQualifier}),
             type: createQualifiedType({type}),
             constructorParams,
             declaration,

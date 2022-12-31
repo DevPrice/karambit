@@ -122,10 +122,18 @@ export class InjectNodeDetector {
     }
 
     isProvider(type: ts.Type): ts.Type | undefined {
+        return this.isKarambitGenericType(type, "Provider")
+    }
+
+    isSubcomponentFactory(type: ts.Type): ts.Type | undefined {
+        return this.isKarambitGenericType(type, "SubcomponentFactory")
+    }
+
+    private isKarambitGenericType(type: ts.Type, typeName: string): ts.Type | undefined {
         const symbol = type.getSymbol()
-        if (symbol?.getName() === "Provider" && this.isInjectSymbol(symbol)) {
+        if (symbol?.getName() === typeName && this.isInjectSymbol(symbol)) {
             const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
-            if (typeArguments.length != 1) ErrorReporter.reportParseFailed("Invalid Provider type!")
+            if (typeArguments.length != 1) ErrorReporter.reportParseFailed(`Invalid ${typeName} type!`)
             return typeArguments[0]
         }
     }

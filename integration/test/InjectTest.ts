@@ -4,6 +4,7 @@ import {
     Provides,
     Scope,
     Provider,
+    SubcomponentFactory,
     Module,
     Component,
     Subcomponent,
@@ -110,11 +111,14 @@ describe("Injection", () => {
             const grandchildComponent = subcomponent.grandChildSubcomponentFactory({})
             assert.deepStrictEqual([2], grandchildComponent.grandChildClass.values)
         })
+        it("subcomponent factory is available within graph", () => {
+            assert.strictEqual(parentComponent.parentClass.subcomponentFactory([2, 2]).sum, 4)
+        })
         it("subcomponent factory can be aliased", () => {
             assert.strictEqual(parentComponent.aliasedSubcomponentFactory([2, 2]).sum, 4)
         })
-        it("subcomponent factory is available within graph", () => {
-            assert.strictEqual(parentComponent.parentClass.subcomponentFactory([2, 2]).sum, 4)
+        it("subcomponent factory helper type can be used", () => {
+            assert.strictEqual(parentComponent.builtInTypeSubcomponentFactory([2, 2]).sum, 4)
         })
     })
 })
@@ -181,7 +185,7 @@ class ChildClass { }
 
 @Inject
 class ParentClass implements ParentClassInterface {
-    constructor(readonly child: ChildClass, readonly subcomponentFactory: (values: number[]) => ChildSubcomponent) { }
+    constructor(readonly child: ChildClass, readonly subcomponentFactory: SubcomponentFactory<typeof ChildSubcomponent>) { }
 }
 
 const childInstance = new ChildClass()
@@ -238,7 +242,8 @@ interface ChildSubcomponentInterface {
 @Subcomponent({modules: [SubcomponentModule], subcomponents: [GrandChildSubcomponent]})
 abstract class ChildSubcomponent implements ChildSubcomponentInterface {
 
-    protected constructor(@BindsInstance values: number[]) { }
+    // noinspection TypeScriptAbstractClassConstructorCanBeMadeProtected
+    constructor(@BindsInstance values: number[]) { }
 
     readonly sum: number
     readonly parentClass: ParentClass
@@ -310,6 +315,7 @@ class ParentComponent {
     readonly subcomponentFactory: (values: number[]) => ChildSubcomponent
     readonly scopedSubcomponentFactory: () => ScopedSubcomponent
     readonly aliasedSubcomponentFactory: ChildSubcomponentFactory
+    readonly builtInTypeSubcomponentFactory: SubcomponentFactory<typeof ChildSubcomponent>
 }
 
 const parentComponent = new ParentComponent(new ChildComponent(), {value: Symbol.for("value")}, "bound")

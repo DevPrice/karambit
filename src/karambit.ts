@@ -94,6 +94,10 @@ export interface Provider<T> {
     (): T
 }
 
+export interface SubcomponentFactory<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> {
+    (...args: ConstructorParameters<T>): InstanceType<T>
+}
+
 export interface KarambitTransformOptions {
     stripImports: boolean
     printTransformDuration: boolean
