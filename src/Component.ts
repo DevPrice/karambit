@@ -1,5 +1,14 @@
 import * as ts from "typescript"
-import {Binds, BindsInstance, Component, Module, Provides, Reusable, Subcomponent} from "karambit-inject"
+import {
+    Binds,
+    BindsInstance,
+    Component,
+    Module,
+    Provides,
+    Reusable,
+    Subcomponent,
+    SubcomponentFactory
+} from "karambit-inject"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {InjectConstructorExporter} from "./InjectConstructorExporter"
 import {ComponentVisitor} from "./ComponentVisitor"
@@ -16,7 +25,7 @@ import type {KarambitTransformOptions} from "./karambit"
 @ComponentGenerationScope
 abstract class ComponentGenerationSubcomponent implements ComponentGeneratorDependencies {
 
-    protected constructor(@BindsInstance componentDeclaration: ts.ClassDeclaration) { }
+    constructor(@BindsInstance componentDeclaration: ts.ClassDeclaration) { }
 
     readonly generator: ComponentGenerator
 }
@@ -43,7 +52,7 @@ abstract class SourceFileModule {
     // @ts-ignore
     @Binds
     abstract bindComponentGeneratorDependenciesFactory(
-        factory: (componentDeclaration: ts.ClassDeclaration) => ComponentGenerationSubcomponent
+        factory: SubcomponentFactory<typeof ComponentGenerationSubcomponent>
     ): ComponentGeneratorDependenciesFactory
 }
 
@@ -51,7 +60,7 @@ abstract class SourceFileModule {
 @SourceFileScope
 abstract class SourceFileSubcomponent {
 
-    protected constructor(@BindsInstance sourceFile: ts.SourceFile) { }
+    constructor(@BindsInstance sourceFile: ts.SourceFile) { }
 
     readonly transformers: ts.Transformer<ts.SourceFile>[]
 }
@@ -59,9 +68,9 @@ abstract class SourceFileSubcomponent {
 @Subcomponent({subcomponents: [SourceFileSubcomponent]})
 abstract class TransformationContextSubcomponent {
 
-    protected constructor(@BindsInstance transformationContext: ts.TransformationContext) { }
+    constructor(@BindsInstance transformationContext: ts.TransformationContext) { }
 
-    readonly sourceFileSubcomponentFactory: (sourceFile: ts.SourceFile) => SourceFileSubcomponent
+    readonly sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>
 }
 
 @Module
@@ -80,5 +89,5 @@ export class ProgramComponent {
 
     constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitTransformOptions) { }
 
-    readonly transformationContextSubcomponentFactory: (transformationContext: ts.TransformationContext) => TransformationContextSubcomponent
+    readonly transformationContextSubcomponentFactory: SubcomponentFactory<typeof TransformationContextSubcomponent>
 }

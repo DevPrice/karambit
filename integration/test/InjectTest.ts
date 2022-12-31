@@ -242,7 +242,6 @@ interface ChildSubcomponentInterface {
 @Subcomponent({modules: [SubcomponentModule], subcomponents: [GrandChildSubcomponent]})
 abstract class ChildSubcomponent implements ChildSubcomponentInterface {
 
-    // noinspection TypeScriptAbstractClassConstructorCanBeMadeProtected
     constructor(@BindsInstance values: number[]) { }
 
     readonly sum: number
