@@ -31,10 +31,15 @@ interface GeneratedSubcomponent {
     readonly rootDependencies: Iterable<Dependency>
 }
 
+export interface Multibindings {
+    providers: ProvidesMethod[]
+    boundTypes: QualifiedType[]
+}
+
 export interface ModuleProviders {
     factories: ReadonlyMap<QualifiedType, ProvidesMethod>
     bindings: Iterable<Binding>
-    setMultibindings: ReadonlyMap<QualifiedType, ProvidesMethod[]>
+    setMultibindings: ReadonlyMap<QualifiedType, Multibindings>
 }
 
 export interface ComponentGeneratorDependencies {
@@ -126,14 +131,14 @@ export class ComponentGenerator {
     ): ModuleProviders {
         const installedModules = this.moduleLocator.getInstalledModules(componentDecorator)
         const factories = new Map<QualifiedType, ProvidesMethod>()
-        const setMultibindings = new Map<QualifiedType, ProvidesMethod[]>()
+        const setMultibindings = new Map<QualifiedType, Multibindings>()
         installedModules.flatMap(module => module.factories).forEach(providesMethod => {
             if (providesMethod.scope && !this.nodeDetector.isReusableScope(providesMethod.scope) && providesMethod.scope != componentScope) {
                 this.errorReporter.reportInvalidScope(providesMethod, componentScope)
             }
             if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isIntoSetDecorator)) {
-                const existing = setMultibindings.get(providesMethod.type) ?? []
-                existing.push(providesMethod)
+                const existing = setMultibindings.get(providesMethod.type) ?? {providers: [], boundTypes: []}
+                existing.providers.push(providesMethod)
                 setMultibindings.set(providesMethod.type, existing)
             } else {
                 const existing = factories.get(providesMethod.type)
@@ -141,7 +146,17 @@ export class ComponentGenerator {
                 factories.set(providesMethod.type, providesMethod)
             }
         })
-        return {factories, setMultibindings, bindings: installedModules.flatMap(it => it.bindings)}
+        const bindings: Binding[] = []
+        installedModules.flatMap(it => it.bindings).forEach(binding => {
+            if (binding.declaration.modifiers?.some(this.nodeDetector.isIntoSetDecorator)) {
+                const existing = setMultibindings.get(binding.returnType) ?? {providers: [], boundTypes: []}
+                existing.boundTypes.push(binding.paramType)
+                setMultibindings.set(binding.returnType, existing)
+            } else {
+                bindings.push(binding)
+            }
+        })
+        return {factories, setMultibindings, bindings}
     }
 
     updateComponent(): ts.ClassDeclaration {

@@ -8,6 +8,7 @@ import {PropertyExtractor} from "./PropertyExtractor"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {InjectableConstructor, InstanceProvider, PropertyProvider, ProviderType, ProvidesMethod} from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
+import type {Multibindings} from "./ComponentGenerator"
 
 export interface Dependency {
     readonly type: QualifiedType
@@ -28,7 +29,7 @@ export class DependencyGraphBuilder {
         private readonly nodeDetector: InjectNodeDetector,
         private readonly dependencyMap:  ReadonlyMap<QualifiedType, PropertyProvider>,
         private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
-        private readonly setMultibindingMap: ReadonlyMap<QualifiedType, ProvidesMethod[]>,
+        private readonly setMultibindingMap: ReadonlyMap<QualifiedType, Multibindings>,
         private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly constructorHelper: ConstructorHelper,
@@ -125,17 +126,20 @@ export class DependencyGraphBuilder {
 
         const readonlySetType = this.nodeDetector.isReadonlySet(boundType.type)
         if (readonlySetType) {
-            const elementProviders = this.setMultibindingMap.get(createQualifiedType({type: readonlySetType}))
-            if (elementProviders) {
-                const dependencies = elementProviders.map(it => { return {type: it.type, optional: false} })
+            const multibinding = this.setMultibindingMap.get(createQualifiedType({type: readonlySetType}))
+            if (multibinding) {
+                const dependencies = multibinding.boundTypes
+                    .map(type => { return {type, optional: false} })
+                    .concat(multibinding.providers.flatMap(this.getDependencies))
                 return {
                     provider: {
                         providerType: ProviderType.SET_MULTIBINDING,
                         type: boundType,
-                        elementProviders,
+                        elementProviders: multibinding.providers,
+                        elementBindings: multibinding.boundTypes,
                         dependencies: new Set(dependencies.map(it => it.type)),
                     },
-                    dependencies: elementProviders.flatMap(this.getDependencies)
+                    dependencies,
                 }
             }
         }

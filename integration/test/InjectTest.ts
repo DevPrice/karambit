@@ -134,6 +134,12 @@ describe("Injection", () => {
             assert.ok(multibindingComponent.numberSet.has(2))
             assert.ok(multibindingComponent.numberSet.has(3))
         })
+        it("multibinding via @Binds", () => {
+            assert.strictEqual(multibindingComponent.boundSet.size, 2)
+            const values = Array.from(multibindingComponent.boundSet.values())
+            assert.ok(values.some(it => it.property === "impl"))
+            assert.ok(values.some(it => it.property === "provided"))
+        })
     })
 })
 
@@ -466,12 +472,33 @@ class MultibindingSetModule {
     static provideThreeHolder(): ThreeHolder {
         return {three: 3}
     }
+
+    @Provides
+    @IntoSet
+    static provideMultibindingType(): MultibindingType {
+        return {property: "provided"}
+    }
+
+    // @ts-ignore
+    @Binds
+    @IntoSet
+    abstract bindMultibindingType(impl: MultibindingTypeImpl): MultibindingType
+}
+
+interface MultibindingType {
+    property: string
+}
+
+@Inject
+class MultibindingTypeImpl {
+    property = "impl"
 }
 
 @Component({modules: [MultibindingSetModule]})
 class MultibindingsComponent {
 
     readonly numberSet: ReadonlySet<number>
+    readonly boundSet: ReadonlySet<MultibindingType>
 }
 
 const multibindingComponent = new MultibindingsComponent()
