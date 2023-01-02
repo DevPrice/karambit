@@ -3,6 +3,7 @@ import {QualifiedType} from "./QualifiedType"
 
 export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | UndefinedProvider | ParentProvider | SetMultibinding
 export type MultibindingProvider = SetMultibinding
+export type MultibindingElementProvider = ProvidesMethod | InjectableConstructor
 export type ProviderParameter = ProvidesMethodParameter | ConstructorParameter
 
 export interface PropertyProvider {
@@ -85,6 +86,7 @@ export interface SetMultibinding {
     readonly providerType: ProviderType.SET_MULTIBINDING
     readonly type: QualifiedType
     readonly elementProviders: InstanceProvider[]
+    readonly elementBindings: QualifiedType[]
     readonly declaration?: undefined
 }
 

@@ -243,7 +243,7 @@ export class ComponentDeclarationBuilder {
                         return this.factoryCallExpression(elementProvider)
                     }
                     this.errorReporter.reportParseFailed("Only @Provides and @Binds can provide a multibinding!")
-                }),
+                }).concat(provider.elementBindings.map(this.getParamExpression)),
                 false
             )]
         )

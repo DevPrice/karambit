@@ -8,7 +8,7 @@ import {ErrorReporter} from "./ErrorReporter"
 export interface Binding {
     paramType: QualifiedType
     returnType: QualifiedType
-    declaration: ts.Declaration
+    declaration: ts.MethodDeclaration
 }
 
 export interface Module {
