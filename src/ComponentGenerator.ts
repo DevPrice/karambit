@@ -31,6 +31,12 @@ interface GeneratedSubcomponent {
     readonly rootDependencies: Iterable<Dependency>
 }
 
+export interface ModuleProviders {
+    factories: ReadonlyMap<QualifiedType, ProvidesMethod>
+    bindings: Iterable<Binding>
+    setMultibindings: ReadonlyMap<QualifiedType, ProvidesMethod[]>
+}
+
 export interface ComponentGeneratorDependencies {
     readonly generator: ComponentGenerator
 }
@@ -117,25 +123,32 @@ export class ComponentGenerator {
     private getFactoriesAndBindings(
         componentDecorator: ts.Decorator,
         componentScope?: ts.Symbol
-    ): {factories: ReadonlyMap<QualifiedType, ProvidesMethod>, bindings: Iterable<Binding>} {
+    ): ModuleProviders {
         const installedModules = this.moduleLocator.getInstalledModules(componentDecorator)
         const factories = new Map<QualifiedType, ProvidesMethod>()
-        installedModules.flatMap(module => module.factories).forEach(factory => {
-            if (factory.scope && !this.nodeDetector.isReusableScope(factory.scope) && factory.scope != componentScope) {
-                this.errorReporter.reportInvalidScope(factory, componentScope)
+        const setMultibindings = new Map<QualifiedType, ProvidesMethod[]>()
+        installedModules.flatMap(module => module.factories).forEach(providesMethod => {
+            if (providesMethod.scope && !this.nodeDetector.isReusableScope(providesMethod.scope) && providesMethod.scope != componentScope) {
+                this.errorReporter.reportInvalidScope(providesMethod, componentScope)
             }
-            const existing = factories.get(factory.type)
-            if (existing) throw this.errorReporter.reportDuplicateProviders(factory.type, [existing, factory])
-            factories.set(factory.type, factory)
+            if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isIntoSetDecorator)) {
+                const existing = setMultibindings.get(providesMethod.type) ?? []
+                existing.push(providesMethod)
+                setMultibindings.set(providesMethod.type, existing)
+            } else {
+                const existing = factories.get(providesMethod.type)
+                if (existing) throw this.errorReporter.reportDuplicateProviders(providesMethod.type, [existing, providesMethod])
+                factories.set(providesMethod.type, providesMethod)
+            }
         })
-        return {factories, bindings: installedModules.flatMap(it => it.bindings)}
+        return {factories, setMultibindings, bindings: installedModules.flatMap(it => it.bindings)}
     }
 
     updateComponent(): ts.ClassDeclaration {
         const component = this.component
         const componentDecorator = component.modifiers?.find(this.nodeDetector.isComponentDecorator)!
         const componentScope = this.nodeDetector.getScope(component)
-        const {factories, bindings} = this.getFactoriesAndBindings(componentDecorator, componentScope)
+        const {factories, bindings, setMultibindings} = this.getFactoriesAndBindings(componentDecorator, componentScope)
         const dependencyMap = this.getDependencyMap(this.component)
 
         const componentType = this.typeChecker.getTypeAtLocation(component)
@@ -154,6 +167,7 @@ export class ComponentGenerator {
             this.nodeDetector,
             dependencyMap,
             factories,
+            setMultibindings,
             subcomponentFactoryLocator,
             this.propertyExtractor,
             this.constructorHelper,
@@ -247,7 +261,7 @@ export class ComponentGenerator {
     ): GeneratedSubcomponent {
         const dependencyMap = this.getDependencyMap(factory.declaration)
         const subcomponentScope = this.nodeDetector.getScope(factory.declaration)
-        const {factories, bindings} = this.getFactoriesAndBindings(factory.decorator, subcomponentScope)
+        const {factories, bindings, setMultibindings} = this.getFactoriesAndBindings(factory.decorator, subcomponentScope)
         const typeResolver = TypeResolver.merge(resolver, bindings)
         const rootDependencies = this.getRootDependencies(factory.subcomponentType.type)
         const subcomponentFactoryLocator = new SubcomponentFactoryLocator(
@@ -262,6 +276,7 @@ export class ComponentGenerator {
             this.nodeDetector,
             dependencyMap,
             factories,
+            setMultibindings,
             subcomponentFactoryLocator,
             this.propertyExtractor,
             this.constructorHelper,

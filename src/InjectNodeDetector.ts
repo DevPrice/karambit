@@ -29,6 +29,7 @@ export class InjectNodeDetector {
         this.isBindsInstanceDecorator = this.isBindsInstanceDecorator.bind(this)
         this.isInjectDecorator = this.isInjectDecorator.bind(this)
         this.isModuleDecorator = this.isModuleDecorator.bind(this)
+        this.isIntoSetDecorator = this.isIntoSetDecorator.bind(this)
         this.isEraseable = this.isEraseable.bind(this)
         this.eraseInjectRuntime = this.eraseInjectRuntime.bind(this)
     }
@@ -94,31 +95,39 @@ export class InjectNodeDetector {
     }
 
     isComponentDecorator(decorator: ts.Node): decorator is ts.Decorator {
-        return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "Component"
+        return this.isKarambitDecorator(decorator, "Component")
     }
 
     isSubcomponentDecorator(decorator: ts.Node): decorator is ts.Decorator {
-        return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "Subcomponent"
+        return this.isKarambitDecorator(decorator, "Subcomponent")
     }
 
     isProvidesDecorator(decorator: ts.Node): decorator is ts.Decorator {
-        return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "Provides"
+        return this.isKarambitDecorator(decorator, "Provides")
     }
 
     isBindsDecorator(decorator: ts.Node): decorator is ts.Decorator {
-        return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "Binds"
+        return this.isKarambitDecorator(decorator, "Binds")
     }
 
     isBindsInstanceDecorator(decorator: ts.Node): decorator is ts.Decorator {
-        return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "BindsInstance"
+        return this.isKarambitDecorator(decorator, "BindsInstance")
     }
 
     isInjectDecorator(decorator: ts.Node): decorator is ts.Decorator {
-        return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "Inject"
+        return this.isKarambitDecorator(decorator, "Inject")
     }
 
     isModuleDecorator(decorator: ts.Node): decorator is ts.Decorator {
-        return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === "Module"
+        return this.isKarambitDecorator(decorator, "Module")
+    }
+
+    isIntoSetDecorator(decorator: ts.Node): decorator is ts.Decorator {
+        return this.isKarambitDecorator(decorator, "IntoSet")
+    }
+
+    private isKarambitDecorator(decorator: ts.Node, name: string): decorator is ts.Decorator {
+        return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === name
     }
 
     isProvider(type: ts.Type): ts.Type | undefined {
@@ -134,6 +143,15 @@ export class InjectNodeDetector {
         if (symbol?.getName() === typeName && this.isInjectSymbol(symbol)) {
             const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
             if (typeArguments.length != 1) ErrorReporter.reportParseFailed(`Invalid ${typeName} type!`)
+            return typeArguments[0]
+        }
+    }
+
+    isReadonlySet(type: ts.Type): ts.Type | undefined {
+        const symbol = type.getSymbol()
+        if (symbol?.getName() === "ReadonlySet") {
+            const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
+            if (typeArguments.length != 1) ErrorReporter.reportParseFailed("Invalid ReadonlySet type!")
             return typeArguments[0]
         }
     }

@@ -432,6 +432,10 @@ class OptionalComponent {
 
 const optionalComponent = new OptionalComponent()
 
+interface ThreeHolder {
+    three: number
+}
+
 @Module
 class MultibindingSetModule {
 
@@ -442,15 +446,25 @@ class MultibindingSetModule {
     }
 
     @Provides
-    @IntoSet
     static provideTwo(): number {
         return 2
     }
 
     @Provides
     @IntoSet
-    static provideThree(): number {
-        return 3
+    static provideTwoIntoSet(two: number): number {
+        return two
+    }
+
+    @Provides
+    @IntoSet
+    static provideThree(holder: ThreeHolder): number {
+        return holder.three
+    }
+
+    @Provides
+    static provideThreeHolder(): ThreeHolder {
+        return {three: 3}
     }
 }
 
