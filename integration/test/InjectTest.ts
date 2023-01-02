@@ -35,6 +35,11 @@ describe("Injection", () => {
         it("reusable @Inject type returns same instance", () => {
             assert.strictEqual(scopedComponent.reusableInjectClass, scopedComponent.reusableInjectClass)
         })
+        it("scoped nullable type returns cached instance", () => {
+            assert.strictEqual(scopedComponent.nullableClass, null)
+            assert.strictEqual(scopedComponent.nullableClass, null)
+            assert.strictEqual(nullProvidedCount, 1)
+        })
     })
     describe("Component dependencies", () => {
         it("parent provides child binding", () => {
@@ -141,6 +146,8 @@ class ScopedInjectClass { }
 @Reusable
 class ReusableInjectClass { }
 
+let nullProvidedCount: number = 0
+
 @Module
 abstract class ScopeModule {
 
@@ -160,7 +167,16 @@ abstract class ScopeModule {
     static provideReusableClass(): ReusableClass {
         return new ReusableClass()
     }
+
+    @Provides
+    @Reusable
+    static provideNullableClass(): NullableClass {
+        nullProvidedCount++
+        return null
+    }
 }
+
+type NullableClass = InjectClass | null
 
 @Component({modules: [ScopeModule]})
 @TestScope
@@ -177,6 +193,8 @@ class ScopedComponent {
     readonly reusableInjectClass: ReusableInjectClass
 
     readonly reusableClass: ReusableClass
+
+    readonly nullableClass: NullableClass
 }
 
 const scopedComponent = new ScopedComponent()
