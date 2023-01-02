@@ -6,13 +6,7 @@ import * as ts from "typescript"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-import {
-    InjectableConstructor,
-    InstanceProvider,
-    PropertyProvider,
-    ProviderType,
-    ProvidesMethod
-} from "./Providers"
+import {InjectableConstructor, InstanceProvider, PropertyProvider, ProviderType, ProvidesMethod} from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 
 export interface Dependency {
@@ -34,6 +28,7 @@ export class DependencyGraphBuilder {
         private readonly nodeDetector: InjectNodeDetector,
         private readonly dependencyMap:  ReadonlyMap<QualifiedType, PropertyProvider>,
         private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
+        private readonly setMultibindingMap: ReadonlyMap<QualifiedType, ProvidesMethod[]>,
         private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly constructorHelper: ConstructorHelper,
@@ -128,7 +123,35 @@ export class DependencyGraphBuilder {
             }
         }
 
+        const readonlySetType = this.nodeDetector.isReadonlySet(boundType.type)
+        if (readonlySetType) {
+            const elementProviders = this.setMultibindingMap.get(createQualifiedType({type: readonlySetType}))
+            if (elementProviders) {
+                const dependencies = elementProviders.map(it => { return {type: it.type, optional: false} })
+                return {
+                    provider: {
+                        providerType: ProviderType.SET_MULTIBINDING,
+                        type: boundType,
+                        elementProviders,
+                        dependencies: new Set(dependencies.map(it => it.type)),
+                    },
+                    dependencies: elementProviders.flatMap(this.getDependencies)
+                }
+            }
+        }
+
         return undefined
+    }
+
+    private getDependencies(provider: InstanceProvider): Dependency[] {
+        switch (provider.providerType) {
+            case ProviderType.INJECTABLE_CONSTRUCTOR:
+                return provider.parameters
+            case ProviderType.PROVIDES_METHOD:
+                return provider.parameters
+            default:
+                return []
+        }
     }
 
     private getInjectableConstructor(type: ts.Type): InjectableConstructor | undefined {

@@ -10,6 +10,7 @@ import {
     PropertyProvider,
     ProviderType,
     ProvidesMethod,
+    SetMultibinding,
     SubcomponentFactory
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
@@ -92,7 +93,7 @@ export class ComponentDeclarationBuilder {
         if (provider.providerType == ProviderType.SUBCOMPONENT_FACTORY) return [this.getSubcomponentFactoryDeclaration(provider)]
         if (provider.providerType == ProviderType.PROVIDES_METHOD) return this.getFactoryDeclaration(provider)
         if (provider.providerType == ProviderType.INJECTABLE_CONSTRUCTOR) return this.getConstructorProviderDeclaration(provider, componentScope)
-        if (provider.providerType == ProviderType.SET_MULTIBINDING) throw Error("TODO")
+        if (provider.providerType == ProviderType.SET_MULTIBINDING) return [this.getSetMultibindingProviderDeclaration(provider)]
         return [this.getMissingOptionalDeclaration(provider.type)]
     }
 
@@ -225,6 +226,26 @@ export class ComponentDeclarationBuilder {
             ),
             undefined,
             [ts.factory.createThis(), ...params]
+        )
+    }
+
+    private getSetMultibindingProviderDeclaration(provider: SetMultibinding): ts.ClassElement {
+        return this.getterMethodDeclaration(provider.type, this.createSetMultibindingExpression(provider))
+    }
+
+    private createSetMultibindingExpression(provider: SetMultibinding): ts.Expression {
+        return ts.factory.createNewExpression(
+            ts.factory.createIdentifier("Set"),
+            undefined,
+            [ts.factory.createArrayLiteralExpression(
+                provider.elementProviders.map(elementProvider => {
+                    if (elementProvider.providerType === ProviderType.PROVIDES_METHOD) {
+                        return this.factoryCallExpression(elementProvider)
+                    }
+                    this.errorReporter.reportParseFailed("Only @Provides and @Binds can provide a multibinding!")
+                }),
+                false
+            )]
         )
     }
 

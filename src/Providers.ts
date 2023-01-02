@@ -85,6 +85,7 @@ export interface SetMultibinding {
     readonly providerType: ProviderType.SET_MULTIBINDING
     readonly type: QualifiedType
     readonly elementProviders: InstanceProvider[]
+    readonly declaration?: undefined
 }
 
 export enum ProviderType {
