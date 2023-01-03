@@ -170,6 +170,23 @@ describe("Injection", () => {
             assert.ok(multibindingComponent.boundMap.get("impl")?.property, "impl")
             assert.ok(multibindingComponent.boundMap.get("provided")?.property, "provided")
         })
+        it("multibinding map provides qualified elements", () => {
+            assert.strictEqual(multibindingComponent.qualifiedMap.size, 2)
+            assert.strictEqual(multibindingComponent.qualifiedMap.get("one"), 1)
+            assert.strictEqual(multibindingComponent.qualifiedMap.get("two"), 2)
+        })
+        it("multibinding map provides scoped elements", () => {
+            assert.strictEqual(multibindingComponent.numberMap.size, 3)
+            assert.strictEqual(multibindingComponent.numberMap.size, 3)
+            assert.strictEqual(multibindingScopedProvidedCount, 1)
+        })
+        it("subcomponent multibinding provides additional map elements", () => {
+            assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.size, 4)
+            assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("one"), 1)
+            assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("two"), 2)
+            assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("three"), 3)
+            assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("four"), 4)
+        })
     })
 })
 
@@ -476,12 +493,20 @@ abstract class MultibindingSetSubcomponentModule {
     static provideFour(): number {
         return 4
     }
+
+    @Provides
+    @MapKey<string>("four")
+    @IntoMap
+    static provideFourIntoMap(): number {
+        return 4
+    }
 }
 
 @Subcomponent({modules: [MultibindingSetSubcomponentModule]})
 abstract class MultibindingSetSubcomponent {
 
     readonly numberSetExtension: ReadonlySet<number>
+    readonly numberMapExtension: ReadonlyMap<string, number>
 }
 
 interface ThreeHolder {
@@ -574,6 +599,22 @@ abstract class MultibindingMapModule {
     }
 
     @Provides
+    @MapKey<string>("one")
+    @IntoMap
+    @MyQualifier
+    static provideQualifiedOne(): number {
+        return 1
+    }
+
+    @Provides
+    @MapKey<string>("two")
+    @IntoMap
+    @MyQualifier
+    static provideQualifiedTwo(): number {
+        return 2
+    }
+
+    @Provides
     @MapKey<string>("provided")
     @IntoMap
     static provideMultibindingType(): MultibindingType {
@@ -602,6 +643,7 @@ class MultibindingsComponent {
     readonly numberSet: ReadonlySet<number>
     readonly boundSet: ReadonlySet<MultibindingType>
     @MyQualifier readonly qualifiedSet: ReadonlySet<number>
+    @MyQualifier readonly qualifiedMap: ReadonlyMap<string, number>
 
     readonly numberMap: ReadonlyMap<string, number>
     readonly boundMap: ReadonlyMap<string, MultibindingType>

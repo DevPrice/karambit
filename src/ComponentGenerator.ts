@@ -155,7 +155,11 @@ export class ComponentGenerator {
                     entryProviders: [],
                     entryBindings: []
                 }
-                existing.entryProviders.push({...providesMethod, type: createQualifiedType({...providesMethod.type, discriminator: keyInfo.expression}), key: keyInfo.expression})
+                existing.entryProviders.push({
+                    ...providesMethod,
+                    type: createQualifiedType({...providesMethod.type, discriminator: Symbol("entry")}),
+                    key: keyInfo.expression
+                })
                 mapMultibindings.set([providesMethod.type, keyInfo.keyType], existing)
             } else {
                 const existing = factories.get(providesMethod.type)
@@ -248,7 +252,9 @@ export class ComponentGenerator {
         generatedSubcomponents.forEach(it => {
             Array.from(it.graph.resolved.entries()).forEach(([type, provider]) => {
                 const duplicate = graph.resolved.get(type) ?? dependencyMap.get(type) ?? factories.get(type)
-                if (duplicate && !(provider.providerType === ProviderType.SET_MULTIBINDING && duplicate.providerType === ProviderType.SET_MULTIBINDING)) {
+                if (duplicate
+                    && !(provider.providerType === ProviderType.SET_MULTIBINDING && duplicate.providerType === ProviderType.SET_MULTIBINDING)
+                    && !(provider.providerType === ProviderType.MAP_MULTIBINDING && duplicate.providerType === ProviderType.MAP_MULTIBINDING)) {
                     this.errorReporter.reportDuplicateProviders(type, [duplicate, provider])
                 }
             })
