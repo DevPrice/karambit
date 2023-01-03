@@ -32,6 +32,7 @@ export class InjectNodeDetector {
         this.isIntoSetDecorator = this.isIntoSetDecorator.bind(this)
         this.isIntoMapDecorator = this.isIntoMapDecorator.bind(this)
         this.isMapKeyDecorator = this.isMapKeyDecorator.bind(this)
+        this.isCompileTimeConstant = this.isCompileTimeConstant.bind(this)
         this.isEraseable = this.isEraseable.bind(this)
         this.eraseInjectRuntime = this.eraseInjectRuntime.bind(this)
     }
@@ -160,13 +161,7 @@ export class InjectNodeDetector {
             const argument = decorator.expression.arguments[0]
             if (!argument) return undefined
 
-            // TODO: Support other compile-time constants?
-            if (
-                argument.kind !== ts.SyntaxKind.NumericLiteral
-                && argument.kind !== ts.SyntaxKind.BigIntLiteral
-                && argument.kind !== ts.SyntaxKind.StringLiteral
-                && argument.kind !== ts.SyntaxKind.BooleanKeyword
-            ) throw new Error("@MapKey argument must be a basic literal!")
+            if (!this.isCompileTimeConstant(argument)) throw new Error("@MapKey argument must be a literal!")
 
             const keyTypeNode = decorator.expression.typeArguments
                 ? decorator.expression.typeArguments[0]
@@ -181,6 +176,15 @@ export class InjectNodeDetector {
 
     private isKarambitDecorator(decorator: ts.Node, name: string): decorator is ts.Decorator {
         return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === name
+    }
+
+    private isCompileTimeConstant(expression: ts.Expression): boolean {
+        return expression.kind === ts.SyntaxKind.NumericLiteral
+            || expression.kind === ts.SyntaxKind.BigIntLiteral
+            || expression.kind === ts.SyntaxKind.StringLiteral
+            || expression.kind === ts.SyntaxKind.BooleanKeyword
+            || (ts.isObjectLiteralExpression(expression) && expression.properties.every(it => it.kind === ts.SyntaxKind.PropertyAssignment && this.isCompileTimeConstant(it.initializer)))
+            || (ts.isArrayLiteralExpression(expression) && expression.elements.every(this.isCompileTimeConstant))
     }
 
     isProvider(type: ts.Type): ts.Type | undefined {
