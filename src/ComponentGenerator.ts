@@ -174,6 +174,17 @@ export class ComponentGenerator {
                 }
                 existing.elementBindings.push(binding.paramType)
                 setMultibindings.set(binding.returnType, existing)
+            } else if (binding.declaration.modifiers?.some(this.nodeDetector.isIntoMapDecorator)) {
+                const keyInfo = this.nodeDetector.getMapKey(binding.declaration)
+                if (!keyInfo) this.errorReporter.reportParseFailed("@IntoMap binding must have @MapKey")
+                const existing: MapMultibinding = mapMultibindings.get([binding.returnType, keyInfo.keyType]) ?? {
+                    providerType: ProviderType.MAP_MULTIBINDING,
+                    type: binding.returnType,
+                    entryProviders: [],
+                    entryBindings: [],
+                }
+                existing.entryBindings.push({valueType: binding.paramType, key: keyInfo.expression})
+                mapMultibindings.set([binding.returnType, keyInfo.keyType], existing)
             } else {
                 bindings.push(binding)
             }
