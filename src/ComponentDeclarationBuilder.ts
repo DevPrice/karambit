@@ -240,7 +240,9 @@ export class ComponentDeclarationBuilder {
             [ts.factory.createArrayLiteralExpression(
                 provider.elementProviders.map(elementProvider => {
                     if (elementProvider.providerType === ProviderType.PROVIDES_METHOD) {
-                        return this.factoryCallExpression(elementProvider)
+                        return elementProvider.scope
+                            ? this.getCachedFactoryCallExpression(elementProvider)
+                            : this.factoryCallExpression(elementProvider)
                     }
                     this.errorReporter.reportParseFailed("Only @Provides and @Binds can provide a multibinding!")
                 }).concat(provider.elementBindings.map(this.getParamExpression)),
@@ -369,14 +371,14 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    private factoryCallExpression(factory: ProvidesMethod): ts.Expression {
+    private factoryCallExpression(providesMethod: ProvidesMethod): ts.Expression {
         return ts.factory.createCallExpression(
             ts.factory.createPropertyAccessExpression(
-                this.getExpressionForDeclaration(factory.module),
-                ts.factory.createIdentifier(factory.declaration.name.getText())
+                this.getExpressionForDeclaration(providesMethod.module),
+                ts.factory.createIdentifier(providesMethod.declaration.name.getText())
             ),
             undefined,
-            factory.parameters.map(it => it.type).map(this.typeResolver.resolveBoundType).map(this.getParamExpression)
+            providesMethod.parameters.map(it => it.type).map(this.typeResolver.resolveBoundType).map(this.getParamExpression)
         )
     }
 
@@ -395,23 +397,33 @@ export class ComponentDeclarationBuilder {
     }
 
     private getCachedFactoryDeclaration(factory: ProvidesMethod): ts.ClassElement[] {
-        const propIdentifier = this.nameGenerator.getPropertyIdentifier(factory.type)
-        const nullable = this.isTypeNullable(factory.type.type)
         return [
-            ts.factory.createPropertyDeclaration(
-                undefined,
-                propIdentifier,
-                undefined,
-                undefined,
-                nullable ? this.getUnsetPropertyExpression() : undefined
-            ),
+            this.getCachedPropertyDeclaration(factory.type),
             this.getterMethodDeclaration(
                 factory.type,
-                nullable ?
-                    this.createScopedNullableExpression(propIdentifier, this.factoryCallExpression(factory)) :
-                    this.createScopedExpression(propIdentifier, this.factoryCallExpression(factory))
+                this.getCachedFactoryCallExpression(factory)
             )
         ]
+    }
+
+    private getCachedFactoryCallExpression(providesMethod: ProvidesMethod): ts.Expression {
+        const propIdentifier = this.nameGenerator.getPropertyIdentifier(providesMethod.type)
+        const nullable = this.isTypeNullable(providesMethod.type.type)
+        return nullable ?
+            this.createScopedNullableExpression(propIdentifier, this.factoryCallExpression(providesMethod)) :
+            this.createScopedExpression(propIdentifier, this.factoryCallExpression(providesMethod))
+    }
+
+    private getCachedPropertyDeclaration(type: QualifiedType): ts.ClassElement {
+        const propIdentifier = this.nameGenerator.getPropertyIdentifier(type)
+        const nullable = this.isTypeNullable(type.type)
+        return ts.factory.createPropertyDeclaration(
+            undefined,
+            propIdentifier,
+            undefined,
+            undefined,
+            nullable ? this.getUnsetPropertyExpression() : undefined
+        )
     }
 
     private getParentProvidedDeclaration(type: QualifiedType): ts.ClassElement {
