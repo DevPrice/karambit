@@ -93,7 +93,7 @@ export class ComponentDeclarationBuilder {
         if (provider.providerType == ProviderType.SUBCOMPONENT_FACTORY) return [this.getSubcomponentFactoryDeclaration(provider)]
         if (provider.providerType == ProviderType.PROVIDES_METHOD) return this.getFactoryDeclaration(provider)
         if (provider.providerType == ProviderType.INJECTABLE_CONSTRUCTOR) return this.getConstructorProviderDeclaration(provider, componentScope)
-        if (provider.providerType == ProviderType.SET_MULTIBINDING) return [this.getSetMultibindingProviderDeclaration(provider)]
+        if (provider.providerType == ProviderType.SET_MULTIBINDING) return this.getSetMultibindingProviderDeclaration(provider)
         return [this.getMissingOptionalDeclaration(provider.type)]
     }
 
@@ -229,8 +229,9 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    private getSetMultibindingProviderDeclaration(provider: SetMultibinding): ts.ClassElement {
-        return this.getterMethodDeclaration(provider.type, this.createSetMultibindingExpression(provider))
+    private getSetMultibindingProviderDeclaration(provider: SetMultibinding, componentScope?: ts.Symbol): ts.ClassElement[] {
+        const members = provider.elementProviders.flatMap(it => this.getProviderDeclaration(it, componentScope))
+        return [...members, this.getterMethodDeclaration(provider.type, this.createSetMultibindingExpression(provider))]
     }
 
     private createSetMultibindingExpression(provider: SetMultibinding): ts.Expression {
@@ -239,12 +240,10 @@ export class ComponentDeclarationBuilder {
             undefined,
             [ts.factory.createArrayLiteralExpression(
                 provider.elementProviders.map(elementProvider => {
-                    if (elementProvider.providerType === ProviderType.PROVIDES_METHOD) {
-                        return elementProvider.scope
-                            ? this.getCachedFactoryCallExpression(elementProvider)
-                            : this.factoryCallExpression(elementProvider)
-                    }
-                    this.errorReporter.reportParseFailed("Only @Provides and @Binds can provide a multibinding!")
+                    const qualifiedType = elementProvider.providerType === ProviderType.INJECTABLE_CONSTRUCTOR
+                        ? createQualifiedType({type: elementProvider.type})
+                        : elementProvider.type
+                    return this.getParamExpression(qualifiedType)
                 }).concat(provider.elementBindings.map(this.getParamExpression)),
                 false
             )]
