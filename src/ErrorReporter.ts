@@ -7,12 +7,15 @@ import {
     isInjectableConstructor,
     isPropertyProvider,
     isProvidesMethod,
-    isSubcomponentFactory, ProviderType, ProvidesMethod
+    isSubcomponentFactory,
+    ProviderType,
+    ProvidesMethod
 } from "./Providers"
 import {filterTree, printTreeMap} from "./Util"
 import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
 import {Binding} from "./ModuleLocator"
 import {Chalk} from "chalk"
+
 const chalk: Chalk = require("chalk")
 
 export enum KarambitErrorScope {
@@ -210,6 +213,8 @@ function providerForDisplay(provider: InstanceProvider): string | undefined {
     if (isProvidesMethod(provider)) return nodeForDisplay(provider.declaration)
     if (isInjectableConstructor(provider)) return nodeForDisplay(provider.declaration)
     if (isSubcomponentFactory(provider)) return nodeForDisplay(provider.declaration)
+    if (provider.providerType === ProviderType.PARENT) return "Parent binding"
+    if (provider.providerType === ProviderType.SET_MULTIBINDING) return "@IntoSet multibinding"
     return undefined
 }
 

@@ -150,6 +150,13 @@ describe("Injection", () => {
             assert.strictEqual(multibindingComponent.numberSet.size, 3)
             assert.strictEqual(multibindingScopedProvidedCount, 1)
         })
+        it("subcomponent multibinding provides additional elements", () => {
+            assert.strictEqual(multibindingComponent.subcomponentFactory().numberSetExtension.size, 4)
+            assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(1))
+            assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(2))
+            assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(3))
+            assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(4))
+        })
     })
 })
 
@@ -448,6 +455,22 @@ class OptionalComponent {
 
 const optionalComponent = new OptionalComponent()
 
+@Module
+abstract class MultibindingSetSubcomponentModule {
+
+    @Provides
+    @IntoSet
+    static provideFour(): number {
+        return 4
+    }
+}
+
+@Subcomponent({modules: [MultibindingSetSubcomponentModule]})
+abstract class MultibindingSetSubcomponent {
+
+    readonly numberSetExtension: ReadonlySet<number>
+}
+
 interface ThreeHolder {
     three: number
 }
@@ -522,12 +545,14 @@ class MultibindingTypeImpl {
     property = "impl"
 }
 
-@Component({modules: [MultibindingSetModule]})
+@Component({modules: [MultibindingSetModule], subcomponents: [MultibindingSetSubcomponent]})
 class MultibindingsComponent {
 
     readonly numberSet: ReadonlySet<number>
     readonly boundSet: ReadonlySet<MultibindingType>
     @MyQualifier readonly qualifiedSet: ReadonlySet<number>
+
+    readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
 }
 
 const multibindingComponent = new MultibindingsComponent()

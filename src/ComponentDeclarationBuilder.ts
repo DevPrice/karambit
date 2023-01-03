@@ -235,6 +235,9 @@ export class ComponentDeclarationBuilder {
     }
 
     private createSetMultibindingExpression(provider: SetMultibinding): ts.Expression {
+        const parentAccessExpression: ts.Expression | undefined = provider.parentBinding
+            ? ts.factory.createSpreadElement(this.accessParentGetter(provider.type))
+            : undefined
         return ts.factory.createNewExpression(
             ts.factory.createIdentifier("Set"),
             undefined,
@@ -244,7 +247,9 @@ export class ComponentDeclarationBuilder {
                         ? createQualifiedType({type: elementProvider.type})
                         : elementProvider.type
                     return this.getParamExpression(qualifiedType)
-                }).concat(provider.elementBindings.map(this.getParamExpression)),
+                })
+                    .concat(provider.elementBindings.map(this.getParamExpression))
+                    .concat(parentAccessExpression ?? []),
                 false
             )]
         )
