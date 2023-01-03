@@ -1,6 +1,6 @@
 import * as ts from "typescript"
 import {Inject, Reusable} from "karambit-inject"
-import {TypeQualifier} from "./QualifiedType"
+import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType"
 import {ErrorReporter} from "./ErrorReporter"
 import type {KarambitTransformOptions} from "./karambit"
 
@@ -136,7 +136,22 @@ export class InjectNodeDetector {
         return this.isKarambitDecorator(decorator, "MapKey")
     }
 
-    getMapKey(declaration: ts.MethodDeclaration): {keyType: ts.Type, expression: ts.Expression} | undefined {
+    getMapBindingInfo(returnType: QualifiedType, declaration: ts.MethodDeclaration): {keyType: ts.Type, valueType: QualifiedType, expression?: ts.Expression} | undefined {
+        const keyInfo = this.getMapKey(declaration)
+        if (keyInfo) return {...keyInfo, valueType: returnType}
+
+        const type = returnType.type as any
+        if (type.target && type.target.fixedLength === 2) {
+            const typeArgs = type.resolvedTypeArguments as ts.Type[] ?? []
+            if (typeArgs.length === 2) {
+                return {keyType: typeArgs[0], valueType: createQualifiedType({...returnType, type: typeArgs[1]})}
+            }
+        }
+
+        return undefined
+    }
+
+    private getMapKey(declaration: ts.MethodDeclaration): {keyType: ts.Type, expression: ts.Expression} | undefined {
         const decorators = declaration.modifiers?.filter(this.isMapKeyDecorator)
         if (!decorators || decorators.length !== 1) return undefined
         const decorator = decorators[0]
@@ -144,6 +159,14 @@ export class InjectNodeDetector {
         if (ts.isCallExpression(decorator.expression)) {
             const argument = decorator.expression.arguments[0]
             if (!argument) return undefined
+
+            // TODO: Support other compile-time constants?
+            if (
+                argument.kind !== ts.SyntaxKind.NumericLiteral
+                && argument.kind !== ts.SyntaxKind.BigIntLiteral
+                && argument.kind !== ts.SyntaxKind.StringLiteral
+                && argument.kind !== ts.SyntaxKind.BooleanKeyword
+            ) throw new Error("@MapKey argument must be a basic literal!")
 
             const keyTypeNode = decorator.expression.typeArguments
                 ? decorator.expression.typeArguments[0]

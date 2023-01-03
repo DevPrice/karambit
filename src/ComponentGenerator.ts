@@ -146,21 +146,21 @@ export class ComponentGenerator {
                 existing.elementProviders.push({...providesMethod, type: createQualifiedType({...providesMethod.type, discriminator: Symbol("element")})})
                 setMultibindings.set(providesMethod.type, existing)
             } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isIntoMapDecorator)) {
-                const keyInfo = this.nodeDetector.getMapKey(providesMethod.declaration)
-                if (!keyInfo) this.errorReporter.reportParseFailed("@IntoMap provider must have @MapKey")
+                const info = this.nodeDetector.getMapBindingInfo(providesMethod.type, providesMethod.declaration)
+                if (!info) this.errorReporter.reportParseFailed("@IntoMap provider must have @MapKey or return tuple of size 2.", providesMethod.declaration)
 
-                const existing: MapMultibinding = mapMultibindings.get([providesMethod.type, keyInfo.keyType]) ?? {
+                const existing: MapMultibinding = mapMultibindings.get([info.valueType, info.keyType]) ?? {
                     providerType: ProviderType.MAP_MULTIBINDING,
-                    type: providesMethod.type,
+                    type: info.valueType,
                     entryProviders: [],
                     entryBindings: []
                 }
                 existing.entryProviders.push({
                     ...providesMethod,
                     type: createQualifiedType({...providesMethod.type, discriminator: Symbol("entry")}),
-                    key: keyInfo.expression
+                    key: info.expression
                 })
-                mapMultibindings.set([providesMethod.type, keyInfo.keyType], existing)
+                mapMultibindings.set([info.valueType, info.keyType], existing)
             } else {
                 const existing = factories.get(providesMethod.type)
                 if (existing) throw this.errorReporter.reportDuplicateProviders(providesMethod.type, [existing, providesMethod])
@@ -179,16 +179,16 @@ export class ComponentGenerator {
                 existing.elementBindings.push(binding.paramType)
                 setMultibindings.set(binding.returnType, existing)
             } else if (binding.declaration.modifiers?.some(this.nodeDetector.isIntoMapDecorator)) {
-                const keyInfo = this.nodeDetector.getMapKey(binding.declaration)
-                if (!keyInfo) this.errorReporter.reportParseFailed("@IntoMap binding must have @MapKey")
-                const existing: MapMultibinding = mapMultibindings.get([binding.returnType, keyInfo.keyType]) ?? {
+                const info = this.nodeDetector.getMapBindingInfo(binding.returnType, binding.declaration)
+                if (!info) this.errorReporter.reportParseFailed("@IntoMap binding must have @MapKey or return tuple of size 2.", binding.declaration)
+                const existing: MapMultibinding = mapMultibindings.get([info.valueType, info.keyType]) ?? {
                     providerType: ProviderType.MAP_MULTIBINDING,
-                    type: binding.returnType,
+                    type: info.valueType,
                     entryProviders: [],
                     entryBindings: [],
                 }
-                existing.entryBindings.push({valueType: binding.paramType, key: keyInfo.expression})
-                mapMultibindings.set([binding.returnType, keyInfo.keyType], existing)
+                existing.entryBindings.push({valueType: binding.paramType, key: info.expression})
+                mapMultibindings.set([info.valueType, info.keyType], existing)
             } else {
                 bindings.push(binding)
             }

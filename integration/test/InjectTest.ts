@@ -585,10 +585,9 @@ abstract class MultibindingMapModule {
     }
 
     @Provides
-    @MapKey("two")
     @IntoMap
-    static provideTwo(): number {
-        return 2
+    static provideTwo(): [string, number] {
+        return ["two", 2]
     }
 
     @Provides
@@ -607,11 +606,10 @@ abstract class MultibindingMapModule {
     }
 
     @Provides
-    @MapKey("two")
     @IntoMap
     @MyQualifier
-    static provideQualifiedTwo(): number {
-        return 2
+    static provideQualifiedTwo(): [string, number] {
+        return ["two", 2]
     }
 
     @Provides
