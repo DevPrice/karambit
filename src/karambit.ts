@@ -68,6 +68,17 @@ export function IntoSet(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
+export function IntoMap(): MethodDecorator
+export function IntoMap(target: unknown, propertyKey: string | symbol): void
+export function IntoMap(): never {
+    ErrorReporter.reportCodeNotTransformed()
+}
+
+export function MapKey<T>(key: T): MethodDecorator
+export function MapKey(): never {
+    ErrorReporter.reportCodeNotTransformed()
+}
+
 export function Scope(): ScopeDecorator {
     ErrorReporter.reportCodeNotTransformed()
 }
