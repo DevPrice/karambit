@@ -165,6 +165,11 @@ describe("Injection", () => {
             assert.strictEqual(multibindingComponent.numberMap.get("two"), 2)
             assert.strictEqual(multibindingComponent.numberMap.get("three"), 3)
         })
+        it("multibinding map via @Binds", () => {
+            assert.strictEqual(multibindingComponent.boundMap.size, 2)
+            assert.ok(multibindingComponent.boundMap.get("impl")?.property, "impl")
+            assert.ok(multibindingComponent.boundMap.get("provided")?.property, "provided")
+        })
     })
 })
 
@@ -567,6 +572,19 @@ abstract class MultibindingMapModule {
     static provideThree(holder: ThreeHolder): number {
         return holder.three
     }
+
+    @Provides
+    @MapKey<string>("provided")
+    @IntoMap
+    static provideMultibindingType(): MultibindingType {
+        return {property: "provided"}
+    }
+
+    // @ts-ignore
+    @Binds
+    @MapKey<string>("impl")
+    @IntoMap
+    abstract bindMultibindingType(impl: MultibindingTypeImpl): MultibindingType
 }
 
 interface MultibindingType {
@@ -586,6 +604,7 @@ class MultibindingsComponent {
     @MyQualifier readonly qualifiedSet: ReadonlySet<number>
 
     readonly numberMap: ReadonlyMap<string, number>
+    readonly boundMap: ReadonlyMap<string, MultibindingType>
 
     readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
 }
