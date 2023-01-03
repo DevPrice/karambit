@@ -378,3 +378,12 @@ In both cases, the type of map is inferred based on the key and value types used
 ```typescript
 @MapKey<"enum1" | "enum2">("enum1")
 ```
+
+### Multibindings in subcomponents
+
+Multibindings are unique in that they are the only opportunity a subcomponent has to modify the bindings of its parent. Any `@IntoSet` or `@IntoMap` bindings in a subcomponent will be provided *in addition* to those provided by its parent.
+
+Therefore, the injected set or map may have different elements based on which component or subcomponent it is injected from.
+
+> **Note**
+> A subcomponent can only *add* bindings to a set or map, it cannot remove bindings provided by its parent.
