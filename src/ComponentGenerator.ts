@@ -139,7 +139,7 @@ export class ComponentGenerator {
                     elementBindings: [],
                     elementProviders: []
                 }
-                existing.elementProviders.push(providesMethod)
+                existing.elementProviders.push({...providesMethod, type: createQualifiedType({...providesMethod.type, discriminator: Symbol("element")})})
                 setMultibindings.set(providesMethod.type, existing)
             } else {
                 const existing = factories.get(providesMethod.type)

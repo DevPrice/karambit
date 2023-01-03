@@ -6,6 +6,7 @@ export type TypeQualifier = ts.Symbol | symbol | string
 export interface QualifiedType {
     readonly type: ts.Type
     readonly qualifier?: TypeQualifier
+    readonly discriminator?: unknown
 }
 
 const typesWeakMap = new WeakMap<ts.Type, QualifiedType[]>()
@@ -13,7 +14,7 @@ const typesWeakMap = new WeakMap<ts.Type, QualifiedType[]>()
 export function createQualifiedType(args: QualifiedType): QualifiedType {
     const existing = typesWeakMap.get(args.type) ?? []
     for (const item of existing) {
-        if (item.type === args.type && item.qualifier === args.qualifier) {
+        if (item.type === args.type && item.qualifier === args.qualifier && item.discriminator === args.discriminator) {
             return item
         }
     }
