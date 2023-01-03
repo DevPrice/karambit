@@ -15,6 +15,7 @@ import {
     Binds,
     IntoSet,
 } from "karambit-inject"
+import {IntoMap, MapKey} from "../../src/karambit"
 
 describe("Injection", () => {
     describe("Scope", () => {
@@ -128,34 +129,40 @@ describe("Injection", () => {
         })
     })
     describe("Multibindings", () => {
-        it("multibinding provides all elements", () => {
+        it("multibinding set provides all elements", () => {
             assert.strictEqual(multibindingComponent.numberSet.size, 3)
             assert.ok(multibindingComponent.numberSet.has(1))
             assert.ok(multibindingComponent.numberSet.has(2))
             assert.ok(multibindingComponent.numberSet.has(3))
         })
-        it("multibinding via @Binds", () => {
+        it("multibinding set via @Binds", () => {
             assert.strictEqual(multibindingComponent.boundSet.size, 2)
             const values = Array.from(multibindingComponent.boundSet.values())
             assert.ok(values.some(it => it.property === "impl"))
             assert.ok(values.some(it => it.property === "provided"))
         })
-        it("multibinding provides qualified elements", () => {
+        it("multibinding set provides qualified elements", () => {
             assert.strictEqual(multibindingComponent.qualifiedSet.size, 2)
             assert.ok(multibindingComponent.qualifiedSet.has(1))
             assert.ok(multibindingComponent.qualifiedSet.has(2))
         })
-        it("multibinding provides scoped elements", () => {
+        it("multibinding set provides scoped elements", () => {
             assert.strictEqual(multibindingComponent.numberSet.size, 3)
             assert.strictEqual(multibindingComponent.numberSet.size, 3)
             assert.strictEqual(multibindingScopedProvidedCount, 1)
         })
-        it("subcomponent multibinding provides additional elements", () => {
+        it("subcomponent multibinding provides additional set elements", () => {
             assert.strictEqual(multibindingComponent.subcomponentFactory().numberSetExtension.size, 4)
             assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(1))
             assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(2))
             assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(3))
             assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(4))
+        })
+        it("multibinding map provides all elements", () => {
+            assert.strictEqual(multibindingComponent.numberMap.size, 3)
+            assert.strictEqual(multibindingComponent.numberMap.get("1"), 1)
+            assert.strictEqual(multibindingComponent.numberMap.get("2"), 2)
+            assert.strictEqual(multibindingComponent.numberMap.get("3"), 3)
         })
     })
 })
@@ -536,6 +543,31 @@ class MultibindingSetModule {
     abstract bindMultibindingType(impl: MultibindingTypeImpl): MultibindingType
 }
 
+@Module
+abstract class MultibindingMapModule {
+
+    @Provides
+    @MapKey("1")
+    @IntoMap
+    static provideOne(): number {
+        return 1
+    }
+
+    @Provides
+    @MapKey("2")
+    @IntoMap
+    static provideTwo(): number {
+        return 2
+    }
+
+    @Provides
+    @MapKey("3")
+    @IntoSet
+    static provideThree(holder: ThreeHolder): number {
+        return holder.three
+    }
+}
+
 interface MultibindingType {
     property: string
 }
@@ -545,12 +577,14 @@ class MultibindingTypeImpl {
     property = "impl"
 }
 
-@Component({modules: [MultibindingSetModule], subcomponents: [MultibindingSetSubcomponent]})
+@Component({modules: [MultibindingSetModule, MultibindingMapModule], subcomponents: [MultibindingSetSubcomponent]})
 class MultibindingsComponent {
 
     readonly numberSet: ReadonlySet<number>
     readonly boundSet: ReadonlySet<MultibindingType>
     @MyQualifier readonly qualifiedSet: ReadonlySet<number>
+
+    readonly numberMap: ReadonlyMap<string, number>
 
     readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
 }
