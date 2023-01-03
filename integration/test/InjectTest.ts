@@ -145,6 +145,11 @@ describe("Injection", () => {
             assert.ok(multibindingComponent.qualifiedSet.has(1))
             assert.ok(multibindingComponent.qualifiedSet.has(2))
         })
+        it("multibinding provides scoped elements", () => {
+            assert.strictEqual(multibindingComponent.numberSet.size, 3)
+            assert.strictEqual(multibindingComponent.numberSet.size, 3)
+            assert.strictEqual(multibindingScopedProvidedCount, 1)
+        })
     })
 })
 
@@ -447,6 +452,8 @@ interface ThreeHolder {
     three: number
 }
 
+let multibindingScopedProvidedCount = 0
+
 @Module
 class MultibindingSetModule {
 
@@ -468,8 +475,10 @@ class MultibindingSetModule {
     }
 
     @Provides
+    @Reusable
     @IntoSet
     static provideThree(holder: ThreeHolder): number {
+        multibindingScopedProvidedCount++
         return holder.three
     }
 
