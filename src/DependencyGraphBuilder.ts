@@ -137,11 +137,13 @@ export class DependencyGraphBuilder {
                 const dependencies = multibinding.elementBindings
                     .map(type => { return {type, optional: false} })
                     .concat(multibinding.elementProviders.flatMap(this.getDependencies))
+                const parentBinding = this.parentGraph ? this.parentGraph(boundType) : false
                 return {
                     provider: {
                         ...multibinding,
                         type: boundType,
                         dependencies: new Set(dependencies.map(it => it.type)),
+                        parentBinding
                     },
                     dependencies,
                 }

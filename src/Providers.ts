@@ -87,6 +87,7 @@ export interface SetMultibinding {
     readonly type: QualifiedType
     readonly elementProviders: InstanceProvider[]
     readonly elementBindings: QualifiedType[]
+    readonly parentBinding?: boolean
     readonly declaration?: undefined
 }
 

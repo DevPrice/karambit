@@ -220,7 +220,9 @@ export class ComponentGenerator {
         generatedSubcomponents.forEach(it => {
             Array.from(it.graph.resolved.entries()).forEach(([type, provider]) => {
                 const duplicate = graph.resolved.get(type) ?? dependencyMap.get(type) ?? factories.get(type)
-                if (duplicate) this.errorReporter.reportDuplicateProviders(type, [duplicate, provider])
+                if (duplicate && !(provider.providerType === ProviderType.SET_MULTIBINDING && duplicate.providerType === ProviderType.SET_MULTIBINDING)) {
+                    this.errorReporter.reportDuplicateProviders(type, [duplicate, provider])
+                }
             })
             const missingSubcomponentDependencies = Array.from(it.graph.missing.keys()).filter(it => !it.optional && !mergedGraph.resolved.has(it.type))
             if (missingSubcomponentDependencies.length > 0) {
