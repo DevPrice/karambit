@@ -6,9 +6,15 @@ import * as ts from "typescript"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-import {InjectableConstructor, InstanceProvider, PropertyProvider, ProviderType, ProvidesMethod} from "./Providers"
+import {
+    InjectableConstructor,
+    InstanceProvider,
+    PropertyProvider,
+    ProviderType,
+    ProvidesMethod,
+    SetMultibinding
+} from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
-import type {Multibindings} from "./ComponentGenerator"
 
 export interface Dependency {
     readonly type: QualifiedType
@@ -29,7 +35,7 @@ export class DependencyGraphBuilder {
         private readonly nodeDetector: InjectNodeDetector,
         private readonly dependencyMap:  ReadonlyMap<QualifiedType, PropertyProvider>,
         private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
-        private readonly setMultibindingMap: ReadonlyMap<QualifiedType, Multibindings>,
+        private readonly setMultibindingMap: ReadonlyMap<QualifiedType, SetMultibinding>,
         private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly constructorHelper: ConstructorHelper,
@@ -126,17 +132,15 @@ export class DependencyGraphBuilder {
 
         const readonlySetType = this.nodeDetector.isReadonlySet(boundType.type)
         if (readonlySetType) {
-            const multibinding = this.setMultibindingMap.get(createQualifiedType({type: readonlySetType}))
+            const multibinding = this.setMultibindingMap.get(createQualifiedType({...boundType, type: readonlySetType}))
             if (multibinding) {
-                const dependencies = multibinding.boundTypes
+                const dependencies = multibinding.elementBindings
                     .map(type => { return {type, optional: false} })
-                    .concat(multibinding.providers.flatMap(this.getDependencies))
+                    .concat(multibinding.elementProviders.flatMap(this.getDependencies))
                 return {
                     provider: {
-                        providerType: ProviderType.SET_MULTIBINDING,
+                        ...multibinding,
                         type: boundType,
-                        elementProviders: multibinding.providers,
-                        elementBindings: multibinding.boundTypes,
                         dependencies: new Set(dependencies.map(it => it.type)),
                     },
                     dependencies,
