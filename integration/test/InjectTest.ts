@@ -140,6 +140,11 @@ describe("Injection", () => {
             assert.ok(values.some(it => it.property === "impl"))
             assert.ok(values.some(it => it.property === "provided"))
         })
+        it("multibinding provides qualified elements", () => {
+            assert.strictEqual(multibindingComponent.qualifiedSet.size, 2)
+            assert.ok(multibindingComponent.qualifiedSet.has(1))
+            assert.ok(multibindingComponent.qualifiedSet.has(2))
+        })
     })
 })
 
@@ -479,6 +484,20 @@ class MultibindingSetModule {
         return {property: "provided"}
     }
 
+    @Provides
+    @IntoSet
+    @MyQualifier
+    static provideQualifiedOne(): number {
+        return 1
+    }
+
+    @Provides
+    @IntoSet
+    @MyQualifier
+    static provideQualifiedTwo(): number {
+        return 2
+    }
+
     // @ts-ignore
     @Binds
     @IntoSet
@@ -499,6 +518,7 @@ class MultibindingsComponent {
 
     readonly numberSet: ReadonlySet<number>
     readonly boundSet: ReadonlySet<MultibindingType>
+    @MyQualifier readonly qualifiedSet: ReadonlySet<number>
 }
 
 const multibindingComponent = new MultibindingsComponent()
