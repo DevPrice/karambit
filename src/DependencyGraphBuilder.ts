@@ -154,7 +154,7 @@ export class DependencyGraphBuilder {
 
         const readonlyMapTypes = this.nodeDetector.isReadonlyMap(boundType.type)
         if (readonlyMapTypes) {
-            const multibinding = this.mapMultibindings.get([createQualifiedType({type: readonlyMapTypes[1]}), readonlyMapTypes[0]])
+            const multibinding = this.mapMultibindings.get([createQualifiedType({...boundType, type: readonlyMapTypes[1]}), readonlyMapTypes[0]])
             if (multibinding) {
                 const dependencies = multibinding.entryBindings
                     .map(type => { return {type: type.valueType, optional: false} })
