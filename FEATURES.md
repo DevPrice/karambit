@@ -279,3 +279,102 @@ class ParentComponent {
 Installing a subcomponent adds a factory binding to your graph. The factory binding is function type with the same argument types as the Subcomponent constructor which returns an instance of the Subcomponent. Karambit includes a helper type, `SubcomponentFactory<T>` which has represents the factory type for a Subcomponent of type `T`.
 
 This type can be injected anywhere within the parent graph, and can be called to return a new instance of the Subcomponent.
+
+## Multibindings
+
+Multibindings are a convenience tool that allows you to bind the elements of a Set or Map across separate `@Provides` or `@Binds` methods, and even across different Modules.
+
+You can use multibindings to, for example, implement a "plugin" architecture.
+
+### Set multibindings
+
+To contribute an object into a `ReadOnlySet`, use the `@IntoSet` decorator on the Module method:
+
+```typescript
+@Module
+abstract class FoodModule {
+    @Provides
+    @IntoSet
+    static provideApple(): string {
+        return "Apple"
+    }
+
+    @Provides
+    @IntoSet
+    static provideBurger(): string {
+        return "Burger"
+    }
+}
+```
+
+This will contribute a binding into the graph for `ReadonlySet<string>`. The above code is effectively equivalent to:
+
+```typescript
+@Module
+abstract class FoodModule {
+    @Provides
+    static provideFood(): ReadonlySet<string> {
+        return new Set(["Apple", "Burger"])
+    }
+}
+```
+
+### Map multibindings
+
+Map multibindings are similar to set multibindings, only you must also specify the map key for each element. This can be done using the `@MapKey` decorator:
+
+```typescript
+@Module
+abstract class NumberModule {
+    @Provides
+    @MapKey("one")
+    @IntoMap
+    static provideOne(): number {
+        return 1
+    }
+
+    @Provides
+    @MapKey("two")
+    @IntoMap
+    static provideTwo(): number {
+        return 2
+    }
+}
+```
+
+Alternatively, you can bind an entry tuple directly into the map, and skip the `@MapKey` decorator:
+
+```typescript
+@Module
+abstract class NumberModule {
+    @Provides
+    @IntoMap
+    static provideOne(): [string, number] {
+        return ["one", 1]
+    }
+
+    @Provides
+    @IntoMap
+    static provideTwo(): [string, number] {
+        return ["two", 2]
+    }
+}
+```
+
+The above examples would bind the `ReadonlyMap<string, number>` type into the graph and are effectively equivalent to:
+
+```typescript
+@Module
+abstract class NumberModule {
+    @Provides
+    static provideNumbers(): ReadonlyMap<string, number> {
+        return new Map([["one", 1], ["two", 2]])
+    }
+}
+```
+
+In both cases, the type of map is inferred based on the key and value types used. When using `@MapKey`, you can use its generic type argument to override the inferred type:
+
+```typescript
+@MapKey<"enum1" | "enum2">("enum1")
+```
