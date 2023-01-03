@@ -30,6 +30,8 @@ export class InjectNodeDetector {
         this.isInjectDecorator = this.isInjectDecorator.bind(this)
         this.isModuleDecorator = this.isModuleDecorator.bind(this)
         this.isIntoSetDecorator = this.isIntoSetDecorator.bind(this)
+        this.isIntoMapDecorator = this.isIntoMapDecorator.bind(this)
+        this.isMapKeyDecorator = this.isMapKeyDecorator.bind(this)
         this.isEraseable = this.isEraseable.bind(this)
         this.eraseInjectRuntime = this.eraseInjectRuntime.bind(this)
     }
@@ -126,6 +128,36 @@ export class InjectNodeDetector {
         return this.isKarambitDecorator(decorator, "IntoSet")
     }
 
+    isIntoMapDecorator(decorator: ts.Node): decorator is ts.Decorator {
+        return this.isKarambitDecorator(decorator, "IntoMap")
+    }
+
+    isMapKeyDecorator(decorator: ts.Node): decorator is ts.Decorator {
+        return this.isKarambitDecorator(decorator, "MapKey")
+    }
+
+    getMapKey(declaration: ts.MethodDeclaration): {keyType: ts.Type, expression: ts.Expression} | undefined {
+        const decorators = declaration.modifiers?.filter(this.isMapKeyDecorator)
+        if (!decorators || decorators.length !== 1) return undefined
+        const decorator = decorators[0]
+
+        if (ts.isCallExpression(decorator.expression)) {
+            const keyType = decorator.expression.typeArguments
+                ? this.typeChecker.getTypeAtLocation(decorator.expression.typeArguments[0])
+                : undefined
+            const literal = decorator.expression.getChildren()
+                .flatMap(it => it.kind === ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
+                .find(ts.isStringLiteral)
+
+            if (!literal) throw new Error("TODO")
+
+            return {
+                keyType: keyType ?? this.typeChecker.getTypeAtLocation(literal),
+                expression: literal,
+            }
+        }
+    }
+
     private isKarambitDecorator(decorator: ts.Node, name: string): decorator is ts.Decorator {
         return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === name
     }
@@ -153,6 +185,15 @@ export class InjectNodeDetector {
             const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
             if (typeArguments.length != 1) ErrorReporter.reportParseFailed("Invalid ReadonlySet type!")
             return typeArguments[0]
+        }
+    }
+
+    isReadonlyMap(type: ts.Type): [ts.Type, ts.Type] | undefined {
+        const symbol = type.getSymbol()
+        if (symbol?.getName() === "ReadonlyMap") {
+            const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
+            if (typeArguments.length != 2) ErrorReporter.reportParseFailed("Invalid ReadonlyMap type!")
+            return typeArguments as [ts.Type, ts.Type]
         }
     }
 

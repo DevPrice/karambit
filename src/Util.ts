@@ -143,3 +143,94 @@ export function time<T>(fun: () => T): { durationMs: number, result: T } {
     const result = fun()
     return {durationMs: Date.now() - startTime, result}
 }
+
+export class TupleMap<K extends Array<unknown>, V> implements Map<K, V> {
+
+    private backingMap: Map<any, any> = new Map()
+    readonly size: number
+
+    clear(): void {
+        this.backingMap.clear()
+    }
+
+    delete(key: K): boolean {
+        let current = this.backingMap
+        for (let i = 0; i < key.length - 1; i++) {
+            const k = key[i]
+            const next = current.get(k)
+            if (next === undefined) {
+                return false
+            } else {
+                current = next
+            }
+        }
+        return current.delete(key[key.length - 1])
+    }
+
+    forEach(callback: (value: V, key: K, map: Map<K, V>) => void, thisArg?: any): void {
+        throw new Error("Not implemented")
+    }
+
+    get(key: K): V | undefined {
+        let current = this.backingMap
+        for (let i = 0; i < key.length - 1; i++) {
+            const k = key[i]
+            const next = current.get(k)
+            if (next === undefined) {
+                return undefined
+            } else {
+                current = next
+            }
+        }
+        return current.get(key[key.length - 1])
+    }
+
+    has(key: K): boolean {
+        let current = this.backingMap
+        for (let i = 0; i < key.length - 1; i++) {
+            const k = key[i]
+            const next = current.get(k)
+            if (next === undefined) {
+                return false
+            } else {
+                current = next
+            }
+        }
+        return current.has(key[key.length - 1])
+    }
+
+    set(key: K, value: V): this {
+        let current = this.backingMap
+        for (let i = 0; i < key.length - 1; i++) {
+            const k = key[i]
+            const next = current.get(k)
+            if (next === undefined) {
+                const newMap = new Map()
+                current.set(k, newMap)
+                current = newMap
+            } else {
+                current = next
+            }
+        }
+        current.set(key[key.length - 1], value)
+        return this
+    }
+
+    [Symbol.iterator](): IterableIterator<[K, V]> {
+        throw new Error("Not implemented")
+    }
+
+    entries(): IterableIterator<[K, V]> {
+        throw new Error("Not implemented")
+    }
+
+    keys(): IterableIterator<K> {
+        throw new Error("Not implemented")
+    }
+
+    values(): IterableIterator<V> {
+        throw new Error("Not implemented")
+    }
+
+    readonly [Symbol.toStringTag]: string
+}

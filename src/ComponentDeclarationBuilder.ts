@@ -11,6 +11,7 @@ import {
     ProviderType,
     ProvidesMethod,
     SetMultibinding,
+    MapMultibinding,
     SubcomponentFactory
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
@@ -94,6 +95,7 @@ export class ComponentDeclarationBuilder {
         if (provider.providerType == ProviderType.PROVIDES_METHOD) return this.getFactoryDeclaration(provider)
         if (provider.providerType == ProviderType.INJECTABLE_CONSTRUCTOR) return this.getConstructorProviderDeclaration(provider, componentScope)
         if (provider.providerType == ProviderType.SET_MULTIBINDING) return this.getSetMultibindingProviderDeclaration(provider)
+        if (provider.providerType == ProviderType.MAP_MULTIBINDING) return this.getMapMultibindingProviderDeclaration(provider)
         return [this.getMissingOptionalDeclaration(provider.type)]
     }
 
@@ -242,17 +244,39 @@ export class ComponentDeclarationBuilder {
             ts.factory.createIdentifier("Set"),
             undefined,
             [ts.factory.createArrayLiteralExpression(
-                provider.elementProviders.map(elementProvider => {
-                    const qualifiedType = elementProvider.providerType === ProviderType.INJECTABLE_CONSTRUCTOR
-                        ? createQualifiedType({type: elementProvider.type})
-                        : elementProvider.type
-                    return this.getParamExpression(qualifiedType)
-                })
+                provider.elementProviders
+                    .map(elementProvider => this.getParamExpression(elementProvider.type))
                     .concat(provider.elementBindings.map(this.getParamExpression))
                     .concat(parentAccessExpression ?? []),
                 false
             )]
         )
+    }
+
+    private getMapMultibindingProviderDeclaration(provider: MapMultibinding, componentScope?: ts.Symbol): ts.ClassElement[] {
+        const members = provider.entryProviders.flatMap(it => this.getProviderDeclaration(it, componentScope))
+        return [...members, this.getterMethodDeclaration(provider.type, this.createMapMultibindingExpression(provider))]
+    }
+
+    private createMapMultibindingExpression(provider: MapMultibinding): ts.Expression {
+        const parentAccessExpression: ts.Expression | undefined = provider.parentBinding
+            ? ts.factory.createSpreadElement(this.accessParentGetter(provider.type))
+            : undefined
+        return ts.factory.createNewExpression(
+            ts.factory.createIdentifier("Map"),
+            undefined,
+            [ts.factory.createArrayLiteralExpression(
+                provider.entryProviders
+                    .map(entryProvider => this.getMapEntryExpression(entryProvider.type, entryProvider.key))
+                    .concat(provider.entryBindings.map(it => this.getMapEntryExpression(it.valueType, it.key)))
+                    .concat(parentAccessExpression ?? []),
+                false
+            )]
+        )
+    }
+
+    private getMapEntryExpression(type: QualifiedType, keyExpression: ts.Expression): ts.Expression {
+        return ts.factory.createArrayLiteralExpression([keyExpression, this.getParamExpression(type)], false)
     }
 
     private getterMethodDeclaration(type: QualifiedType, expression: ts.Expression): ts.MethodDeclaration {
