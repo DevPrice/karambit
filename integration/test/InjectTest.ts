@@ -495,7 +495,7 @@ abstract class MultibindingSetSubcomponentModule {
     }
 
     @Provides
-    @MapKey<string>("four")
+    @MapKey("four")
     @IntoMap
     static provideFourIntoMap(): number {
         return 4
@@ -578,28 +578,28 @@ class MultibindingSetModule {
 abstract class MultibindingMapModule {
 
     @Provides
-    @MapKey<string>("one")
+    @MapKey("one")
     @IntoMap
     static provideOne(): number {
         return 1
     }
 
     @Provides
-    @MapKey<string>("two")
+    @MapKey("two")
     @IntoMap
     static provideTwo(): number {
         return 2
     }
 
     @Provides
-    @MapKey<string>("three")
+    @MapKey("three")
     @IntoMap
     static provideThree(holder: ThreeHolder): number {
         return holder.three
     }
 
     @Provides
-    @MapKey<string>("one")
+    @MapKey("one")
     @IntoMap
     @MyQualifier
     static provideQualifiedOne(): number {
@@ -607,7 +607,7 @@ abstract class MultibindingMapModule {
     }
 
     @Provides
-    @MapKey<string>("two")
+    @MapKey("two")
     @IntoMap
     @MyQualifier
     static provideQualifiedTwo(): number {
@@ -615,7 +615,7 @@ abstract class MultibindingMapModule {
     }
 
     @Provides
-    @MapKey<string>("provided")
+    @MapKey("provided")
     @IntoMap
     static provideMultibindingType(): MultibindingType {
         return {property: "provided"}
@@ -623,7 +623,7 @@ abstract class MultibindingMapModule {
 
     // @ts-ignore
     @Binds
-    @MapKey<string>("impl")
+    @MapKey("impl")
     @IntoMap
     abstract bindMultibindingType(impl: MultibindingTypeImpl): MultibindingType
 }

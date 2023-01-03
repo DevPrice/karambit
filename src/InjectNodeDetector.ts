@@ -142,18 +142,16 @@ export class InjectNodeDetector {
         const decorator = decorators[0]
 
         if (ts.isCallExpression(decorator.expression)) {
-            const keyType = decorator.expression.typeArguments
-                ? this.typeChecker.getTypeAtLocation(decorator.expression.typeArguments[0])
+            const argument = decorator.expression.arguments[0]
+            if (!argument) return undefined
+
+            const keyTypeNode = decorator.expression.typeArguments
+                ? decorator.expression.typeArguments[0]
                 : undefined
-            const literal = decorator.expression.getChildren()
-                .flatMap(it => it.kind === ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
-                .find(ts.isStringLiteral)
-
-            if (!literal) throw new Error("TODO")
-
+            const keyType = keyTypeNode ? this.typeChecker.getTypeAtLocation(keyTypeNode) : undefined
             return {
-                keyType: keyType ?? this.typeChecker.getTypeAtLocation(literal),
-                expression: literal,
+                keyType: keyType ?? this.typeChecker.getBaseTypeOfLiteralType(this.typeChecker.getTypeAtLocation(argument)),
+                expression: argument,
             }
         }
     }
