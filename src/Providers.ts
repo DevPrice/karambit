@@ -6,11 +6,11 @@ export type MultibindingProvider = SetMultibinding
 export type ProviderParameter = ProvidesMethodParameter | ConstructorParameter
 
 export interface MapEntryProvider extends ProvidesMethod {
-    key: ts.Expression
+    key?: ts.Expression
 }
 
 export interface MapEntryBinding {
-    key: ts.Expression
+    key?: ts.Expression
     valueType: QualifiedType
 }
 

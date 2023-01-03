@@ -275,8 +275,11 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    private getMapEntryExpression(type: QualifiedType, keyExpression: ts.Expression): ts.Expression {
-        return ts.factory.createArrayLiteralExpression([keyExpression, this.getParamExpression(type)], false)
+    private getMapEntryExpression(type: QualifiedType, keyExpression?: ts.Expression): ts.Expression {
+        if (keyExpression) {
+            return ts.factory.createArrayLiteralExpression([keyExpression, this.getParamExpression(type)], false)
+        }
+        return this.getParamExpression(type)
     }
 
     private getterMethodDeclaration(type: QualifiedType, expression: ts.Expression): ts.MethodDeclaration {

@@ -63,8 +63,8 @@ export class ErrorReporter {
         )
     }
 
-    reportParseFailed(message: string): never {
-        return ErrorReporter.reportParseFailed(message)
+    reportParseFailed(message: string, contextNode?: ts.Node): never {
+        return ErrorReporter.reportParseFailed(message + (contextNode ? "\n\n" + nodeForDisplay(contextNode) + "\n" : ""))
     }
 
     reportDuplicateScope(subcomponentName: string, ancestorName: string): never {
