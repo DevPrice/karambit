@@ -9,6 +9,7 @@ import {InjectNodeDetector} from "./InjectNodeDetector"
 import {
     InjectableConstructor,
     InstanceProvider,
+    MapMultibinding,
     PropertyProvider,
     ProviderType,
     ProvidesMethod,
@@ -35,7 +36,8 @@ export class DependencyGraphBuilder {
         private readonly nodeDetector: InjectNodeDetector,
         private readonly dependencyMap:  ReadonlyMap<QualifiedType, PropertyProvider>,
         private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
-        private readonly setMultibindingMap: ReadonlyMap<QualifiedType, SetMultibinding>,
+        private readonly setMultibindings: ReadonlyMap<QualifiedType, SetMultibinding>,
+        private readonly mapMultibindings: ReadonlyMap<[QualifiedType, ts.Type], MapMultibinding>,
         private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly constructorHelper: ConstructorHelper,
@@ -132,11 +134,31 @@ export class DependencyGraphBuilder {
 
         const readonlySetType = this.nodeDetector.isReadonlySet(boundType.type)
         if (readonlySetType) {
-            const multibinding = this.setMultibindingMap.get(createQualifiedType({...boundType, type: readonlySetType}))
+            const multibinding = this.setMultibindings.get(createQualifiedType({...boundType, type: readonlySetType}))
             if (multibinding) {
                 const dependencies = multibinding.elementBindings
                     .map(type => { return {type, optional: false} })
-                    .concat(multibinding.elementProviders.flatMap(this.getDependencies))
+                    .concat(multibinding.elementProviders.flatMap(it => it.parameters))
+                const parentBinding = this.parentGraph ? this.parentGraph(boundType) : false
+                return {
+                    provider: {
+                        ...multibinding,
+                        type: boundType,
+                        dependencies: new Set(dependencies.map(it => it.type)),
+                        parentBinding
+                    },
+                    dependencies,
+                }
+            }
+        }
+
+        const readonlyMapTypes = this.nodeDetector.isReadonlyMap(boundType.type)
+        if (readonlyMapTypes) {
+            const multibinding = this.mapMultibindings.get([createQualifiedType({type: readonlyMapTypes[1]}), readonlyMapTypes[0]])
+            if (multibinding) {
+                const dependencies = multibinding.entryBindings
+                    .map(type => { return {type: type.valueType, optional: false} })
+                    .concat(multibinding.entryProviders.flatMap(it => it.parameters))
                 const parentBinding = this.parentGraph ? this.parentGraph(boundType) : false
                 return {
                     provider: {
@@ -151,17 +173,6 @@ export class DependencyGraphBuilder {
         }
 
         return undefined
-    }
-
-    private getDependencies(provider: InstanceProvider): Dependency[] {
-        switch (provider.providerType) {
-            case ProviderType.INJECTABLE_CONSTRUCTOR:
-                return provider.parameters
-            case ProviderType.PROVIDES_METHOD:
-                return provider.parameters
-            default:
-                return []
-        }
     }
 
     private getInjectableConstructor(type: ts.Type): InjectableConstructor | undefined {

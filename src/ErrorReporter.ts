@@ -215,6 +215,7 @@ function providerForDisplay(provider: InstanceProvider): string | undefined {
     if (isSubcomponentFactory(provider)) return nodeForDisplay(provider.declaration)
     if (provider.providerType === ProviderType.PARENT) return "Parent binding"
     if (provider.providerType === ProviderType.SET_MULTIBINDING) return "@IntoSet multibinding"
+    if (provider.providerType === ProviderType.MAP_MULTIBINDING) return "@IntoMap multibinding"
     return undefined
 }
 

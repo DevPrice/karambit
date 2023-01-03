@@ -13,6 +13,7 @@ import {PropertyExtractor} from "./PropertyExtractor"
 import {
     InstanceProvider,
     isSubcomponentFactory,
+    MapMultibinding,
     ParentProvider,
     PropertyProvider,
     ProviderType,
@@ -23,6 +24,7 @@ import {
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {Inject, Reusable} from "karambit-inject"
+import {TupleMap} from "./Util"
 
 interface GeneratedSubcomponent {
     readonly name: string
@@ -36,6 +38,7 @@ export interface ModuleProviders {
     factories: ReadonlyMap<QualifiedType, ProvidesMethod>
     bindings: Iterable<Binding>
     setMultibindings: ReadonlyMap<QualifiedType, SetMultibinding>
+    mapMultibindings: ReadonlyMap<[QualifiedType, ts.Type], MapMultibinding>
 }
 
 export interface ComponentGeneratorDependencies {
@@ -128,6 +131,7 @@ export class ComponentGenerator {
         const installedModules = this.moduleLocator.getInstalledModules(componentDecorator)
         const factories = new Map<QualifiedType, ProvidesMethod>()
         const setMultibindings = new Map<QualifiedType, SetMultibinding>()
+        const mapMultibindings = new TupleMap<[QualifiedType, ts.Type], MapMultibinding>()
         installedModules.flatMap(module => module.factories).forEach(providesMethod => {
             if (providesMethod.scope && !this.nodeDetector.isReusableScope(providesMethod.scope) && providesMethod.scope != componentScope) {
                 this.errorReporter.reportInvalidScope(providesMethod, componentScope)
@@ -141,6 +145,18 @@ export class ComponentGenerator {
                 }
                 existing.elementProviders.push({...providesMethod, type: createQualifiedType({...providesMethod.type, discriminator: Symbol("element")})})
                 setMultibindings.set(providesMethod.type, existing)
+            } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isIntoMapDecorator)) {
+                const keyInfo = this.nodeDetector.getMapKey(providesMethod.declaration)
+                if (!keyInfo) this.errorReporter.reportParseFailed("@IntoMap provider must have @MapKey")
+
+                const existing: MapMultibinding = mapMultibindings.get([providesMethod.type, keyInfo.keyType]) ?? {
+                    providerType: ProviderType.MAP_MULTIBINDING,
+                    type: providesMethod.type,
+                    entryProviders: [],
+                    entryBindings: []
+                }
+                existing.entryProviders.push({...providesMethod, type: createQualifiedType({...providesMethod.type, discriminator: keyInfo.expression}), key: keyInfo.expression})
+                mapMultibindings.set([providesMethod.type, keyInfo.keyType], existing)
             } else {
                 const existing = factories.get(providesMethod.type)
                 if (existing) throw this.errorReporter.reportDuplicateProviders(providesMethod.type, [existing, providesMethod])
@@ -162,14 +178,14 @@ export class ComponentGenerator {
                 bindings.push(binding)
             }
         })
-        return {factories, setMultibindings, bindings}
+        return {factories, bindings, setMultibindings, mapMultibindings}
     }
 
     updateComponent(): ts.ClassDeclaration {
         const component = this.component
         const componentDecorator = component.modifiers?.find(this.nodeDetector.isComponentDecorator)!
         const componentScope = this.nodeDetector.getScope(component)
-        const {factories, bindings, setMultibindings} = this.getFactoriesAndBindings(componentDecorator, componentScope)
+        const {factories, bindings, setMultibindings, mapMultibindings} = this.getFactoriesAndBindings(componentDecorator, componentScope)
         const dependencyMap = this.getDependencyMap(this.component)
 
         const componentType = this.typeChecker.getTypeAtLocation(component)
@@ -189,6 +205,7 @@ export class ComponentGenerator {
             dependencyMap,
             factories,
             setMultibindings,
+            mapMultibindings,
             subcomponentFactoryLocator,
             this.propertyExtractor,
             this.constructorHelper,
@@ -284,7 +301,7 @@ export class ComponentGenerator {
     ): GeneratedSubcomponent {
         const dependencyMap = this.getDependencyMap(factory.declaration)
         const subcomponentScope = this.nodeDetector.getScope(factory.declaration)
-        const {factories, bindings, setMultibindings} = this.getFactoriesAndBindings(factory.decorator, subcomponentScope)
+        const {factories, bindings, setMultibindings, mapMultibindings} = this.getFactoriesAndBindings(factory.decorator, subcomponentScope)
         const typeResolver = TypeResolver.merge(resolver, bindings)
         const rootDependencies = this.getRootDependencies(factory.subcomponentType.type)
         const subcomponentFactoryLocator = new SubcomponentFactoryLocator(
@@ -300,6 +317,7 @@ export class ComponentGenerator {
             dependencyMap,
             factories,
             setMultibindings,
+            mapMultibindings,
             subcomponentFactoryLocator,
             this.propertyExtractor,
             this.constructorHelper,

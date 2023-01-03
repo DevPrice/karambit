@@ -14,8 +14,9 @@ import {
     BindsInstance,
     Binds,
     IntoSet,
+    IntoMap,
+    MapKey,
 } from "karambit-inject"
-import {IntoMap, MapKey} from "../../src/karambit"
 
 describe("Injection", () => {
     describe("Scope", () => {
@@ -160,9 +161,9 @@ describe("Injection", () => {
         })
         it("multibinding map provides all elements", () => {
             assert.strictEqual(multibindingComponent.numberMap.size, 3)
-            assert.strictEqual(multibindingComponent.numberMap.get("1"), 1)
-            assert.strictEqual(multibindingComponent.numberMap.get("2"), 2)
-            assert.strictEqual(multibindingComponent.numberMap.get("3"), 3)
+            assert.strictEqual(multibindingComponent.numberMap.get("one"), 1)
+            assert.strictEqual(multibindingComponent.numberMap.get("two"), 2)
+            assert.strictEqual(multibindingComponent.numberMap.get("three"), 3)
         })
     })
 })
@@ -547,22 +548,22 @@ class MultibindingSetModule {
 abstract class MultibindingMapModule {
 
     @Provides
-    @MapKey("1")
+    @MapKey<string>("one")
     @IntoMap
     static provideOne(): number {
         return 1
     }
 
     @Provides
-    @MapKey("2")
+    @MapKey<string>("two")
     @IntoMap
     static provideTwo(): number {
         return 2
     }
 
     @Provides
-    @MapKey("3")
-    @IntoSet
+    @MapKey<string>("three")
+    @IntoMap
     static provideThree(holder: ThreeHolder): number {
         return holder.three
     }

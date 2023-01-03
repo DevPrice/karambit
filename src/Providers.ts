@@ -1,10 +1,18 @@
 import * as ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
 
-export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | UndefinedProvider | ParentProvider | SetMultibinding
+export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | UndefinedProvider | ParentProvider | SetMultibinding | MapMultibinding
 export type MultibindingProvider = SetMultibinding
-export type MultibindingElementProvider = ProvidesMethod | InjectableConstructor
 export type ProviderParameter = ProvidesMethodParameter | ConstructorParameter
+
+export interface MapEntryProvider extends ProvidesMethod {
+    key: ts.Expression
+}
+
+export interface MapEntryBinding {
+    key: ts.Expression
+    valueType: QualifiedType
+}
 
 export interface PropertyProvider {
     readonly providerType: ProviderType.PROPERTY
@@ -85,8 +93,17 @@ export interface UndefinedProvider {
 export interface SetMultibinding {
     readonly providerType: ProviderType.SET_MULTIBINDING
     readonly type: QualifiedType
-    readonly elementProviders: InstanceProvider[]
+    readonly elementProviders: ProvidesMethod[]
     readonly elementBindings: QualifiedType[]
+    readonly parentBinding?: boolean
+    readonly declaration?: undefined
+}
+
+export interface MapMultibinding {
+    readonly providerType: ProviderType.MAP_MULTIBINDING
+    readonly type: QualifiedType
+    readonly entryProviders: MapEntryProvider[]
+    readonly entryBindings: MapEntryBinding[]
     readonly parentBinding?: boolean
     readonly declaration?: undefined
 }
@@ -99,4 +116,5 @@ export enum ProviderType {
     UNDEFINED,
     PARENT,
     SET_MULTIBINDING,
+    MAP_MULTIBINDING,
 }
