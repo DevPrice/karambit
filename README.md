@@ -156,3 +156,21 @@ class HelloWorldComponent {
 While this example is clearly a bit contrived, you should be able to see how simple it can be to add new types to a graph and build much more complex dependency structures.
 
 This is only scratching the surface of what Karambit is capable of, so check out the [feature guide](FEATURES.md) for a more in-depth look at everything it has to offer. For a small, real-world migration example, check out [this PR](https://github.com/DevPrice/karambit/pull/1) that bootstrapped Karambit to use itself for dependency injection.
+
+## License
+
+```text
+Copyright 2022-2023 Devin Price
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
