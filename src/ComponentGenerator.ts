@@ -250,14 +250,7 @@ export class ComponentGenerator {
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
         const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...rootDependencies, ...missingSubcomponentDependencies]))
         generatedSubcomponents.forEach(it => {
-            Array.from(it.graph.resolved.entries()).forEach(([type, provider]) => {
-                const duplicate = graph.resolved.get(type) ?? dependencyMap.get(type) ?? factories.get(type)
-                if (duplicate
-                    && !(provider.providerType === ProviderType.SET_MULTIBINDING && duplicate.providerType === ProviderType.SET_MULTIBINDING)
-                    && !(provider.providerType === ProviderType.MAP_MULTIBINDING && duplicate.providerType === ProviderType.MAP_MULTIBINDING)) {
-                    this.errorReporter.reportDuplicateProviders(type, [duplicate, provider])
-                }
-            })
+            this.verifyNoDuplicates(graph, it.graph, dependencyMap, factories)
             const missingSubcomponentDependencies = Array.from(it.graph.missing.keys()).filter(it => !it.optional && !mergedGraph.resolved.has(it.type))
             if (missingSubcomponentDependencies.length > 0) {
                 this.errorReporter.reportMissingProviders(
@@ -362,10 +355,7 @@ export class ComponentGenerator {
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
 
         generatedSubcomponents.forEach(it => {
-            Array.from(it.graph.resolved.entries()).forEach(([type, provider]) => {
-                const duplicate = graph.resolved.get(type) ?? dependencyMap.get(type) ?? factories.get(type)
-                if (duplicate) this.errorReporter.reportDuplicateProviders(type, [duplicate, provider])
-            })
+            this.verifyNoDuplicates(graph, it.graph, dependencyMap, factories)
         })
 
         const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...rootDependencies, ...missingSubcomponentDependencies]))
@@ -408,5 +398,23 @@ export class ComponentGenerator {
             name: subcomponentName,
             rootDependencies,
         }
+    }
+
+    private verifyNoDuplicates(
+        parentGraph: DependencyGraph,
+        subgraph: DependencyGraph,
+        dependencyMap: ReadonlyMap<QualifiedType, PropertyProvider>,
+        providesMethods: ReadonlyMap<QualifiedType, ProvidesMethod>,
+    ) {
+        Array.from(subgraph.resolved.entries())
+            .forEach(([type, provider]) => {
+                const duplicate = parentGraph.resolved.get(type) ?? dependencyMap.get(type) ?? providesMethods.get(type)
+                if (duplicate
+                    && !(provider.providerType === ProviderType.INJECTABLE_CONSTRUCTOR && duplicate.providerType === ProviderType.INJECTABLE_CONSTRUCTOR)
+                    && !(provider.providerType === ProviderType.SET_MULTIBINDING && duplicate.providerType === ProviderType.SET_MULTIBINDING)
+                    && !(provider.providerType === ProviderType.MAP_MULTIBINDING && duplicate.providerType === ProviderType.MAP_MULTIBINDING)) {
+                    this.errorReporter.reportDuplicateProviders(type, [duplicate, provider])
+                }
+            })
     }
 }
