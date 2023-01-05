@@ -196,7 +196,7 @@ export class ComponentGenerator {
         return {factories, bindings, setMultibindings, mapMultibindings}
     }
 
-    updateComponent(): ts.ClassDeclaration {
+    updateComponent(): ts.ClassDeclaration | ts.ClassDeclaration[] {
         const component = this.component
         const componentDecorator = component.modifiers?.find(this.nodeDetector.isComponentDecorator)!
         const componentScope = this.nodeDetector.getScope(component)
@@ -289,18 +289,16 @@ export class ComponentGenerator {
             Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals)
                 .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
         )
-        return ts.factory.updateClassDeclaration(
-            component,
-            component.modifiers,
-            component.name,
-            component.typeParameters,
-            component.heritageClauses,
-            [
+        return [component, builder.declareComponent({
+            componentType: createQualifiedType({type: componentType, discriminator: null}),
+            declaration: component,
+            constructorParams: this.constructorHelper.getConstructorParamsForDeclaration(component) ?? [],
+            members: [
                 ...ts.visitNodes(component.members, builder.updateComponentMember),
                 ...Array.from(generatedDeps.values()).flatMap(it => builder.getProviderDeclaration(it, componentScope)),
-                ...generatedSubcomponents.map(it => it.classElement),
+                ...generatedSubcomponents.map(it => it.classElement)
             ]
-        )
+        })]
     }
 
     private generateSubcomponent(
@@ -387,7 +385,7 @@ export class ComponentGenerator {
                 .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
         )
         const members = [
-            ...ts.visitNodes(factory.declaration.members, subcomponentBuilder.updateSubcomponentMember).filter(it => it !== null && it !== undefined),
+            ...ts.visitNodes(factory.declaration.members, subcomponentBuilder.updateComponentMember).filter(it => it !== null && it !== undefined),
             ...Array.from(generatedDeps.values()).flatMap(it => subcomponentBuilder.getProviderDeclaration(it, scope)),
             ...generatedSubcomponents.map(it => it.classElement),
         ]

@@ -16,7 +16,7 @@ export class ComponentVisitor {
     }
 
     visitComponents(sourceFile: ts.SourceFile): ts.SourceFile
-    visitComponents(node: ts.Node): ts.Node {
+    visitComponents(node: ts.Node): ts.Node | ts.Node[] {
         if (ts.isClassDeclaration(node) && node.modifiers?.some(this.nodeDetector.isComponentDecorator)) {
             const generatorDeps = this.componentGeneratorDependenciesFactory(node)
             return generatorDeps.generator.updateComponent()
