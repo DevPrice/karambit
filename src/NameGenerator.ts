@@ -11,11 +11,22 @@ export class NameGenerator {
         private readonly typeChecker: ts.TypeChecker
     ) { }
 
+    private componentNames = new Map<QualifiedType, ts.Identifier>()
     private propertyNames = new Map<QualifiedType, ts.Identifier | ts.PrivateIdentifier>()
     private paramPropertyNames = new Map<ts.ParameterDeclaration, ts.Identifier>()
     private getterNames = new Map<QualifiedType, ts.Identifier | ts.PrivateIdentifier>()
 
     readonly parentName: ts.Identifier = ts.factory.createUniqueName("parent")
+
+    getComponentIdentifier(type: QualifiedType): ts.Identifier {
+        const existingName = this.componentNames.get(type)
+        if (existingName) return existingName
+
+        const identifierText = this.getValidIdentifier(type.type)
+        const newName = ts.factory.createUniqueName(`Karambit${identifierText}`)
+        this.componentNames.set(type, newName)
+        return newName
+    }
 
     getPropertyIdentifier(type: QualifiedType): ts.Identifier | ts.PrivateIdentifier {
         const existingName = this.propertyNames.get(type)

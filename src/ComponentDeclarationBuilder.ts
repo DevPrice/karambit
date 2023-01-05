@@ -12,7 +12,7 @@ import {
     ProvidesMethod,
     SetMultibinding,
     MapMultibinding,
-    SubcomponentFactory
+    SubcomponentFactory, ConstructorParameter
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 
@@ -29,15 +29,49 @@ export class ComponentDeclarationBuilder {
         private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
     ) {
         this.updateComponentMember = this.updateComponentMember.bind(this)
-        this.updateSubcomponentMember = this.updateSubcomponentMember.bind(this)
         this.getParamExpression = this.getParamExpression.bind(this)
     }
 
-    updateComponentMember(member: ts.ClassElement): ts.Node {
-        return this.updateSubcomponentMember(member) ?? member
+    declareComponent(options: {componentType: QualifiedType, declaration: ts.ClassDeclaration, constructorParams: ConstructorParameter[], members: ts.ClassElement[]}): ts.ClassDeclaration {
+        return ts.factory.createClassDeclaration(
+            undefined,
+            this.nameGenerator.getComponentIdentifier(options.componentType),
+            undefined,
+            [ts.factory.createHeritageClause(
+                ts.SyntaxKind.ExtendsKeyword,
+                [ts.factory.createExpressionWithTypeArguments(
+                    this.getExpressionForDeclaration(options.declaration),
+                    undefined
+                )]
+            )],
+            [
+                ts.factory.createConstructorDeclaration(
+                    undefined,
+                    options.constructorParams.map(param =>
+                        ts.factory.createParameterDeclaration(
+                            [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword), ts.factory.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
+                            undefined,
+                            this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
+                            undefined,
+                            undefined,
+                            undefined
+                        )
+                    ),
+                    ts.factory.createBlock(
+                        [ts.factory.createExpressionStatement(ts.factory.createCallExpression(
+                            ts.factory.createSuper(),
+                            undefined,
+                            options.constructorParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration))
+                        ))],
+                        true
+                    )
+                ),
+                ...options.members,
+            ]
+        )
     }
 
-    updateSubcomponentMember(member: ts.ClassElement): ts.Node | undefined {
+    updateComponentMember(member: ts.ClassElement): ts.Node | undefined {
         if (ts.isPropertyDeclaration(member) && !member.initializer) {
             const type = createQualifiedType({
                 type: this.typeChecker.getTypeAtLocation(member.type ?? member),
