@@ -37,6 +37,14 @@ export class ModuleLocator {
         return this.getSymbolList(decorator, "subcomponents")
     }
 
+    getGeneratedClassName(decorator: ts.Decorator): string | undefined {
+        const valueExpression = this.getPropertyNode(decorator, "generatedClassName")
+        if (valueExpression) {
+            if (!ts.isStringLiteral(valueExpression)) this.errorReporter.reportParseFailed("generatedClassName must be a string literal!", decorator)
+            return this.nodeDetector.resolveStringLiteral(valueExpression)
+        }
+    }
+
     private withIncludedModules(symbols: ts.Symbol[]): Module[] {
         const directlyReferencedModules = this.getModuleMap(symbols)
         const errorReporter = this.errorReporter
@@ -181,5 +189,20 @@ export class ModuleLocator {
         }
         ts.visitEachChild(decorator, visit, ctx)
         return moduleSymbols
+    }
+
+    private getPropertyNode(decorator: ts.Decorator, propertyName: string): ts.Node | undefined {
+        if (ts.isCallExpression(decorator.expression)) {
+            if (decorator.expression.arguments.length === 1) {
+                const componentInfo = decorator.expression.arguments[0]
+                if (ts.isObjectLiteralExpression(componentInfo)) {
+                    for (const child of componentInfo.getChildren().flatMap(it => it.kind === ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])) {
+                        if (ts.isPropertyAssignment(child) && child.name.getText() === propertyName) {
+                            return child.initializer
+                        }
+                    }
+                }
+            }
+        }
     }
 }
