@@ -291,6 +291,7 @@ export class ComponentGenerator {
         )
         return [component, builder.declareComponent({
             componentType: componentType,
+            preferredClassName: this.moduleLocator.getGeneratedClassName(componentDecorator),
             declaration: component,
             constructorParams: this.constructorHelper.getConstructorParamsForDeclaration(component) ?? [],
             members: [

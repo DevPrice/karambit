@@ -18,12 +18,12 @@ export class NameGenerator {
 
     readonly parentName: ts.Identifier = ts.factory.createUniqueName("parent")
 
-    getComponentIdentifier(type: ts.Type): ts.Identifier {
+    getComponentIdentifier(type: ts.Type, preferredName?: string): ts.Identifier {
         const existingName = this.componentIdentifiers.get(type)
         if (existingName) return existingName
 
         // for some reason, createUniqueName doesn't work with the export keyword here...?
-        const newName = ts.factory.createIdentifier(`Karambit${this.getValidIdentifier(type)}`)
+        const newName = ts.factory.createIdentifier(preferredName ?? `Karambit${this.getValidIdentifier(type)}`)
         this.componentIdentifiers.set(type, newName)
         return newName
     }

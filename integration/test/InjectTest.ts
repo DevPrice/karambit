@@ -189,6 +189,11 @@ describe("Injection", () => {
             assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("four"), 4)
         })
     })
+    describe("Configuration", () => {
+        it("Component has custom name", () => {
+            assert.strictEqual(parentComponent.constructor.name, "CustomComponentName")
+        })
+    })
 })
 
 const TestScope = Scope()
@@ -382,7 +387,7 @@ interface ParentClassInterface {
     readonly child: ChildClass
 }
 
-@Component({modules: [ParentModule], subcomponents: [ChildSubcomponent, ScopedSubcomponent]})
+@Component({generatedClassName: "CustomComponentName", modules: [ParentModule], subcomponents: [ChildSubcomponent, ScopedSubcomponent]})
 abstract class ParentComponent {
 
     constructor(child: ChildComponent, typeLiteralChild: {value: symbol}, @BindsInstance public boundString: string) { }

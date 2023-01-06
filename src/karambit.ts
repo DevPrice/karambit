@@ -9,7 +9,9 @@ interface ComponentLikeInfo {
     readonly subcomponents?: unknown[]
 }
 
-interface ComponentInfo extends ComponentLikeInfo { }
+interface ComponentInfo extends ComponentLikeInfo {
+    generatedClassName?: string
+}
 
 export function Component(info: ComponentInfo): ClassDecorator
 export function Component(target: unknown): void
