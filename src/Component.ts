@@ -9,17 +9,18 @@ import {
     Subcomponent,
     SubcomponentFactory
 } from "karambit-inject"
-import {InjectNodeDetector} from "./InjectNodeDetector"
-import {InjectConstructorExporter} from "./InjectConstructorExporter"
-import {ComponentVisitor} from "./ComponentVisitor"
-import {Importer} from "./Importer"
 import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
-import {
+import type {InjectNodeDetector} from "./InjectNodeDetector"
+import type {InjectConstructorExporter} from "./InjectConstructorExporter"
+import type {ComponentVisitor} from "./ComponentVisitor"
+import type {Importer} from "./Importer"
+import type {
     ComponentGenerator,
     ComponentGeneratorDependencies,
     ComponentGeneratorDependenciesFactory
 } from "./ComponentGenerator"
 import type {KarambitTransformOptions} from "./karambit"
+import type {CreateComponentTransformer} from "./CreateComponentTransformer"
 
 @Subcomponent
 @ComponentGenerationScope
@@ -39,6 +40,7 @@ abstract class SourceFileModule {
         componentVisitor: ComponentVisitor,
         nodeDetector: InjectNodeDetector,
         importer: Importer,
+        createComponentTransformer: CreateComponentTransformer,
         ctx: ts.TransformationContext,
     ): ts.Transformer<ts.SourceFile>[] {
         return [
@@ -46,6 +48,7 @@ abstract class SourceFileModule {
             componentVisitor.visitComponents,
             node => nodeDetector.eraseInjectRuntime(node, ctx),
             importer.addImportsToSourceFile,
+            createComponentTransformer.transform,
         ]
     }
 
@@ -80,6 +83,12 @@ abstract class ProgramModule {
     @Reusable
     static provideTypeChecker(program: ts.Program): ts.TypeChecker {
         return program.getTypeChecker()
+    }
+
+    @Provides
+    @ProgramScope
+    static provideComponentIdentifiers(): Map<ts.Type, ts.Identifier> {
+        return new Map()
     }
 }
 

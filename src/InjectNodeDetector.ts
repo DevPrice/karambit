@@ -18,6 +18,7 @@ interface Decorated {
 export class InjectNodeDetector {
 
     constructor(private readonly typeChecker: ts.TypeChecker, private readonly karambitOptions: KarambitTransformOptions) {
+        this.isCreateComponentCall = this.isCreateComponentCall.bind(this)
         this.isScopeDecorator = this.isScopeDecorator.bind(this)
         this.isScope = this.isScope.bind(this)
         this.isQualifier = this.isQualifier.bind(this)
@@ -35,6 +36,12 @@ export class InjectNodeDetector {
         this.isCompileTimeConstant = this.isCompileTimeConstant.bind(this)
         this.isEraseable = this.isEraseable.bind(this)
         this.eraseInjectRuntime = this.eraseInjectRuntime.bind(this)
+    }
+
+    isCreateComponentCall(expression: ts.CallExpression): ts.Type | undefined {
+        if (ts.isIdentifier(expression.expression) && this.getKarambitNodeName(expression) === "createComponent") {
+            return this.typeChecker.getTypeAtLocation(expression)
+        }
     }
 
     isScopeDecorator(decorator: ts.Node): decorator is ts.Decorator {
@@ -175,7 +182,7 @@ export class InjectNodeDetector {
     }
 
     private isKarambitDecorator(decorator: ts.Node, name: string): decorator is ts.Decorator {
-        return ts.isDecorator(decorator) && this.getKarambitDecoratorName(decorator) === name
+        return ts.isDecorator(decorator) && this.getKarambitNodeName(decorator) === name
     }
 
     private isCompileTimeConstant(expression: ts.Expression): boolean {
@@ -253,7 +260,7 @@ export class InjectNodeDetector {
         return this.isScopeDecorator(node) ||
             this.isQualifierDecorator(node) ||
             (this.karambitOptions.stripImports && this.isInjectionModuleImport(node)) ||
-            (ts.isDecorator(node) && this.getKarambitDecoratorName(node) !== undefined)
+            (ts.isDecorator(node) && this.getKarambitNodeName(node) !== undefined)
     }
 
     eraseInjectRuntime<T extends ts.Node>(node: T, ctx: ts.TransformationContext): T {
@@ -291,7 +298,8 @@ export class InjectNodeDetector {
     }
 
     private isInjectSymbol(symbol: ts.Symbol): boolean {
-        const declarations = symbol.getDeclarations() ?? []
+        const aliasedSymbol = this.getAliasedSymbol(symbol)
+        const declarations = aliasedSymbol.getDeclarations() ?? []
         for (const declaration of declarations) {
             const sourceWithoutExtension = declaration.getSourceFile().fileName.replace(/\..*$/, "")
             if (sourceWithoutExtension.endsWith(injectSourceFileNameWithoutExtension)) return true
@@ -299,8 +307,8 @@ export class InjectNodeDetector {
         return false
     }
 
-    private getKarambitDecoratorName(decorator: ts.Decorator): string | undefined {
-        const identifiers = this.getIdentifiers(decorator)
+    private getKarambitNodeName(node: ts.Node): string | undefined {
+        const identifiers = this.getIdentifiers(node)
         if (identifiers.length === 1) {
             const [identifier] = identifiers
             const symbol = this.typeChecker.getSymbolAtLocation(identifier)
