@@ -38,17 +38,17 @@ abstract class SourceFileModule {
     static provideTransformers(
         classExporter: InjectConstructorExporter,
         componentVisitor: ComponentVisitor,
+        createComponentTransformer: CreateComponentTransformer,
         nodeDetector: InjectNodeDetector,
         importer: Importer,
-        createComponentTransformer: CreateComponentTransformer,
         ctx: ts.TransformationContext,
     ): ts.Transformer<ts.SourceFile>[] {
         return [
             classExporter.exportProviders,
             componentVisitor.visitComponents,
+            createComponentTransformer.transform,
             node => nodeDetector.eraseInjectRuntime(node, ctx),
             importer.addImportsToSourceFile,
-            createComponentTransformer.transform,
         ]
     }
 

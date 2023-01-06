@@ -505,12 +505,7 @@ export class ComponentDeclarationBuilder {
     private getExpressionForDeclaration(node: ts.Declaration): ts.Expression {
         const type = this.typeChecker.getTypeAtLocation(node)!
         const symbol = type.getSymbol()!
-        if (this.sourceFile === node.getSourceFile()) return ts.factory.createIdentifier(symbol.getName())
-
-        return ts.factory.createPropertyAccessExpression(
-            ts.factory.getGeneratedNameForNode(this.importer.getImportForSymbol(symbol)),
-            ts.factory.createIdentifier(symbol.getName())
-        )
+        return this.importer.getExpressionForDeclaration(symbol, node.getSourceFile())
     }
 
     accessParentGetter(type: QualifiedType): ts.Expression {
