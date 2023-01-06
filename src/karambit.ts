@@ -96,6 +96,11 @@ export function Named(name: string): NamedQualifierDecorator {
     ErrorReporter.reportCodeNotTransformed()
 }
 
+// noinspection JSUnusedLocalSymbols
+export function createComponent<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>>(...args: ConstructorParameters<T>): InstanceType<T> {
+    ErrorReporter.reportCodeNotTransformed()
+}
+
 export interface ScopeDecorator {
     <T>(target: any, propertyKey?: string | symbol, descriptor?: TypedPropertyDescriptor<T>): any | void
 }
