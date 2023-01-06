@@ -39,7 +39,6 @@ export class NameGenerator {
     }
 
     getPropertyIdentifierForParameter(param: ts.ParameterDeclaration): ts.Identifier {
-        if (param.modifiers && param.modifiers.length > 0) return ts.factory.createIdentifier(param.name.getText())
         const existingName = this.paramPropertyNames.get(param)
         if (existingName) return existingName
 
