@@ -311,7 +311,7 @@ abstract class GrandChildSubcomponent {
 
     protected constructor(@BindsInstance dep: GrandChildDependency) { }
 
-    readonly grandChildClass: GrandChildClass
+    abstract readonly grandChildClass: GrandChildClass
 }
 
 interface ChildSubcomponentInterface {
@@ -325,9 +325,9 @@ abstract class ChildSubcomponent implements ChildSubcomponentInterface {
 
     constructor(@BindsInstance values: number[]) { }
 
-    readonly sum: number
-    readonly parentClass: ParentClass
-    readonly grandChildSubcomponentFactory: (dep: GrandChildDependency) => GrandChildSubcomponent
+    abstract readonly sum: number
+    abstract readonly parentClass: ParentClass
+    abstract readonly grandChildSubcomponentFactory: (dep: GrandChildDependency) => GrandChildSubcomponent
 }
 type ChildSubcomponentFactory = (values: number[]) => ChildSubcomponentInterface
 
@@ -355,8 +355,8 @@ class ScopedSubcomponentModule {
 @TestSubcomponentScope
 abstract class ScopedSubcomponent {
 
-    readonly scopedClass: ScopedSubcomponentClass
-    readonly scopedInterface: ScopedSubcomponentInterface
+    abstract readonly scopedClass: ScopedSubcomponentClass
+    abstract readonly scopedInterface: ScopedSubcomponentInterface
 }
 
 interface ParentInterface { }
@@ -506,8 +506,8 @@ abstract class MultibindingSetSubcomponentModule {
 @Subcomponent({modules: [MultibindingSetSubcomponentModule]})
 abstract class MultibindingSetSubcomponent {
 
-    readonly numberSetExtension: ReadonlySet<number>
-    readonly numberMapExtension: ReadonlyMap<string, number>
+    abstract readonly numberSetExtension: ReadonlySet<number>
+    abstract readonly numberMapExtension: ReadonlyMap<string, number>
 }
 
 interface ThreeHolder {

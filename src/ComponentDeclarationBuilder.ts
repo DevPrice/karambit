@@ -72,7 +72,7 @@ export class ComponentDeclarationBuilder {
     }
 
     updateComponentMember(member: ts.ClassElement): ts.Node | undefined {
-        if (ts.isPropertyDeclaration(member) && !member.initializer) {
+        if (ts.isPropertyDeclaration(member) && member.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
             const type = createQualifiedType({
                 type: this.typeChecker.getTypeAtLocation(member.type ?? member),
                 qualifier: this.nodeDetector.getQualifier(member)
