@@ -31,6 +31,15 @@ export class Importer {
         )
     }
 
+    getExpressionForDeclaration(symbol: ts.Symbol, sourceFile: ts.SourceFile, identifier?: ts.Identifier): ts.Expression {
+        if (this.sourceFile === sourceFile) return identifier ?? ts.factory.createIdentifier(symbol.getName())
+
+        return ts.factory.createPropertyAccessExpression(
+            ts.factory.getGeneratedNameForNode(this.getImportForSymbol(symbol)),
+            identifier ?? ts.factory.createIdentifier(symbol.getName())
+        )
+    }
+
     private createImportForSymbol(symbol: ts.Symbol, importPath: string): ts.ImportDeclaration {
         const myPath = this.sourceFile.fileName.replace(/[^/]+$/, "")
         const relativePath = Path.relative(myPath, importPath).replace(/\.ts$/, "")
