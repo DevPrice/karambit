@@ -8,23 +8,23 @@ import {SourceFileScope} from "./Scopes"
 export class NameGenerator {
 
     constructor(
-        private readonly typeChecker: ts.TypeChecker
+        private readonly typeChecker: ts.TypeChecker,
+        private readonly componentIdentifiers: Map<ts.Type, ts.Identifier>,
     ) { }
 
-    private componentNames = new Map<QualifiedType, ts.Identifier>()
     private propertyNames = new Map<QualifiedType, ts.Identifier | ts.PrivateIdentifier>()
     private paramPropertyNames = new Map<ts.ParameterDeclaration, ts.Identifier>()
     private getterNames = new Map<QualifiedType, ts.Identifier | ts.PrivateIdentifier>()
 
     readonly parentName: ts.Identifier = ts.factory.createUniqueName("parent")
 
-    getComponentIdentifier(type: QualifiedType): ts.Identifier {
-        const existingName = this.componentNames.get(type)
+    getComponentIdentifier(type: ts.Type): ts.Identifier {
+        const existingName = this.componentIdentifiers.get(type)
         if (existingName) return existingName
 
-        const identifierText = this.getValidIdentifier(type.type)
-        const newName = ts.factory.createUniqueName(`Karambit${identifierText}`)
-        this.componentNames.set(type, newName)
+        // for some reason, createUniqueName doesn't work with the export keyword here...?
+        const newName = ts.factory.createIdentifier(`Karambit${this.getValidIdentifier(type)}`)
+        this.componentIdentifiers.set(type, newName)
         return newName
     }
 

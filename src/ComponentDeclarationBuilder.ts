@@ -32,11 +32,11 @@ export class ComponentDeclarationBuilder {
         this.getParamExpression = this.getParamExpression.bind(this)
     }
 
-    declareComponent(options: {componentType: QualifiedType, declaration: ts.ClassDeclaration, constructorParams: ConstructorParameter[], members: ts.ClassElement[]}): ts.ClassDeclaration {
+    declareComponent(options: {componentType: ts.Type, declaration: ts.ClassDeclaration, constructorParams: ConstructorParameter[], members: ts.ClassElement[]}): ts.ClassDeclaration {
         return ts.factory.createClassDeclaration(
-            undefined,
+            [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
             this.nameGenerator.getComponentIdentifier(options.componentType),
-            undefined,
+            [],
             [ts.factory.createHeritageClause(
                 ts.SyntaxKind.ExtendsKeyword,
                 [ts.factory.createExpressionWithTypeArguments(

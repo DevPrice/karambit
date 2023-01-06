@@ -290,7 +290,7 @@ export class ComponentGenerator {
                 .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
         )
         return [component, builder.declareComponent({
-            componentType: createQualifiedType({type: componentType, discriminator: null}),
+            componentType: componentType,
             declaration: component,
             constructorParams: this.constructorHelper.getConstructorParamsForDeclaration(component) ?? [],
             members: [
