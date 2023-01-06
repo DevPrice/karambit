@@ -114,7 +114,7 @@ export class ComponentGenerator {
         return this.propertyExtractor.getDeclaredPropertiesForType(componentType)
             .filter(property => property.initializer === undefined)
             .map(property => {
-                if (!property.modifiers || !property.modifiers.some(it => it.kind === ts.SyntaxKind.ReadonlyKeyword)) {
+                if (property.modifiers && property.modifiers.some(it => it.kind === ts.SyntaxKind.AbstractKeyword) && !property.modifiers.some(it => it.kind === ts.SyntaxKind.ReadonlyKeyword)) {
                     this.errorReporter.reportComponentPropertyMustBeReadOnly(property)
                 }
                 return {

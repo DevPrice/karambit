@@ -50,7 +50,7 @@ export class ErrorReporter {
     reportComponentPropertyMustBeReadOnly(property: ts.Node): never {
         ErrorReporter.fail(
             KarambitErrorScope.PARSE,
-            `Generated component properties must be read-only!\n\n${nodeForDisplay(property)}\n`,
+            `Abstract component properties must be read-only!\n\n${nodeForDisplay(property)}\n`,
             this.component
         )
     }
