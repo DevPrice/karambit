@@ -16,6 +16,7 @@ import {
     IntoSet,
     IntoMap,
     MapKey,
+    createComponent,
 } from "karambit-inject"
 
 describe("Injection", () => {
@@ -242,24 +243,24 @@ type NullableClass = InjectClass | null
 
 @Component({modules: [ScopeModule]})
 @TestScope
-class ScopedComponent {
+abstract class ScopedComponent {
 
-    readonly unscopedClass: UnscopedClass
+    abstract readonly unscopedClass: UnscopedClass
 
-    readonly scopedClass: ScopedClass
+    abstract readonly scopedClass: ScopedClass
 
-    readonly unscopedInjectClass: InjectClass
+    abstract readonly unscopedInjectClass: InjectClass
 
-    readonly scopedInjectClass: ScopedInjectClass
+    abstract readonly scopedInjectClass: ScopedInjectClass
 
-    readonly reusableInjectClass: ReusableInjectClass
+    abstract readonly reusableInjectClass: ReusableInjectClass
 
-    readonly reusableClass: ReusableClass
+    abstract readonly reusableClass: ReusableClass
 
-    readonly nullableClass: NullableClass
+    abstract readonly nullableClass: NullableClass
 }
 
-const scopedComponent = new ScopedComponent()
+const scopedComponent = createComponent<typeof ScopedComponent>()
 
 class ChildClass { }
 
@@ -382,22 +383,22 @@ interface ParentClassInterface {
 }
 
 @Component({modules: [ParentModule], subcomponents: [ChildSubcomponent, ScopedSubcomponent]})
-class ParentComponent {
+abstract class ParentComponent {
 
     constructor(child: ChildComponent, typeLiteralChild: {value: symbol}, @BindsInstance public boundString: string) { }
 
-    readonly value: symbol
-    readonly parentClass: ParentClass
-    readonly parentClassInterface: ParentClassInterface
-    readonly providerHolder: ProviderHolder
+    abstract readonly value: symbol
+    abstract readonly parentClass: ParentClass
+    abstract readonly parentClassInterface: ParentClassInterface
+    abstract readonly providerHolder: ProviderHolder
 
-    readonly subcomponentFactory: (values: number[]) => ChildSubcomponent
-    readonly scopedSubcomponentFactory: () => ScopedSubcomponent
-    readonly aliasedSubcomponentFactory: ChildSubcomponentFactory
-    readonly builtInTypeSubcomponentFactory: SubcomponentFactory<typeof ChildSubcomponent>
+    abstract readonly subcomponentFactory: (values: number[]) => ChildSubcomponent
+    abstract readonly scopedSubcomponentFactory: () => ScopedSubcomponent
+    abstract readonly aliasedSubcomponentFactory: ChildSubcomponentFactory
+    abstract readonly builtInTypeSubcomponentFactory: SubcomponentFactory<typeof ChildSubcomponent>
 }
 
-const parentComponent = new ParentComponent(new ChildComponent(), {value: Symbol.for("value")}, "bound")
+const parentComponent = createComponent<typeof ParentComponent>(new ChildComponent(), {value: Symbol.for("value")}, "bound")
 
 @Module
 abstract class ProviderModule {
@@ -409,12 +410,12 @@ abstract class ProviderModule {
 }
 
 @Component({modules: [ProviderModule]})
-class ProviderComponent {
+abstract class ProviderComponent {
 
-    readonly providedOnlyProvider: Provider<ProvidedOnly>
+    abstract readonly providedOnlyProvider: Provider<ProvidedOnly>
 }
 
-const providerComponent = new ProviderComponent()
+const providerComponent = createComponent<typeof ProviderComponent>()
 
 const MyQualifier = Qualifier()
 
@@ -447,16 +448,16 @@ class IncludesModule {
 }
 
 @Component({modules: [IncludesModule]})
-class IncludesComponent {
+abstract class IncludesComponent {
 
-    readonly includedValue: number
+    abstract readonly includedValue: number
 
-    @Named("my name") readonly namedValue: number
+    @Named("my name") abstract readonly namedValue: number
 
-    @MyQualifier readonly qualifiedValue: number
+    @MyQualifier abstract readonly qualifiedValue: number
 }
 
-const includesComponent = new IncludesComponent()
+const includesComponent = createComponent<typeof IncludesComponent>()
 
 @Inject
 class ProvidedOptional {
@@ -477,13 +478,13 @@ class OptionalModule {
 }
 
 @Component({modules: [OptionalModule]})
-class OptionalComponent {
+abstract class OptionalComponent {
 
-    readonly providedOptional?: ProvidedOptional
-    readonly missingOptional?: MissingOptional
+    abstract readonly providedOptional?: ProvidedOptional
+    abstract readonly missingOptional?: MissingOptional
 }
 
-const optionalComponent = new OptionalComponent()
+const optionalComponent = createComponent<typeof OptionalComponent>()
 
 @Module
 abstract class MultibindingSetSubcomponentModule {
@@ -636,17 +637,17 @@ class MultibindingTypeImpl {
 }
 
 @Component({modules: [MultibindingSetModule, MultibindingMapModule], subcomponents: [MultibindingSetSubcomponent]})
-class MultibindingsComponent {
+abstract class MultibindingsComponent {
 
-    readonly numberSet: ReadonlySet<number>
-    readonly boundSet: ReadonlySet<MultibindingType>
-    @MyQualifier readonly qualifiedSet: ReadonlySet<number>
-    @MyQualifier readonly qualifiedMap: ReadonlyMap<string, number>
+    abstract readonly numberSet: ReadonlySet<number>
+    abstract readonly boundSet: ReadonlySet<MultibindingType>
+    @MyQualifier abstract readonly qualifiedSet: ReadonlySet<number>
+    @MyQualifier abstract readonly qualifiedMap: ReadonlyMap<string, number>
 
-    readonly numberMap: ReadonlyMap<string, number>
-    readonly boundMap: ReadonlyMap<string, MultibindingType>
+    abstract readonly numberMap: ReadonlyMap<string, number>
+    abstract readonly boundMap: ReadonlyMap<string, MultibindingType>
 
-    readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
+    abstract readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
 }
 
-const multibindingComponent = new MultibindingsComponent()
+const multibindingComponent = createComponent<typeof MultibindingsComponent>()
