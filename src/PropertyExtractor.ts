@@ -5,6 +5,7 @@ import {Inject, Reusable} from "karambit-inject"
 
 export type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
 export type ElementLike = ts.ClassElement | ts.TypeElement
+type MethodLike = ts.Node & {name: ts.PropertyName, body?: ts.BlockLike, modifiers?: ts.NodeArray<ts.ModifierLike>}
 
 @Inject
 @Reusable
@@ -48,6 +49,26 @@ export class PropertyExtractor {
             .filter(it => it.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.AbstractKeyword))
             .map(it => it as PropertyLike)
             .concat(baseProperties)
+    }
+
+    getUnimplementedAbstractMethods(type: ts.Type): MethodLike[] {
+        const declarations = type.getSymbol()?.getDeclarations() ?? []
+        const methods = declarations
+            .filter(it => ts.isClassLike(it))
+            .map(it => it as ts.ClassLikeDeclaration)
+            .flatMap(declaration => declaration.members)
+            .filter(it => ts.isMethodDeclaration(it) || ts.isMethodSignature(it))
+            .map(it => it as MethodLike)
+
+        const implementedMethods = methods.filter(it => it.body !== undefined)
+            .map(it => it.name.getText())
+        const baseTypes = type.getBaseTypes() ?? []
+        const baseMethods = baseTypes.flatMap(it => this.getUnimplementedAbstractMethods(it))
+            .filter(it => !implementedMethods.includes(it.name.getText()))
+
+        return methods
+            .filter(it => it.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.AbstractKeyword))
+            .concat(baseMethods)
     }
 
     typeFromPropertyDeclaration(property: PropertyLike): QualifiedType {
