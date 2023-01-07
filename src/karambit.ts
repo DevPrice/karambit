@@ -98,8 +98,15 @@ export function Named(name: string): NamedQualifierDecorator {
     ErrorReporter.reportCodeNotTransformed()
 }
 
+type ConstructorType<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> = abstract new (...args: ConstructorParameters<T>) => InstanceType<T>
+
 // noinspection JSUnusedLocalSymbols
-export function createComponent<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>>(...args: ConstructorParameters<T>): InstanceType<T> {
+export function createComponent<T extends ConstructorType<T>>(...args: ConstructorParameters<T>): InstanceType<T> {
+    ErrorReporter.reportCodeNotTransformed()
+}
+
+// noinspection JSUnusedLocalSymbols
+export function getConstructor<T extends ConstructorType<T>>(type: T): new (...args: ConstructorParameters<T>) => InstanceType<T> {
     ErrorReporter.reportCodeNotTransformed()
 }
 

@@ -17,6 +17,7 @@ import {
     IntoMap,
     MapKey,
     createComponent,
+    getConstructor,
 } from "karambit-inject"
 
 describe("Injection", () => {
@@ -414,7 +415,8 @@ abstract class ParentComponent extends InheritedClass {
     override readonly implementedProperty = true
 }
 
-const parentComponent = createComponent<typeof ParentComponent>(new ChildComponent(), {value: Symbol.for("value")}, "bound")
+const ParentComponentConstructor = getConstructor(ParentComponent)
+const parentComponent = new ParentComponentConstructor(new ChildComponent(), {value: Symbol.for("value")}, "bound")
 
 @Module
 abstract class ProviderModule {

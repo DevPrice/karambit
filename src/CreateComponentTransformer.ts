@@ -16,26 +16,41 @@ export class CreateComponentTransformer {
         private readonly importer: Importer,
         private readonly errorReporter: ErrorReporter,
     ) {
-        this.transform = this.transform.bind(this)
+        this.replaceCreateComponent = this.replaceCreateComponent.bind(this)
+        this.replaceGetConstructor = this.replaceGetConstructor.bind(this)
     }
 
-    transform(sourceFile: ts.SourceFile): ts.SourceFile
-    transform<T>(node: ts.Node): ts.Node {
+    replaceCreateComponent(sourceFile: ts.SourceFile): ts.SourceFile
+    replaceCreateComponent(node: ts.Node): ts.Node {
         const componentType = ts.isCallExpression(node) && this.nodeDetector.isCreateComponentCall(node)
         if (componentType) {
-            const identifier = this.componentIdentifiers.get(componentType)
-            if (!identifier) this.errorReporter.reportParseFailed(`Cannot create instance of ${this.typeChecker.typeToString(componentType)}! Is the type decorated with @Component?`, node)
-            const symbol = componentType.getSymbol()
-            if (!symbol) this.errorReporter.reportParseFailed(`Couldn't find symbol of type ${this.typeChecker.typeToString(componentType)}!`, node)
-            const declaration = symbol.valueDeclaration
-            if (!declaration) this.errorReporter.reportParseFailed(`Couldn't find declaration of type ${this.typeChecker.typeToString(componentType)}!`, node)
             return ts.factory.createNewExpression(
-                this.importer.getExpressionForDeclaration(componentType.symbol, declaration.getSourceFile(), identifier),
+                this.getComponentConstructorExpression(componentType, node),
                 undefined,
-                node.arguments.map(it => ts.visitNode(it, this.transform))
+                node.arguments.map(it => ts.visitNode(it, this.replaceCreateComponent))
             )
         } else {
-            return ts.visitEachChild(node, this.transform, this.context)
+            return ts.visitEachChild(node, this.replaceCreateComponent, this.context)
         }
+    }
+
+    replaceGetConstructor(sourceFile: ts.SourceFile): ts.SourceFile
+    replaceGetConstructor(node: ts.Node): ts.Node {
+        const componentType = ts.isCallExpression(node) && this.nodeDetector.isGetConstructorCall(node)
+        if (componentType) {
+            return this.getComponentConstructorExpression(componentType, node)
+        } else {
+            return ts.visitEachChild(node, this.replaceGetConstructor, this.context)
+        }
+    }
+
+    private getComponentConstructorExpression(componentType: ts.Type, contextNode: ts.Node): ts.Expression {
+        const identifier = this.componentIdentifiers.get(componentType)
+        if (!identifier) this.errorReporter.reportParseFailed(`Cannot create instance of ${this.typeChecker.typeToString(componentType)}! Is the type decorated with @Component?`, contextNode)
+        const symbol = componentType.getSymbol()
+        if (!symbol) this.errorReporter.reportParseFailed(`Couldn't find symbol of type ${this.typeChecker.typeToString(componentType)}!`, contextNode)
+        const declaration = symbol.valueDeclaration
+        if (!declaration) this.errorReporter.reportParseFailed(`Couldn't find declaration of type ${this.typeChecker.typeToString(componentType)}!`, contextNode)
+        return this.importer.getExpressionForDeclaration(componentType.symbol, declaration.getSourceFile(), identifier)
     }
 }
