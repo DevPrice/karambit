@@ -113,6 +113,9 @@ export class ComponentGenerator {
     }
 
     private getRootDependencies(componentType: ts.Type): RootDependency[] {
+        const unimplementedMethods = this.propertyExtractor.getUnimplementedAbstractMethods(componentType)
+        // TODO: Eventually we can implement some simple methods. For now fail on any unimplemented methods.
+        if (unimplementedMethods.length > 0) this.errorReporter.reportParseFailed("Component has method(s) that Karambit cannot implement! A Component should not have any abstract methods.", unimplementedMethods[0])
         return this.propertyExtractor.getUnimplementedAbstractProperties(componentType)
             .map(property => {
                 if (property.modifiers && !property.modifiers.some(it => it.kind === ts.SyntaxKind.ReadonlyKeyword)) {
