@@ -36,7 +36,7 @@ export class ErrorReporter {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
-        private readonly component: ts.ClassDeclaration,
+        private readonly component?: ts.ClassDeclaration,
     ) { }
 
     reportCompileTimeConstantRequired(context: ts.Node, identifierName: string): never {
