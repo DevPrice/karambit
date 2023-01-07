@@ -100,11 +100,20 @@ export function Named(name: string): NamedQualifierDecorator {
 
 type ConstructorType<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> = abstract new (...args: ConstructorParameters<T>) => InstanceType<T>
 
+/**
+ * Create a Component instance. Used to access a generated Component from the same compilation unit.
+ * @param args the constructor arguments of the component.
+ */
 // noinspection JSUnusedLocalSymbols
 export function createComponent<T extends ConstructorType<T>>(...args: ConstructorParameters<T>): InstanceType<T> {
     ErrorReporter.reportCodeNotTransformed()
 }
 
+/**
+ * Get a reference to the generated Component constructor.
+ * Used to access a generated Component from the same compilation unit.
+ * @param type the constructor of the type decorated with @{@link Component}
+ */
 // noinspection JSUnusedLocalSymbols
 export function getConstructor<T extends ConstructorType<T>>(type: T): new (...args: ConstructorParameters<T>) => InstanceType<T> {
     ErrorReporter.reportCodeNotTransformed()

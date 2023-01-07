@@ -1,12 +1,12 @@
-import {Inject, Module, Provides, Component} from "karambit-inject"
+import {Inject, Module, Provides, Component, createComponent} from "karambit-inject"
 
 @Inject
 class Greeter {
 
-    constructor(private readonly target: string) { }
+    constructor(private readonly greeting: string) { }
 
     greet(): string {
-        return `Hello, ${this.target}!`
+        return `${this.greeting}, World!`
     }
 }
 
@@ -14,16 +14,16 @@ class Greeter {
 abstract class HelloWorldModule {
 
     @Provides
-    static provideGreetingTarget(): string {
-        return "World"
+    static provideGreeting(): string {
+        return "Hello"
     }
 }
 
 @Component({modules: [HelloWorldModule]})
-class HelloWorldComponent {
+abstract class HelloWorldComponent {
 
-    readonly greeter: Greeter
+    abstract readonly greeter: Greeter
 }
 
-const component = new HelloWorldComponent()
+const component = createComponent<typeof HelloWorldComponent>()
 console.log(component.greeter.greet())

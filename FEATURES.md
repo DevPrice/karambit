@@ -4,7 +4,7 @@
 
 [Components](https://en.wikipedia.org/wiki/Component_(graph_theory)) are the most fundamental part of Karambit. Each Component hosts a single graph of dependencies, and they expose the contract which Karambit implements during compilation.
 
-A component is a class marked with the `@Component` annotation. It's defined by its installed [Modules](#Modules), installed [Subcomponents](#Subcomponents), [scope](#Scope), [constructor arguments](#Component-dependencies), and [declared properties](#Exposing-types).
+A component is an abstract class marked with the `@Component` annotation. It's defined by its installed [Modules](#Modules), installed [Subcomponents](#Subcomponents), [scope](#Scope), [constructor arguments](#Component-dependencies), and [declared properties](#Exposing-types).
 
 ### Exposing types
 
@@ -13,12 +13,21 @@ A component with no properties has no use. A component ultimately exists to expo
 From the Hello World sample:
 ```typescript
 @Component(/* ... */)
-class HelloWorldComponent {
-    readonly greeter: Greeter
+abstract class HelloWorldComponent {
+    abstract readonly greeter: Greeter
 }
 ```
 
-This component exposes the `Greeter` type through its `greeter` property. Karambit will generate a graph of dependencies internally to satisfy `Greeter`'s dependencies, and then implement a getter that provides an instance of `Greeter`.
+This Component exposes the `Greeter` type through its `greeter` property. Karambit will generate a graph of dependencies internally to satisfy `Greeter`'s dependencies, and then implement a getter that provides an instance of `Greeter`.
+
+Karambit generates a new class that extends the class decorated with `@Component`. You can specify the name of the generated class via the `generateClassName` property of the Component options.
+
+To get an instance of this generated class, you can call `createComponent<typeof HelloWorldComponent>()`. Alternatively, you can get a reference to the generated constructor via `getConstructor(HelloWorldComponent)`:
+
+```typescript
+const HelloWorldComponentConstructor = getConstructor(HelloWorldComponent)
+const componentInstance = new HelloWorldComponentConstructor()
+```
 
 ### Component dependencies
 
@@ -35,7 +44,7 @@ interface MyComponentDependency {
 }
 
 @Component
-class MyComponent {
+abstract class MyComponent {
     constructor(dep: MyComponentDependency) { }
 }
 ```
@@ -54,7 +63,7 @@ Sometimes, you want to bind a single type into your graph rather than all of its
 
 ```typescript
 @Component
-class MyComponent {
+abstract class MyComponent {
     constructor(@BindsInstance value: number, @BindsInstance text: string) { }
 }
 ```
@@ -66,8 +75,9 @@ This is functionally equivalent to the previous example.
 Creating an instance of your dependency graph is simple, just call the constructor of your Component. You can access all of its properties just like any other class, and they will provide instances from the graph.
 
 From the Hello World sample:
+
 ```typescript
-const component = new HelloWorldComponent()
+const component = createComponent<typeof HelloWorldComponent>()
 console.log(component.greeter.greet()) // "Hello, World!"
 ```
 
@@ -102,8 +112,8 @@ In the Hello World sample, the `string` type is provided via a `@Provides` metho
 @Module
 abstract class HelloWorldModule {
     @Provides
-    static provideGreetingTarget(): string {
-        return "World"
+    static provideGreeting(): string {
+        return "Hello"
     }
 }
 ```
