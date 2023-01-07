@@ -23,7 +23,7 @@ export class NameGenerator {
         if (existingName) return existingName
 
         // for some reason, createUniqueName doesn't work with the export keyword here...?
-        const newName = ts.factory.createIdentifier(preferredName ?? `Karambit${this.getValidIdentifier(type)}`)
+        const newName = ts.factory.createIdentifier(preferredName ?? `Karambit${capitalize(this.getValidIdentifier(type))}`)
         this.componentIdentifiers.set(type, newName)
         return newName
     }
