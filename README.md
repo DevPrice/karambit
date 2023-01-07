@@ -78,9 +78,8 @@ The Component is what ultimately hosts a dependency graph, and how you expose th
 
 ```typescript
 @Component({modules: [HelloWorldModule]})
-class HelloWorldComponent {
-
-    readonly greeter: Greeter
+abstract class HelloWorldComponent {
+    abstract readonly greeter: Greeter
 }
 ```
 
@@ -99,9 +98,10 @@ In this sample, the `Greeter` class is marked `@Inject`, and this type is availa
 ```typescript
 @Inject
 class Greeter {
-
-    constructor(private readonly target: string) { }
-    /// the rest of the class body...
+    constructor(private readonly greeting: string) { }
+    greet(): string {
+        return `${this.greeting}, World!`
+    }
 }
 ```
 
@@ -118,8 +118,8 @@ In our example, the `string` type is provided in the `HelloWorldModule`:
 abstract class HelloWorldModule {
 
     @Provides
-    static provideGreetingTarget(): string {
-        return "World"
+    static provideGreeting(): string {
+        return "Hello"
     }
 }
 ```
@@ -136,20 +136,20 @@ Modules are installed in Components via the `modules` parameter of the `@Compone
 
 By providing the `string` type into our graph, all the required types are now satisfied with providers and Karambit can generate our Component implementation.
 
-You can use a Component by constructing it and accessing its properties just like any other class:
+You can instantiate a Component by calling `createComponent`, and access its properties just like any other class instance:
 
 ```typescript
-const component = new HelloWorldComponent()
+const component: HelloWorldComponent = createComponent<typeof HelloWorldComponent>()
 console.log(component.greeter.greet()) // "Hello, World!"
 ```
 
 Under the hood, Karambit has generated this implementation in the output JavaScript source:
 
 ```javascript
-class HelloWorldComponent {
+class KarambitHelloWorldComponent extends HelloWorldComponent {
     get greeter() { return this.getGreeter_1(); }
     getGreeter_1() { return new Greeter(this.getString_1()); }
-    getString_1() { return HelloWorldModule.provideGreetingTarget(); }
+    getString_1() { return HelloWorldModule.provideGreeting(); }
 }
 ```
 
