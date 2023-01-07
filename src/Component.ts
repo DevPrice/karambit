@@ -46,7 +46,8 @@ abstract class SourceFileModule {
         return [
             classExporter.exportProviders,
             componentVisitor.visitComponents,
-            createComponentTransformer.transform,
+            createComponentTransformer.replaceCreateComponent,
+            createComponentTransformer.replaceGetConstructor,
             node => nodeDetector.eraseInjectRuntime(node, ctx),
             importer.addImportsToSourceFile,
         ]

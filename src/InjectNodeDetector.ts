@@ -48,6 +48,15 @@ export class InjectNodeDetector {
         }
     }
 
+    isGetConstructorCall(expression: ts.CallExpression): ts.Type | undefined {
+        if (ts.isIdentifier(expression.expression) && this.getKarambitNodeName(expression) === "getConstructor") {
+            const symbol = this.typeChecker.getSymbolAtLocation(expression.arguments[0])
+            const type = symbol?.valueDeclaration && this.typeChecker.getTypeAtLocation(symbol.valueDeclaration)
+            if (type) return type
+            this.errorReporter.reportParseFailed("Unable to parse getComponent call!", expression)
+        }
+    }
+
     isScopeDecorator(decorator: ts.Node): decorator is ts.Decorator {
         if (!ts.isDecorator(decorator)) return false
         const type = this.typeChecker.getTypeAtLocation(decorator.expression)
