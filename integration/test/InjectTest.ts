@@ -55,6 +55,9 @@ describe("Injection", () => {
         it("type literal properties are bound", () => {
             assert.strictEqual(parentComponent.value, Symbol.for("value"))
         })
+        it("implemented properties are not overriden", () => {
+            assert.ok(parentComponent.implementedProperty)
+        })
     })
     describe("Providers", () => {
         it("provider type provides instance of Provider", () => {
@@ -387,12 +390,18 @@ interface ParentClassInterface {
     readonly child: ChildClass
 }
 
-@Component({generatedClassName: "CustomComponentName", modules: [ParentModule], subcomponents: [ChildSubcomponent, ScopedSubcomponent]})
-abstract class ParentComponent {
-
-    constructor(child: ChildComponent, typeLiteralChild: {value: symbol}, @BindsInstance public boundString: string) { }
-
+abstract class InheritedClass {
     abstract readonly value: symbol
+    abstract readonly implementedProperty: boolean
+}
+
+@Component({generatedClassName: "CustomComponentName", modules: [ParentModule], subcomponents: [ChildSubcomponent, ScopedSubcomponent]})
+abstract class ParentComponent extends InheritedClass {
+
+    constructor(child: ChildComponent, typeLiteralChild: {value: symbol}, @BindsInstance public boundString: string) {
+        super()
+    }
+
     abstract readonly parentClass: ParentClass
     abstract readonly parentClassInterface: ParentClassInterface
     abstract readonly providerHolder: ProviderHolder
@@ -401,6 +410,8 @@ abstract class ParentComponent {
     abstract readonly scopedSubcomponentFactory: () => ScopedSubcomponent
     abstract readonly aliasedSubcomponentFactory: ChildSubcomponentFactory
     abstract readonly builtInTypeSubcomponentFactory: SubcomponentFactory<typeof ChildSubcomponent>
+
+    override readonly implementedProperty = true
 }
 
 const parentComponent = createComponent<typeof ParentComponent>(new ChildComponent(), {value: Symbol.for("value")}, "bound")

@@ -29,6 +29,27 @@ export class PropertyExtractor {
             .concat(baseProperties)
     }
 
+    getUnimplementedAbstractProperties(type: ts.Type): PropertyLike[] {
+        const declarations = type.getSymbol()?.getDeclarations() ?? []
+        const properties = declarations
+            .filter(it => ts.isClassLike(it))
+            .map(it => it as ts.ClassLikeDeclaration)
+            .flatMap(declaration => declaration.members)
+            .filter(it => ts.isPropertyDeclaration(it) || ts.isPropertySignature(it))
+            .map(it => it as PropertyLike)
+
+        const implementedProperties = properties.filter(it => it.initializer !== undefined)
+            .map(it => it.name.getText())
+        const baseTypes = type.getBaseTypes() ?? []
+        const baseProperties = baseTypes.flatMap(it => this.getUnimplementedAbstractProperties(it))
+            .filter(it => !implementedProperties.includes(it.name.getText()))
+
+        return properties
+            .filter(it => it.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.AbstractKeyword))
+            .map(it => it as PropertyLike)
+            .concat(baseProperties)
+    }
+
     typeFromPropertyDeclaration(property: PropertyLike): QualifiedType {
         return createQualifiedType({
             type: this.typeChecker.getTypeAtLocation(property.type ?? property)!,
