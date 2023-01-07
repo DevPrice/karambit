@@ -17,7 +17,11 @@ interface Decorated {
 @Reusable
 export class InjectNodeDetector {
 
-    constructor(private readonly typeChecker: ts.TypeChecker, private readonly karambitOptions: KarambitTransformOptions) {
+    constructor(
+        private readonly typeChecker: ts.TypeChecker,
+        private readonly karambitOptions: KarambitTransformOptions,
+        private readonly errorReporter: ErrorReporter,
+    ) {
         this.isCreateComponentCall = this.isCreateComponentCall.bind(this)
         this.isScopeDecorator = this.isScopeDecorator.bind(this)
         this.isScope = this.isScope.bind(this)
@@ -168,7 +172,7 @@ export class InjectNodeDetector {
             const argument = decorator.expression.arguments[0]
             if (!argument) return undefined
 
-            if (!this.isCompileTimeConstant(argument)) throw new Error("@MapKey argument must be a literal!")
+            if (!this.isCompileTimeConstant(argument)) this.errorReporter.reportParseFailed("@MapKey argument must be a literal!", decorator)
 
             const keyTypeNode = decorator.expression.typeArguments
                 ? decorator.expression.typeArguments[0]

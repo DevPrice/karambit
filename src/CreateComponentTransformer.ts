@@ -2,6 +2,7 @@ import {Inject, Reusable} from "karambit-inject"
 import * as ts from "typescript"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {Importer} from "./Importer"
+import {ErrorReporter} from "./ErrorReporter"
 
 @Inject
 @Reusable
@@ -13,6 +14,7 @@ export class CreateComponentTransformer {
         private readonly componentIdentifiers: Map<ts.Type, ts.Identifier>,
         private readonly typeChecker: ts.TypeChecker,
         private readonly importer: Importer,
+        private readonly errorReporter: ErrorReporter,
     ) {
         this.transform = this.transform.bind(this)
     }
@@ -22,11 +24,11 @@ export class CreateComponentTransformer {
         const componentType = ts.isCallExpression(node) && this.nodeDetector.isCreateComponentCall(node)
         if (componentType) {
             const identifier = this.componentIdentifiers.get(componentType)
-            if (!identifier) throw new Error(`Cannot create instance of ${this.typeChecker.typeToString(componentType)}! Is the type decorated with @Component?`)
+            if (!identifier) this.errorReporter.reportParseFailed(`Cannot create instance of ${this.typeChecker.typeToString(componentType)}! Is the type decorated with @Component?`, node)
             const symbol = componentType.getSymbol()
-            if (!symbol) throw new Error(`Couldn't find symbol of type ${this.typeChecker.typeToString(componentType)}!`)
+            if (!symbol) this.errorReporter.reportParseFailed(`Couldn't find symbol of type ${this.typeChecker.typeToString(componentType)}!`, node)
             const declaration = symbol.valueDeclaration
-            if (!declaration) throw new Error(`Couldn't find declaration of type ${this.typeChecker.typeToString(componentType)}!`)
+            if (!declaration) this.errorReporter.reportParseFailed(`Couldn't find declaration of type ${this.typeChecker.typeToString(componentType)}!`, node)
             return ts.factory.createNewExpression(
                 this.importer.getExpressionForDeclaration(componentType.symbol, declaration.getSourceFile(), identifier),
                 undefined,
