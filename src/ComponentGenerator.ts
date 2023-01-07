@@ -47,6 +47,8 @@ export interface ComponentGeneratorDependencies {
 
 export type ComponentGeneratorDependenciesFactory = (componentDeclaration: ts.ClassDeclaration) => ComponentGeneratorDependencies
 
+type RootDependency = Dependency & {name: ts.PropertyName, typeNode?: ts.TypeNode}
+
 @Inject
 @Reusable
 export class ComponentGenerator {
@@ -110,16 +112,17 @@ export class ComponentGenerator {
         return dependencyMap
     }
 
-    private getRootDependencies(componentType: ts.Type): Iterable<Dependency> {
-        return this.propertyExtractor.getDeclaredPropertiesForType(componentType)
-            .filter(property => property.initializer === undefined)
+    private getRootDependencies(componentType: ts.Type): RootDependency[] {
+        return this.propertyExtractor.getUnimplementedAbstractProperties(componentType)
             .map(property => {
-                if (property.modifiers && property.modifiers.some(it => it.kind === ts.SyntaxKind.AbstractKeyword) && !property.modifiers.some(it => it.kind === ts.SyntaxKind.ReadonlyKeyword)) {
+                if (property.modifiers && !property.modifiers.some(it => it.kind === ts.SyntaxKind.ReadonlyKeyword)) {
                     this.errorReporter.reportComponentPropertyMustBeReadOnly(property)
                 }
                 return {
                     type: this.propertyExtractor.typeFromPropertyDeclaration(property),
-                    optional: property.questionToken !== undefined
+                    optional: property.questionToken !== undefined,
+                    name: property.name,
+                    typeNode: property.type,
                 }
             })
     }
@@ -295,7 +298,7 @@ export class ComponentGenerator {
             declaration: component,
             constructorParams: this.constructorHelper.getConstructorParamsForDeclaration(component) ?? [],
             members: [
-                ...ts.visitNodes(component.members, builder.updateComponentMember),
+                ...rootDependencies.map(it => builder.declareComponentProperty(it)),
                 ...Array.from(generatedDeps.values()).flatMap(it => builder.getProviderDeclaration(it, componentScope)),
                 ...generatedSubcomponents.map(it => it.classElement)
             ]
@@ -386,7 +389,7 @@ export class ComponentGenerator {
                 .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
         )
         const members = [
-            ...ts.visitNodes(factory.declaration.members, subcomponentBuilder.updateComponentMember).filter(it => it !== null && it !== undefined),
+            ...rootDependencies.map(it => subcomponentBuilder.declareComponentProperty(it)),
             ...Array.from(generatedDeps.values()).flatMap(it => subcomponentBuilder.getProviderDeclaration(it, scope)),
             ...generatedSubcomponents.map(it => it.classElement),
         ]

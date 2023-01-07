@@ -28,7 +28,6 @@ export class ComponentDeclarationBuilder {
         private readonly typeResolver: TypeResolver,
         private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
     ) {
-        this.updateComponentMember = this.updateComponentMember.bind(this)
         this.getParamExpression = this.getParamExpression.bind(this)
     }
 
@@ -71,55 +70,16 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    updateComponentMember(member: ts.ClassElement): ts.Node | undefined {
-        if (ts.isPropertyDeclaration(member) && member.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-            const type = createQualifiedType({
-                type: this.typeChecker.getTypeAtLocation(member.type ?? member),
-                qualifier: this.nodeDetector.getQualifier(member)
-            })
-            const resolvedType = this.typeResolver.resolveBoundType(type)
-            const expression = this.getParamExpression(resolvedType)
-            return ts.factory.createGetAccessorDeclaration(
-                member.modifiers,
-                member.name,
-                [],
-                member.type,
-                ts.factory.createBlock([ts.factory.createReturnStatement(expression)])
-            )
-        } else if (ts.isConstructorDeclaration(member)) {
-            // for some reason decorator metadata isn't stripped (and is invalid) if we
-            // use modifiers to ensure these assignments happen
-            const initializerStatements = member.parameters.map(param =>
-                ts.factory.createExpressionStatement(
-                    ts.factory.createBinaryExpression(
-                        ts.factory.createPropertyAccessExpression(
-                            ts.factory.createThis(),
-                            this.nameGenerator.getPropertyIdentifierForParameter(param)
-                        ),
-                        ts.factory.createToken(ts.SyntaxKind.EqualsToken),
-                        ts.factory.createIdentifier(param.name.getText())
-                    )
-                )
-            )
-            return ts.factory.updateConstructorDeclaration(
-                member,
-                member.modifiers,
-                member.parameters.map(param =>
-                    ts.factory.createParameterDeclaration(
-                        ts.getDecorators(param), // see above comment
-                        param.dotDotDotToken,
-                        param.name,
-                        param.questionToken,
-                        param.type,
-                        param.initializer
-                    )
-                ),
-                member.body ?
-                    ts.factory.updateBlock(member.body, [...initializerStatements, ...member.body.statements]) :
-                    ts.factory.createBlock(initializerStatements)
-            )
-        }
-        return undefined
+    declareComponentProperty(options: {type: QualifiedType, name: ts.PropertyName, typeNode?: ts.TypeNode}) {
+        const resolvedType = this.typeResolver.resolveBoundType(options.type)
+        const expression = this.getParamExpression(resolvedType)
+        return ts.factory.createGetAccessorDeclaration(
+            [ts.factory.createToken(ts.SyntaxKind.ReadonlyKeyword)],
+            options.name,
+            [],
+            options.typeNode,
+            ts.factory.createBlock([ts.factory.createReturnStatement(expression)])
+        )
     }
 
     getProviderDeclaration(provider: InstanceProvider, componentScope?: ts.Symbol): ts.ClassElement[] {
