@@ -79,9 +79,11 @@ export class SubcomponentFactoryLocator {
         const constructorParams = this.constructorHelper.getConstructorParamsForDeclaration(declaration)
         if (!constructorParams) return undefined
 
+        const subcomponentType = this.typeChecker.getTypeAtLocation(declaration)
+
         return {
             providerType: ProviderType.SUBCOMPONENT_FACTORY,
-            subcomponentType: createQualifiedType({type: aliasedType, qualifier: internalQualifier}),
+            subcomponentType: createQualifiedType({type: subcomponentType, qualifier: internalQualifier}),
             type: createQualifiedType({type}),
             constructorParams,
             declaration,
