@@ -20,15 +20,6 @@ abstract class HelloWorldComponent {
 
 This Component exposes the `Greeter` type through its `greeter` property. Karambit will generate a graph of dependencies internally to satisfy `Greeter`'s dependencies, and then implement a getter that provides an instance of `Greeter`.
 
-Karambit generates a new class that extends the class decorated with `@Component`. You can specify the name of the generated class via the `generateClassName` property of the Component options.
-
-To get an instance of this generated class, you can call `createComponent<typeof HelloWorldComponent>()`. Alternatively, you can get a reference to the generated constructor via `getConstructor(HelloWorldComponent)`:
-
-```typescript
-const HelloWorldComponentConstructor = getConstructor(HelloWorldComponent)
-const componentInstance = new HelloWorldComponentConstructor()
-```
-
 ### Component dependencies
 
 There are some cases where you may want to provide dependencies into a graph at runtime in a configurable way at construction time. This is possible by adding arguments to the Component's constructor.
@@ -72,13 +63,23 @@ This is functionally equivalent to the previous example.
 
 ### Instantiating a graph
 
-Creating an instance of your dependency graph is simple, just call the constructor of your Component. You can access all of its properties just like any other class, and they will provide instances from the graph.
+Karambit generates a new class that extends the class decorated with `@Component`. You can specify the name of the generated class via the `generateClassName` property of the Component options.
 
-From the Hello World sample:
+To get an instance of this generated class, you can call `createComponent()` with the Component's constructor arguments:
+```typescript
+const componentInstance = createComponent<typeof HelloWorldComponent>()
+```
+
+Alternatively, you can get a reference to the generated constructor via `getConstructor(HelloWorldComponent)`:
 
 ```typescript
-const component = createComponent<typeof HelloWorldComponent>()
-console.log(component.greeter.greet()) // "Hello, World!"
+const HelloWorldComponentConstructor = getConstructor(HelloWorldComponent)
+const componentInstance = new HelloWorldComponentConstructor()
+```
+
+Once you have an instance, you can access your graph via the properties you defined:
+```typescript
+console.log(componentInstance.greeter.greet()) // "Hello, World!"
 ```
 
 ## Inject
