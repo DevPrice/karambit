@@ -89,11 +89,17 @@ export const Reusable: ReusableScopeDecorator = () => {
     ErrorReporter.reportCodeNotTransformed()
 }
 
+/**
+ * @deprecated Use {@link Qualified} to qualify a type instead.
+ */
 export function Qualifier(): QualifierDecorator {
     ErrorReporter.reportCodeNotTransformed()
 }
 
 // noinspection JSUnusedLocalSymbols
+/**
+ * @deprecated Use {@link Named} (type) to qualify a type instead.
+ */
 export function Named(name: string): NamedQualifierDecorator {
     ErrorReporter.reportCodeNotTransformed()
 }
@@ -131,11 +137,18 @@ export interface QualifierDecorator {
 
 interface NamedQualifierDecorator extends QualifierDecorator { }
 
+export type Qualified<T extends keyof any & symbol> = {
+    readonly [key in T]?: unknown
+}
+export type Named<T extends (string extends T ? never : string)> = {
+    readonly [key in `_karambitNamed${T}`]?: unknown
+}
+
 export interface Provider<T> {
     (): T
 }
 
-export interface SubcomponentFactory<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> {
+export interface SubcomponentFactory<T extends ConstructorType<T>> {
     (...args: ConstructorParameters<T>): InstanceType<T>
 }
 

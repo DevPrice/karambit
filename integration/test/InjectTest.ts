@@ -11,6 +11,7 @@ import {
     Reusable,
     Named,
     Qualifier,
+    Qualified,
     BindsInstance,
     Binds,
     IntoSet,
@@ -79,11 +80,20 @@ describe("Injection", () => {
         })
     })
     describe("Qualifiers", () => {
+        it("deprecated named parameter provides named provider", () => {
+            assert.strictEqual(includesComponent.deprecatedNamedValue, 4321)
+        })
+        it("deprecated qualified parameter provides qualified provider", () => {
+            assert.strictEqual(includesComponent.deprecatedQualifiedValue, 8765)
+        })
         it("named parameter provides named provider", () => {
             assert.strictEqual(includesComponent.namedValue, 1234)
         })
         it("qualified parameter provides qualified provider", () => {
             assert.strictEqual(includesComponent.qualifiedValue, 5678)
+        })
+        it("another qualified parameter provides another qualified provider", () => {
+            assert.strictEqual(includesComponent.anotherQualifiedValue, 2222)
         })
     })
     describe("Optionals", () => {
@@ -436,6 +446,10 @@ abstract class ProviderComponent {
 const providerComponent = createComponent<typeof ProviderComponent>()
 
 const MyQualifier = Qualifier()
+declare const testQualifier: unique symbol
+export type TestQualifier = Qualified<typeof testQualifier>
+declare const anotherQualifier: unique symbol
+export type AnotherQualifier = Qualified<typeof anotherQualifier>
 
 @Module
 class AnotherIncludedModule {
@@ -454,14 +468,29 @@ class IncludesModule {
 
     @Provides
     @Named("my name")
-    static provideNamedNumber(): number {
+    static provideDeprecatedNamedNumber(): number {
+        return 4321
+    }
+
+    @Provides
+    static provideNamedNumber(): number & Named<"my name"> {
         return 1234
     }
 
     @Provides
     @MyQualifier
-    static provideQualifiedNumber(): number {
+    static provideDeprecatedQualifiedNumber(): number {
+        return 8765
+    }
+
+    @Provides
+    static provideQualifiedNumber(): number & TestQualifier {
         return 5678
+    }
+
+    @Provides
+    static provideAnotherQualifiedNumber(): number & AnotherQualifier {
+        return 2222
     }
 }
 
@@ -470,9 +499,15 @@ abstract class IncludesComponent {
 
     abstract readonly includedValue: number
 
-    @Named("my name") abstract readonly namedValue: number
+    @Named("my name") abstract readonly deprecatedNamedValue: number
 
-    @MyQualifier abstract readonly qualifiedValue: number
+    @MyQualifier abstract readonly deprecatedQualifiedValue: number
+
+    abstract readonly namedValue: number & Named<"my name">
+
+    abstract readonly qualifiedValue: number & TestQualifier
+
+    abstract readonly anotherQualifiedValue: number & AnotherQualifier
 }
 
 const includesComponent = createComponent<typeof IncludesComponent>()
