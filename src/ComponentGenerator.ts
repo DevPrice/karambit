@@ -212,6 +212,7 @@ export class ComponentGenerator {
         const componentType = this.typeChecker.getTypeAtLocation(component)
 
         const rootDependencies = this.getRootDependencies(componentType)
+        if (rootDependencies.length === 0) this.errorReporter.reportParseFailed("Component exposes no properties! A Component must have at least one abstract property for Karambit to implement!", component)
 
         const typeResolver = new TypeResolver(this.errorReporter, bindings)
         const subcomponentFactoryLocator = new SubcomponentFactoryLocator(
@@ -319,6 +320,8 @@ export class ComponentGenerator {
         const {factories, bindings, setMultibindings, mapMultibindings} = this.getFactoriesAndBindings(factory.decorator, subcomponentScope)
         const typeResolver = TypeResolver.merge(resolver, bindings)
         const rootDependencies = this.getRootDependencies(factory.subcomponentType.type)
+        if (rootDependencies.length === 0) this.errorReporter.reportParseFailed("Subcomponent exposes no properties! A Subcomponent must have at least one abstract property for Karambit to implement!", factory.declaration)
+
         const subcomponentFactoryLocator = new SubcomponentFactoryLocator(
             this.typeChecker,
             this.nodeDetector,
