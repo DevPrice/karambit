@@ -15,7 +15,7 @@ export class ConstructorHelper {
 
     getConstructorParamsForDeclaration(declaration: ts.ClassLikeDeclaration): ConstructorParameter[] | undefined {
         const constructor = declaration.getChildren().flatMap(it => it.getChildren())
-            .find(it => ts.isConstructorDeclaration(it))
+            .find(it => ts.isConstructorDeclaration(it) && it.body !== undefined)
         if (!constructor) return []
         return constructor.getChildren()
             .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])

@@ -514,6 +514,7 @@ const includesComponent = createComponent<typeof IncludesComponent>()
 
 @Inject
 class ProvidedOptional {
+    constructor(requiredString: "overload")
     constructor(readonly requiredString?: string, readonly initializedValue: boolean = true, readonly optionalValue?: number) { }
 }
 
