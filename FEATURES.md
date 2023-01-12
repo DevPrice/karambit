@@ -140,6 +140,9 @@ abstract bindAnimal: (dog: Dog) => Animal
 
 `@Binds` properties must be abstract and have a callable type with exactly one argument. The argument type must be assignable to the return type.
 
+> **Note**
+> Method-based bindings from previous releases are still supported, but are deprecated and may be removed in a future major version release.
+
 ### Includes
 
 A Module may also include other modules via the `modules` property of its configuration. For example:
@@ -165,46 +168,49 @@ class Car {
 
 ## Qualifiers
 
-In some cases, you may need to differentiate between two bindings of the same type within your graph. This is possible using Qualifiers. To qualify a type, simply mark its provider (`@Provides` or `@Binds`) and injection site (Provider parameter, `@Inject` constructor parameter, or Component property) with a Qualifier decorator.
+In some cases, you may need to differentiate between two bindings of the same type within your graph. Unlike Dagger, the preferred way of doing this in Karambit is by creating a new type with similar structure ("branding" or "flavoring" the type). Karambit offers two helper types to assist with this.
 
-Karambit has a built in `@Named` qualifier available:
+Karambit has a built-in `Named` type available:
 
 ```typescript
 @Module
 abstract class MyModule {
     @Provides
-    @Named("username")
-    static provideUserName(): string { /* ... */ }
+    static provideUserName(): string & Named<"username"> { /* ... */ }
 
     @Provides
-    @Named("about-me")
-    static provideAboutMe(): string { /* ... */ }
+    static provideAboutMe(): string & Named<"about-me"> { /* ... */ }
 
     @Provides
-    static provideUser(@Named("username") username: string, @Named("about-me") aboutMe: string): User { /* ... */ }
+    static provideUser(username: string & Named<"username">, aboutMe: string & Named<"about-me">): User { /* ... */ }
 }
 ```
 
-You can create a custom Qualifier by calling Karambit's `Qualifier()` method and use it in a similar way:
+You can create a truly *unique* Qualifier by using Karambit's `Qualified` helper type and using it in a similar way:
 
 ```typescript
-const Username = Qualifier()
-const AboutMe = Qualifier()
+// in this example, we simply *declare* the symbols since they are not used a runtime.
+// if you access your symbol(s) at runtime, make sure to actually instantiate them!
+declare const usernameQualifier: unique symbol
+type UsernameQualifier = Qualified<typeof usernameQualifier>
+declare const aboutMeQualifier: unique symbol
+type AboutMeQualifier = Qualified<typeof aboutMeQualifier>
 
 @Module
 abstract class MyModule {
     @Provides
-    @Username
-    static provideUserName(): string { /* ... */ }
+    static provideUserName(): string & UsernameQualifier { /* ... */ }
 
     @Provides
-    @AboutMe
-    static provideAboutMe(): string { /* ... */ }
+    static provideAboutMe(): string & AboutMeQualifier { /* ... */ }
 
     @Provides
-    static provideUser(@Username username: string, @AboutMe aboutMe: string): User { /* ... */ }
+    static provideUser(username: string & UsernameQualifier, aboutMe: string & AboutMeQualifier): User { /* ... */ }
 }
 ```
+
+> **Note**
+> Decorated-based Qualifiers from previous releases are still supported, but are deprecated and may be removed in a future major version release.
 
 ## Scope
 
