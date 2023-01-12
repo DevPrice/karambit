@@ -135,13 +135,10 @@ static provideAnimal(dog: Dog): Animal {
 `@Binds` can simplify this type of binding and will result in simpler generated code. The above provider could be replaced with:
 ```typescript
 @Binds
-abstract bindAnimal(dog: Dog): Animal
+abstract bindAnimal: (dog: Dog) => Animal
 ```
 
-> **Note**
-> TypeScript does not allow abstract methods to be decorated, so your IDE will likely complain about this syntax. Since this decorator is stripped away by Karambit during compile, it will not actually cause an error. You can hide the IDE error with @ts-ignore, or use a `@Provides` method instead if preferred.
-
-`@Binds` methods must be abstract and have exactly one argument. The argument type must be assignable to the return type.
+`@Binds` properties must be abstract and have a callable type with exactly one argument. The argument type must be assignable to the return type.
 
 ### Includes
 

@@ -8,7 +8,7 @@ import {ErrorReporter} from "./ErrorReporter"
 export interface Binding {
     paramType: QualifiedType
     returnType: QualifiedType
-    declaration: ts.MethodDeclaration
+    declaration: ts.MethodDeclaration | ts.PropertyDeclaration
 }
 
 export interface Module {
@@ -151,9 +151,37 @@ export class ModuleLocator {
 
             bindings.push({paramType, returnType, declaration: method})
         }
+        function visitBindingProperty(property: ts.PropertyDeclaration) {
+            if (!property.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
+                errorReporter.reportBindingNotAbstract(property)
+            }
+            const type = typeChecker.getTypeAtLocation(property)
+            const signatures = typeChecker.getSignaturesOfType(type, ts.SignatureKind.Call)
+            if (signatures.length !== 1) errorReporter.reportParseFailed("Couldn't read signature of @Binds property!")
+            const signature = signatures[0]
+            const returnType = createQualifiedType({
+                type: signature.getReturnType(),
+                qualifier: nodeDetector.getQualifier(property)
+            })
+            const parameters = signature.parameters
+                .map(it => typeChecker.getTypeOfSymbolAtLocation(it, property))
+            if (parameters.length != 1) throw errorReporter.reportInvalidBindingArguments(property)
+            const paramType = createQualifiedType({
+                type: parameters[0]
+            })
+            if (paramType === returnType) throw errorReporter.reportTypeBoundToSelf(property)
+            // @ts-ignore
+            const assignable: boolean = typeChecker.isTypeAssignableTo(paramType.type, returnType.type)
+            if (!assignable) throw errorReporter.reportBindingMustBeAssignable(property, paramType.type, returnType.type)
+
+            bindings.push({paramType, returnType, declaration: property})
+        }
         function visit(node: ts.Node): ts.Node {
             if (ts.isMethodDeclaration(node) && node.modifiers?.some(nodeDetector.isProvidesDecorator)) {
                 visitFactory(node)
+                return node
+            } else if (ts.isPropertyDeclaration(node) && node.modifiers?.some(nodeDetector.isBindsDecorator)) {
+                visitBindingProperty(node)
                 return node
             } else if (ts.isMethodDeclaration(node) && node.modifiers?.some(nodeDetector.isBindsDecorator)) {
                 visitBinding(node)

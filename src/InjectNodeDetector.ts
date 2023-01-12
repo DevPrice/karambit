@@ -157,7 +157,7 @@ export class InjectNodeDetector {
         return this.isKarambitDecorator(decorator, "MapKey")
     }
 
-    getMapBindingInfo(returnType: QualifiedType, declaration: ts.MethodDeclaration): {keyType: ts.Type, valueType: QualifiedType, expression?: ts.Expression} | undefined {
+    getMapBindingInfo(returnType: QualifiedType, declaration: ts.MethodDeclaration | ts.PropertyDeclaration): {keyType: ts.Type, valueType: QualifiedType, expression?: ts.Expression} | undefined {
         const keyInfo = this.getMapKey(declaration)
         if (keyInfo) return {...keyInfo, valueType: returnType}
 
@@ -172,7 +172,7 @@ export class InjectNodeDetector {
         return undefined
     }
 
-    private getMapKey(declaration: ts.MethodDeclaration): {keyType: ts.Type, expression: ts.Expression} | undefined {
+    private getMapKey(declaration: ts.MethodDeclaration | ts.PropertyDeclaration): {keyType: ts.Type, expression: ts.Expression} | undefined {
         const decorators = declaration.modifiers?.filter(this.isMapKeyDecorator)
         if (!decorators || decorators.length !== 1) return undefined
         const decorator = decorators[0]

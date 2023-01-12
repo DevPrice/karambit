@@ -52,7 +52,7 @@ export function Provides(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
-export function Binds(): MethodDecorator
+export function Binds(): MethodDecorator | PropertyDecorator
 export function Binds(target: unknown, propertyKey: string | symbol): void
 export function Binds(): never {
     ErrorReporter.reportCodeNotTransformed()
@@ -64,20 +64,19 @@ export function BindsInstance(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
-export function IntoSet(): MethodDecorator
+export function IntoSet(): MethodDecorator | PropertyDecorator
 export function IntoSet(target: unknown, propertyKey: string | symbol): void
 export function IntoSet(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
-export function IntoMap(): MethodDecorator
+export function IntoMap(): MethodDecorator | PropertyDecorator
 export function IntoMap(target: unknown, propertyKey: string | symbol): void
 export function IntoMap(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
-export function MapKey<T>(key: T): MethodDecorator
-export function MapKey(): never {
+export function MapKey<T>(key: T): MethodDecorator | PropertyDecorator | any {
     ErrorReporter.reportCodeNotTransformed()
 }
 

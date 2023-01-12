@@ -383,18 +383,16 @@ interface ParentInterface { }
 @Module
 abstract class ParentModule {
 
+    @Binds
+    abstract bindParentClassInterface: (concrete: ParentClass) => ParentClassInterface
+
+    @Binds
+    abstract bindChildSubcomponentFactory: (factory: (values: number[]) => ChildSubcomponent) => ChildSubcomponentFactory
+
     @Provides
     static provideParentInterface(): ParentInterface {
         return {}
     }
-
-    // @ts-ignore
-    @Binds
-    abstract bindParentClassInterface(concrete: ParentClass): ParentClassInterface
-
-    // @ts-ignore
-    @Binds
-    abstract bindChildSubcomponentFactory(factory: (values: number[]) => ChildSubcomponent): ChildSubcomponentFactory
 }
 
 interface ParentClassInterface {
@@ -571,7 +569,11 @@ interface ThreeHolder {
 let multibindingScopedProvidedCount = 0
 
 @Module
-class MultibindingSetModule {
+abstract class MultibindingSetModule {
+
+    @Binds
+    @IntoSet
+    abstract bindMultibindingType: (impl: MultibindingTypeImpl) => MultibindingType
 
     @Provides
     @IntoSet
@@ -622,15 +624,15 @@ class MultibindingSetModule {
     static provideQualifiedTwo(): number {
         return 2
     }
-
-    // @ts-ignore
-    @Binds
-    @IntoSet
-    abstract bindMultibindingType(impl: MultibindingTypeImpl): MultibindingType
 }
 
 @Module
 abstract class MultibindingMapModule {
+
+    @Binds
+    @MapKey("impl")
+    @IntoMap
+    abstract bindMultibindingType: (impl: MultibindingTypeImpl) => MultibindingType
 
     @Provides
     @MapKey("one")
@@ -673,12 +675,6 @@ abstract class MultibindingMapModule {
     static provideMultibindingType(): MultibindingType {
         return {property: "provided"}
     }
-
-    // @ts-ignore
-    @Binds
-    @MapKey("impl")
-    @IntoMap
-    abstract bindMultibindingType(impl: MultibindingTypeImpl): MultibindingType
 }
 
 interface MultibindingType {

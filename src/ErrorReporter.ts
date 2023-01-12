@@ -106,7 +106,7 @@ export class ErrorReporter {
     reportBindingNotAbstract(context: ts.Node): never {
         ErrorReporter.fail(
             KarambitErrorScope.INVALID_BINDING,
-            "@Binds method must be abstract!\n\n" + nodeForDisplay(context) + "\n",
+            "Binding must be abstract!\n\n" + nodeForDisplay(context) + "\n",
             this.component
         )
     }
@@ -114,7 +114,7 @@ export class ErrorReporter {
     reportInvalidBindingArguments(context: ts.Node): never {
         ErrorReporter.fail(
             KarambitErrorScope.INVALID_BINDING,
-            "Binding method must have exactly one argument!\n\n" + nodeForDisplay(context) + "\n",
+            "Binding signature must have exactly one argument!\n\n" + nodeForDisplay(context) + "\n",
             this.component
         )
     }
