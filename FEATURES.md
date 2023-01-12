@@ -189,7 +189,7 @@ abstract class MyModule {
 You can create a truly *unique* Qualifier by using Karambit's `Qualified` helper type and using it in a similar way:
 
 ```typescript
-// in this example, we simply *declare* the symbols since they are not used a runtime.
+// in this example, we simply *declare* the symbols since they are not used at runtime.
 // if you access your symbol(s) at runtime, make sure to actually instantiate them!
 declare const usernameQualifier: unique symbol
 type UsernameQualifier = Qualified<typeof usernameQualifier>
@@ -210,7 +210,7 @@ abstract class MyModule {
 ```
 
 > **Note**
-> Decorated-based Qualifiers from previous releases are still supported, but are deprecated and may be removed in a future major version release.
+> Decorator-based Qualifiers from previous releases are still supported, but are deprecated and may be removed in a future major version release.
 
 ## Scope
 
@@ -302,7 +302,7 @@ You can use multibindings to, for example, implement a "plugin" architecture.
 
 ### Set multibindings
 
-To contribute an object into a `ReadOnlySet`, use the `@IntoSet` decorator on the Module method:
+To contribute an object into a `ReadonlySet`, use the `@IntoSet` decorator on the Module method:
 
 ```typescript
 @Module
