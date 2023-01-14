@@ -2,7 +2,7 @@ import * as ts from "typescript"
 import {
     Binds,
     BindsInstance,
-    Component,
+    Component, createComponent,
     Module,
     Provides,
     Reusable,
@@ -28,11 +28,16 @@ abstract class ComponentGenerationSubcomponent implements ComponentGeneratorDepe
 
     constructor(@BindsInstance componentDeclaration: ts.ClassDeclaration) { }
 
-    readonly generator: ComponentGenerator
+    abstract readonly generator: ComponentGenerator
 }
 
 @Module
 abstract class SourceFileModule {
+
+    @Binds
+    abstract bindComponentGeneratorDependenciesFactory: (
+        factory: SubcomponentFactory<typeof ComponentGenerationSubcomponent>
+    ) => ComponentGeneratorDependenciesFactory
 
     @Provides
     static provideTransformers(
@@ -52,12 +57,6 @@ abstract class SourceFileModule {
             importer.addImportsToSourceFile,
         ]
     }
-
-    // @ts-ignore
-    @Binds
-    abstract bindComponentGeneratorDependenciesFactory(
-        factory: SubcomponentFactory<typeof ComponentGenerationSubcomponent>
-    ): ComponentGeneratorDependenciesFactory
 }
 
 @Subcomponent({modules: [SourceFileModule], subcomponents: [ComponentGenerationSubcomponent]})
@@ -66,7 +65,7 @@ abstract class SourceFileSubcomponent {
 
     constructor(@BindsInstance sourceFile: ts.SourceFile) { }
 
-    readonly transformers: ts.Transformer<ts.SourceFile>[]
+    abstract readonly transformers: ts.Transformer<ts.SourceFile>[]
 }
 
 @Subcomponent({subcomponents: [SourceFileSubcomponent]})
@@ -74,7 +73,7 @@ abstract class TransformationContextSubcomponent {
 
     constructor(@BindsInstance transformationContext: ts.TransformationContext) { }
 
-    readonly sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>
+    abstract readonly sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>
 }
 
 @Module
@@ -95,9 +94,13 @@ abstract class ProgramModule {
 
 @Component({modules: [ProgramModule], subcomponents: [TransformationContextSubcomponent]})
 @ProgramScope
-export class ProgramComponent {
+abstract class ProgramComponent {
 
     constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitTransformOptions) { }
 
-    readonly transformationContextSubcomponentFactory: SubcomponentFactory<typeof TransformationContextSubcomponent>
+    abstract readonly transformationContextSubcomponentFactory: SubcomponentFactory<typeof TransformationContextSubcomponent>
+}
+
+export function createProgramComponent(program: ts.Program, options: KarambitTransformOptions): ProgramComponent {
+    return createComponent<typeof ProgramComponent>(program, options)
 }

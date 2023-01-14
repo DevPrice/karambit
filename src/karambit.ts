@@ -1,7 +1,7 @@
 import {time} from "./Util"
 import * as ts from "typescript"
 import * as Path from "path"
-import {ProgramComponent} from "./Component"
+import {createProgramComponent} from "./Component"
 import {ErrorReporter} from "./ErrorReporter"
 
 interface ComponentLikeInfo {
@@ -158,7 +158,7 @@ export interface KarambitTransformOptions {
 
 export default function(program: ts.Program, options?: Partial<KarambitTransformOptions>) {
     const transformOptions = {...defaultOptions, ...options}
-    const programComponent = new ProgramComponent(program, transformOptions)
+    const programComponent = createProgramComponent(program, transformOptions)
     return (ctx: ts.TransformationContext) => {
         const transformationContextComponent = programComponent.transformationContextSubcomponentFactory(ctx)
         return (sourceFile: ts.SourceFile) => {
