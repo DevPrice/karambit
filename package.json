@@ -1,6 +1,6 @@
 {
   "name": "karambit-inject",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "A compile-time and type-safe dependency injector for Typescript.",
   "keywords": [
     "dependency injection",
