@@ -43,13 +43,13 @@ export class InjectNodeDetector {
     }
 
     isCreateComponentCall(expression: ts.CallExpression): ts.Type | undefined {
-        if (ts.isIdentifier(expression.expression) && this.getKarambitNodeName(expression) === "createComponent") {
+        if (this.getKarambitNodeName(expression) === "createComponent") {
             return this.typeChecker.getTypeAtLocation(expression)
         }
     }
 
     isGetConstructorCall(expression: ts.CallExpression): ts.Type | undefined {
-        if (ts.isIdentifier(expression.expression) && this.getKarambitNodeName(expression) === "getConstructor") {
+        if (this.getKarambitNodeName(expression) === "getConstructor") {
             const symbol = this.typeChecker.getSymbolAtLocation(expression.arguments[0])
             const type = symbol?.valueDeclaration && this.typeChecker.getTypeAtLocation(symbol.valueDeclaration)
             if (type) return type
@@ -242,18 +242,22 @@ export class InjectNodeDetector {
         }
     }
 
-    private getIdentifiers(decorator: ts.Node): [ts.Identifier] | [ts.Identifier, ts.Identifier] | [] {
-        for (const child of decorator.getChildren()) {
-            if (ts.isPropertyAccessExpression(child)) {
-                return child.getChildren().filter(ts.isIdentifier) as any
-            }
-            if (ts.isIdentifier(child)) return [child]
-            if (ts.isCallExpression(child)) {
-                if (ts.isPropertyAccessExpression(child.expression)) {
-                    return child.expression.getChildren().filter(ts.isIdentifier) as any
+    private getIdentifiers(node: ts.Node): [ts.Identifier] | [ts.Identifier, ts.Identifier] | [] {
+        try {
+            for (const child of node.getChildren()) {
+                if (ts.isPropertyAccessExpression(child)) {
+                    return child.getChildren().filter(ts.isIdentifier) as any
                 }
-                return [child.getChildren().find(ts.isIdentifier)].filterNotNull() as any
+                if (ts.isIdentifier(child)) return [child]
+                if (ts.isCallExpression(child)) {
+                    if (ts.isPropertyAccessExpression(child.expression)) {
+                        return child.expression.getChildren().filter(ts.isIdentifier) as any
+                    }
+                    return [child.getChildren().find(ts.isIdentifier)].filterNotNull() as any
+                }
             }
+        } catch (e) {
+            // getChildren may throw for synthetic nodes (which we can safely ignore)
         }
         return []
     }

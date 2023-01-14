@@ -20,6 +20,7 @@ import {
     createComponent,
     getConstructor,
 } from "karambit-inject"
+import * as k from "karambit-inject"
 
 describe("Injection", () => {
     describe("Scope", () => {
@@ -313,8 +314,8 @@ class SubcomponentModule {
 
 interface GrandChildDependency { }
 
-@Inject
-@Reusable
+@k.Inject
+@k.Reusable
 class GrandChildClass {
 
     constructor(
@@ -325,7 +326,7 @@ class GrandChildClass {
     ) { }
 }
 
-@Subcomponent
+@k.Subcomponent
 abstract class GrandChildSubcomponent {
 
     protected constructor(@BindsInstance dep: GrandChildDependency) { }
@@ -342,7 +343,7 @@ interface ChildSubcomponentInterface {
 @Subcomponent({modules: [SubcomponentModule], subcomponents: [GrandChildSubcomponent]})
 abstract class ChildSubcomponent implements ChildSubcomponentInterface {
 
-    constructor(@BindsInstance values: number[]) { }
+    constructor(@k.BindsInstance values: number[]) { }
 
     abstract readonly sum: number
     abstract readonly parentClass: ParentClass
@@ -360,10 +361,10 @@ interface ScopedSubcomponentInterface {
     value: string
 }
 
-@Module
+@k.Module
 class ScopedSubcomponentModule {
 
-    @Provides
+    @k.Provides
     @TestSubcomponentScope
     static provideScopedSubcomponentInterface(str: string): ScopedSubcomponentInterface {
         return {value: str + ":scoped"}
@@ -571,8 +572,8 @@ let multibindingScopedProvidedCount = 0
 @Module
 abstract class MultibindingSetModule {
 
-    @Binds
-    @IntoSet
+    @k.Binds
+    @k.IntoSet
     abstract bindMultibindingType: (impl: MultibindingTypeImpl) => MultibindingType
 
     @Provides
@@ -670,8 +671,8 @@ abstract class MultibindingMapModule {
     }
 
     @Provides
-    @MapKey("provided")
-    @IntoMap
+    @k.MapKey("provided")
+    @k.IntoMap
     static provideMultibindingType(): MultibindingType {
         return {property: "provided"}
     }
@@ -686,7 +687,7 @@ class MultibindingTypeImpl {
     property = "impl"
 }
 
-@Component({modules: [MultibindingSetModule, MultibindingMapModule], subcomponents: [MultibindingSetSubcomponent]})
+@k.Component({modules: [MultibindingSetModule, MultibindingMapModule], subcomponents: [MultibindingSetSubcomponent]})
 abstract class MultibindingsComponent {
 
     abstract readonly numberSet: ReadonlySet<number>
@@ -700,4 +701,4 @@ abstract class MultibindingsComponent {
     abstract readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
 }
 
-const multibindingComponent = createComponent<typeof MultibindingsComponent>()
+const multibindingComponent = k.createComponent<typeof MultibindingsComponent>()
