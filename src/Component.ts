@@ -2,7 +2,8 @@ import * as ts from "typescript"
 import {
     Binds,
     BindsInstance,
-    Component, createComponent,
+    Component,
+    createComponent,
     Module,
     Provides,
     Reusable,
