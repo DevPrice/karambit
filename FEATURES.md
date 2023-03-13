@@ -401,3 +401,31 @@ Therefore, the injected set or map may have different elements based on which co
 
 > **Note**
 > A subcomponent can only *add* bindings to a set or map, it cannot remove bindings provided by its parent.
+
+## Assisted injection
+
+Sometimes it's necessary for some values to be injected via the Karambit framework, while others are passed in via the caller at runtime. Subcomponents make this possible for collections of dependencies, but are typically overkill to inject a single class. Often, we would use the Factory pattern to inject these types.
+
+Karambit provides a utility for this pattern via assisted injection, where some constructor parameters can be marked as `@Assisted` and provided by the caller at runtime:
+
+```typescript
+@AssistedInject
+class MyTextToSpeech {
+    constructor(
+        private readonly textToSpeechApi: TextToSpeechApi,
+        @Assisted private readonly voiceConfig: VoiceConfiguration,
+    ) { }
+}
+```
+
+This will bind a factory type into the graph that will automatically inject the non-assisted parameters. Specifically, in this case, you can now bind the following factory type anywhere in your graph:
+
+```typescript
+textToSpeechFactory: (config: VoiceConfiguration) => MyTextToSpeech
+```
+
+However, note that unlike `@Assisted`, you cannot bind `MyTextToSpeech` directly, you can only bind its factory type.
+
+There are a few other limitations when using assisted injection, namely:
+1. `@AssistedInject` classes must have at least one `@Assisted` constructor parameter.
+2. Each parameter marked `@Assisted` must have a unique type within the constructor parameters. You can use [qualifiers](#qualifiers) to distinguish otherwise identical types.
