@@ -25,6 +25,7 @@ import {
 import {ErrorReporter} from "./ErrorReporter"
 import {Inject, Reusable} from "karambit-inject"
 import {TupleMap} from "./Util"
+import {AssistedFactoryLocator} from "./AssistedFactoryLocator"
 
 interface GeneratedSubcomponent {
     readonly name: string
@@ -59,6 +60,7 @@ export class ComponentGenerator {
         private readonly sourceFile: ts.SourceFile,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly nameGenerator: NameGenerator,
+        private readonly assistedFactoryLocator: AssistedFactoryLocator,
         private readonly importer: Importer,
         private readonly moduleLocator: ModuleLocator,
         private readonly constructorHelper: ConstructorHelper,
@@ -229,6 +231,7 @@ export class ComponentGenerator {
             setMultibindings,
             mapMultibindings,
             subcomponentFactoryLocator,
+            this.assistedFactoryLocator,
             this.propertyExtractor,
             this.constructorHelper,
             this.errorReporter,
@@ -337,6 +340,7 @@ export class ComponentGenerator {
             setMultibindings,
             mapMultibindings,
             subcomponentFactoryLocator,
+            this.assistedFactoryLocator,
             this.propertyExtractor,
             this.constructorHelper,
             this.errorReporter,

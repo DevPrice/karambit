@@ -16,6 +16,7 @@ import {
     SetMultibinding
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
+import {AssistedFactoryLocator} from "./AssistedFactoryLocator"
 
 export interface Dependency {
     readonly type: QualifiedType
@@ -39,6 +40,7 @@ export class DependencyGraphBuilder {
         private readonly setMultibindings: ReadonlyMap<QualifiedType, SetMultibinding>,
         private readonly mapMultibindings: ReadonlyMap<[QualifiedType, ts.Type], MapMultibinding>,
         private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
+        private readonly assistedFactoryLocation: AssistedFactoryLocator,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly constructorHelper: ConstructorHelper,
         private readonly errorReporter: ErrorReporter,
@@ -129,6 +131,15 @@ export class DependencyGraphBuilder {
         if (factory) {
             return {
                 provider: {...factory, dependencies: new Set()}
+            }
+        }
+
+        const assistedFactory = this.assistedFactoryLocation.asAssistedFactory(boundType.type)
+        if (assistedFactory) {
+            const dependencies = assistedFactory.constructorParams.filter(it => !it.decorators.some(this.nodeDetector.isAssistedDecorator))
+            return {
+                provider: {...assistedFactory, dependencies: new Set(dependencies.map(it => it.type))},
+                dependencies,
             }
         }
 

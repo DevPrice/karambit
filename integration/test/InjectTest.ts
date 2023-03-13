@@ -19,6 +19,8 @@ import {
     MapKey,
     createComponent,
     getConstructor,
+    Assisted,
+    AssistedInject,
 } from "karambit-inject"
 import * as k from "karambit-inject"
 
@@ -207,6 +209,22 @@ describe("Injection", () => {
     describe("Configuration", () => {
         it("Component has custom name", () => {
             assert.strictEqual(parentComponent.constructor.name, "CustomComponentName")
+        })
+    })
+    describe("Assisted factory", () => {
+        it("Assisted factory can be provided", () => {
+            const instance = assistedInjectComponent.assistedFactory(1337)
+            assert.strictEqual(instance.string, "provided-string")
+            assert.strictEqual(instance.assistedNumber, 1337)
+        })
+        it("Assisted factory can be provided with params in another order", () => {
+            const sym = Symbol()
+            const obj = {}
+            const instance = assistedInjectComponent.anotherAssistedFactory(sym, obj, 1234)
+            assert.strictEqual(instance.string, "provided-string")
+            assert.strictEqual(instance.assistedNumber, 1234)
+            assert.strictEqual(instance.assistedSymbol, sym)
+            assert.strictEqual(instance.assistedObject, obj)
         })
     })
 })
@@ -702,3 +720,40 @@ abstract class MultibindingsComponent {
 }
 
 const multibindingComponent = k.createComponent<typeof MultibindingsComponent>()
+
+@AssistedInject
+class AssistedInjectClass {
+
+    constructor(
+        readonly string: string,
+        @Assisted readonly assistedNumber: number,
+    ) { }
+}
+
+@AssistedInject
+class AnotherAssistedInjectClass {
+
+    constructor(
+        @Assisted readonly assistedNumber: number,
+        readonly string: string,
+        @Assisted readonly assistedSymbol: symbol,
+        @Assisted readonly assistedObject: object,
+    ) { }
+}
+
+@Module
+abstract class AssistedInjectModule {
+
+    @Provides
+    static provideString(): string {
+        return "provided-string"
+    }
+}
+
+@Component({modules: [AssistedInjectModule]})
+abstract class AssistedInjectComponent {
+    abstract readonly assistedFactory: (number: number) => AssistedInjectClass
+    abstract readonly anotherAssistedFactory: (symbol: symbol, object: object, number: number) => AnotherAssistedInjectClass
+}
+
+const assistedInjectComponent = createComponent<typeof AssistedInjectComponent>()

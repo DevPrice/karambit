@@ -1,7 +1,8 @@
 import * as ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
+import {ParameterDeclaration} from "typescript"
 
-export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | UndefinedProvider | ParentProvider | SetMultibinding | MapMultibinding
+export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | AssistedFactory | UndefinedProvider | ParentProvider | SetMultibinding | MapMultibinding
 export type MultibindingProvider = SetMultibinding
 export type ProviderParameter = ProvidesMethodParameter | ConstructorParameter
 
@@ -45,6 +46,11 @@ export interface ProvidesMethodParameter {
     readonly optional: boolean
 }
 
+export interface FactoryParameter {
+    readonly name: string
+    readonly type: QualifiedType
+}
+
 export interface InjectableConstructor {
     readonly providerType: ProviderType.INJECTABLE_CONSTRUCTOR
     readonly type: ts.Type
@@ -76,6 +82,15 @@ export interface SubcomponentFactory {
 
 export function isSubcomponentFactory(provider: InstanceProvider): provider is SubcomponentFactory {
     return provider.providerType === ProviderType.SUBCOMPONENT_FACTORY
+}
+
+export interface AssistedFactory {
+    readonly providerType: ProviderType.ASSISTED_FACTORY
+    readonly declaration: ts.ClassDeclaration
+    readonly type: QualifiedType
+    readonly resultType: QualifiedType
+    readonly factoryParams: FactoryParameter[]
+    readonly constructorParams: ConstructorParameter[]
 }
 
 export interface ParentProvider {
@@ -113,6 +128,7 @@ export enum ProviderType {
     PROVIDES_METHOD,
     INJECTABLE_CONSTRUCTOR,
     SUBCOMPONENT_FACTORY,
+    ASSISTED_FACTORY,
     UNDEFINED,
     PARENT,
     SET_MULTIBINDING,

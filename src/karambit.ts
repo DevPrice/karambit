@@ -46,6 +46,18 @@ export function Inject(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
+export function AssistedInject(): ClassDecorator
+export function AssistedInject(target: unknown): void
+export function AssistedInject(): never {
+    ErrorReporter.reportCodeNotTransformed()
+}
+
+export function Assisted(): ParameterDecorator
+export function Assisted(target: Object, propertyKey: string | symbol, parameterIndex: number): void
+export function Assisted(): never {
+    ErrorReporter.reportCodeNotTransformed()
+}
+
 export function Provides(): MethodDecorator
 export function Provides(target: unknown, propertyKey: string | symbol): void
 export function Provides(): never {

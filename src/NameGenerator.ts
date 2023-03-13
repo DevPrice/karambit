@@ -69,6 +69,16 @@ export class NameGenerator {
         return newName
     }
 
+    getAssistedFactoryGetterMethodIdentifier(type: QualifiedType): ts.Identifier | ts.PrivateIdentifier {
+        const existingName = this.getterNames.get(type)
+        if (existingName) return existingName
+
+        const identifierText = this.getValidIdentifier(type.type)
+        const newName = ts.factory.createUniqueName(`get${capitalize(identifierText)}_Factory`)
+        this.getterNames.set(type, newName)
+        return newName
+    }
+
     private getValidIdentifier(type: ts.Type): string {
         return this.typeChecker.typeToString(type).replaceAll(/[^a-z\d]+/ig, "$")
     }

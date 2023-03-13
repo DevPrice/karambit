@@ -29,6 +29,8 @@ export class InjectNodeDetector {
         this.isQualifierDecorator = this.isQualifierDecorator.bind(this)
         this.isComponentDecorator = this.isComponentDecorator.bind(this)
         this.isSubcomponentDecorator = this.isSubcomponentDecorator.bind(this)
+        this.isAssistedDecorator = this.isAssistedDecorator.bind(this)
+        this.isAssistedInjectDecorator = this.isAssistedInjectDecorator.bind(this)
         this.isProvidesDecorator = this.isProvidesDecorator.bind(this)
         this.isBindsDecorator = this.isBindsDecorator.bind(this)
         this.isBindsInstanceDecorator = this.isBindsInstanceDecorator.bind(this)
@@ -123,6 +125,14 @@ export class InjectNodeDetector {
 
     isSubcomponentDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Subcomponent")
+    }
+
+    isAssistedDecorator(decorator: ts.Node): decorator is ts.Decorator {
+        return this.isKarambitDecorator(decorator, "Assisted")
+    }
+
+    isAssistedInjectDecorator(decorator: ts.Node): decorator is ts.Decorator {
+        return this.isKarambitDecorator(decorator, "AssistedInject")
     }
 
     isProvidesDecorator(decorator: ts.Node): decorator is ts.Decorator {

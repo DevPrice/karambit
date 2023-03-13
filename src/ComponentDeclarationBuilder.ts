@@ -12,7 +12,7 @@ import {
     ProvidesMethod,
     SetMultibinding,
     MapMultibinding,
-    SubcomponentFactory, ConstructorParameter
+    SubcomponentFactory, ConstructorParameter, AssistedFactory
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 
@@ -86,6 +86,7 @@ export class ComponentDeclarationBuilder {
         if (provider.providerType == ProviderType.PARENT) return [this.getParentProvidedDeclaration(provider.type)]
         if (provider.providerType == ProviderType.PROPERTY) return [this.getComponentProvidedDeclaration(provider)]
         if (provider.providerType == ProviderType.SUBCOMPONENT_FACTORY) return [this.getSubcomponentFactoryDeclaration(provider)]
+        if (provider.providerType == ProviderType.ASSISTED_FACTORY) return [this.getAssistedFactoryDeclaration(provider)]
         if (provider.providerType == ProviderType.PROVIDES_METHOD) return this.getFactoryDeclaration(provider)
         if (provider.providerType == ProviderType.INJECTABLE_CONSTRUCTOR) return this.getConstructorProviderDeclaration(provider, componentScope)
         if (provider.providerType == ProviderType.SET_MULTIBINDING) return this.getSetMultibindingProviderDeclaration(provider)
@@ -168,9 +169,10 @@ export class ComponentDeclarationBuilder {
             )
         }
         const subcomponentFactory = instanceProvider && instanceProvider.providerType === ProviderType.SUBCOMPONENT_FACTORY
-        const identifier = subcomponentFactory ?
-            this.nameGenerator.getSubcomponentFactoryGetterMethodIdentifier(instanceProvider.subcomponentType) :
-            this.nameGenerator.getGetterMethodIdentifier(paramType)
+        const assistedFactory = instanceProvider && instanceProvider.providerType === ProviderType.ASSISTED_FACTORY
+        const identifier = subcomponentFactory
+            ? this.nameGenerator.getSubcomponentFactoryGetterMethodIdentifier(instanceProvider.subcomponentType)
+            : (assistedFactory ? this.nameGenerator.getAssistedFactoryGetterMethodIdentifier(instanceProvider.resultType) : this.nameGenerator.getGetterMethodIdentifier(paramType))
         return ts.factory.createCallExpression(
             ts.factory.createPropertyAccessExpression(ts.factory.createThis(), identifier),
             undefined,
@@ -222,6 +224,64 @@ export class ComponentDeclarationBuilder {
             ),
             undefined,
             [ts.factory.createThis(), ...params]
+        )
+    }
+
+    private getAssistedFactoryDeclaration(factory: AssistedFactory): ts.ClassElement {
+        return ts.factory.createMethodDeclaration(
+            undefined,
+            undefined,
+            this.nameGenerator.getAssistedFactoryGetterMethodIdentifier(factory.resultType),
+            undefined,
+            undefined,
+            [],
+            undefined,
+            ts.factory.createBlock(
+                [
+                    ts.factory.createReturnStatement(
+                        ts.factory.createArrowFunction(
+                            undefined,
+                            undefined,
+                            factory.factoryParams
+                                .map(it =>
+                                    ts.factory.createParameterDeclaration(
+                                        undefined,
+                                        undefined,
+                                        it.name,
+                                        undefined,
+                                        ts.factory.createKeywordTypeNode(ts.SyntaxKind.NumberKeyword),
+                                        undefined,
+                                    )
+                                ),
+                            undefined,
+                            ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+                            this.createAssistedFactoryExpression(
+                                factory,
+                                factory.constructorParams
+                                    .map(it => {
+                                        if (it.decorators.some(this.nodeDetector.isAssistedDecorator)) {
+                                            const factoryParam = factory.factoryParams
+                                                .find(p => p.type === it.type)
+                                            if (!factoryParam) throw new Error("Error generating Assisted Factory!")
+                                            return ts.factory.createIdentifier(factoryParam.name)
+                                        } else {
+                                            return this.getParamExpression(it.type)
+                                        }
+                                    })
+                            ),
+                        )
+                    )
+                ],
+                true
+            )
+        )
+    }
+
+    private createAssistedFactoryExpression(factory: AssistedFactory, params: ts.Expression[]): ts.Expression {
+        return ts.factory.createNewExpression(
+            this.getExpressionForDeclaration(factory.declaration),
+            undefined,
+            params,
         )
     }
 
