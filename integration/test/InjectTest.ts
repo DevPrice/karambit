@@ -750,10 +750,12 @@ abstract class AssistedInjectModule {
     }
 }
 
+type AnotherAssistedInjectClassFactory = (symbol: symbol, object: object, number: number) => AnotherAssistedInjectClass
+
 @Component({modules: [AssistedInjectModule]})
 abstract class AssistedInjectComponent {
     abstract readonly assistedFactory: (number: number) => AssistedInjectClass
-    abstract readonly anotherAssistedFactory: (symbol: symbol, object: object, number: number) => AnotherAssistedInjectClass
+    abstract readonly anotherAssistedFactory: AnotherAssistedInjectClassFactory
 }
 
 const assistedInjectComponent = createComponent<typeof AssistedInjectComponent>()
