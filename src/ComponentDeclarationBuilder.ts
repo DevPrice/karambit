@@ -15,7 +15,11 @@ import {
     SubcomponentFactory, ConstructorParameter, AssistedFactory
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
+import {Assisted, AssistedInject} from "karambit-inject"
 
+export type ComponentDeclarationBuilderFactory = (typeResolver: TypeResolver, instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>) => ComponentDeclarationBuilder
+
+@AssistedInject
 export class ComponentDeclarationBuilder {
 
     constructor(
@@ -25,8 +29,8 @@ export class ComponentDeclarationBuilder {
         private readonly nameGenerator: NameGenerator,
         private readonly importer: Importer,
         private readonly errorReporter: ErrorReporter,
-        private readonly typeResolver: TypeResolver,
-        private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
+        @Assisted private readonly typeResolver: TypeResolver,
+        @Assisted private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
     ) {
         this.getParamExpression = this.getParamExpression.bind(this)
     }

@@ -1,14 +1,12 @@
 import * as ts from "typescript"
 import {NameGenerator} from "./NameGenerator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-import {Importer} from "./Importer"
 import {Binding, ModuleLocator} from "./ModuleLocator"
-import {ComponentDeclarationBuilder} from "./ComponentDeclarationBuilder"
-import {Dependency, DependencyGraph, DependencyGraphBuilder} from "./DependencyGraphBuilder"
+import {Dependency, DependencyGraph, DependencyGraphBuilderFactory} from "./DependencyGraphBuilder"
 import {ConstructorHelper} from "./ConstructorHelper"
-import {TypeResolver} from "./TypeResolver"
+import {TypeResolver, TypeResolverFactory} from "./TypeResolver"
 import {createQualifiedType, internalQualifier, QualifiedType} from "./QualifiedType"
-import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
+import {SubcomponentFactoryLocatorFactory} from "./SubcomponentFactoryLocator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {
     InstanceProvider,
@@ -26,6 +24,7 @@ import {ErrorReporter} from "./ErrorReporter"
 import {Inject, Reusable} from "karambit-inject"
 import {TupleMap} from "./Util"
 import {AssistedFactoryLocator} from "./AssistedFactoryLocator"
+import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"
 
 interface GeneratedSubcomponent {
     readonly name: string
@@ -56,17 +55,18 @@ export class ComponentGenerator {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
-        private readonly context: ts.TransformationContext,
-        private readonly sourceFile: ts.SourceFile,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly nameGenerator: NameGenerator,
         private readonly assistedFactoryLocator: AssistedFactoryLocator,
-        private readonly importer: Importer,
+        private readonly componentDeclarationBuilderFactory: ComponentDeclarationBuilderFactory,
+        private readonly subcomponentFactoryLocatorFactory: SubcomponentFactoryLocatorFactory,
+        private readonly typeResolverFactory: TypeResolverFactory,
         private readonly moduleLocator: ModuleLocator,
         private readonly constructorHelper: ConstructorHelper,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly errorReporter: ErrorReporter,
         private readonly component: ts.ClassDeclaration,
+        private readonly dependencyGraphBuilderFactory: DependencyGraphBuilderFactory,
     ) { }
 
     private getDependencyMap(component: ts.ClassLikeDeclaration): ReadonlyMap<QualifiedType, PropertyProvider> {
@@ -216,25 +216,17 @@ export class ComponentGenerator {
         const rootDependencies = this.getRootDependencies(componentType)
         if (rootDependencies.length === 0) this.errorReporter.reportParseFailed("Component exposes no properties! A Component must have at least one abstract property for Karambit to implement!", component)
 
-        const typeResolver = new TypeResolver(this.errorReporter, bindings)
-        const subcomponentFactoryLocator = new SubcomponentFactoryLocator(
-            this.typeChecker,
-            this.nodeDetector,
-            this.constructorHelper,
+        const typeResolver = this.typeResolverFactory(bindings)
+        const subcomponentFactoryLocator = this.subcomponentFactoryLocatorFactory(
             new Set(this.moduleLocator.getInstalledSubcomponents(componentDecorator))
         )
-        const graphBuilder = new DependencyGraphBuilder(
+        const graphBuilder = this.dependencyGraphBuilderFactory(
             typeResolver,
-            this.nodeDetector,
             dependencyMap,
             factories,
             setMultibindings,
             mapMultibindings,
             subcomponentFactoryLocator,
-            this.assistedFactoryLocator,
-            this.propertyExtractor,
-            this.constructorHelper,
-            this.errorReporter,
         )
         const graph = graphBuilder.buildDependencyGraph(new Set(rootDependencies))
         const missingDependencies = Array.from(graph.missing.keys()).filter(it => !it.optional)
@@ -281,13 +273,7 @@ export class ComponentGenerator {
             )
         }
 
-        const builder = new ComponentDeclarationBuilder(
-            this.typeChecker,
-            this.sourceFile,
-            this.nodeDetector,
-            this.nameGenerator,
-            this.importer,
-            this.errorReporter,
+        const builder = this.componentDeclarationBuilderFactory(
             typeResolver,
             mergedGraph.resolved,
         )
@@ -325,25 +311,17 @@ export class ComponentGenerator {
         const rootDependencies = this.getRootDependencies(factory.subcomponentType.type)
         if (rootDependencies.length === 0) this.errorReporter.reportParseFailed("Subcomponent exposes no properties! A Subcomponent must have at least one abstract property for Karambit to implement!", factory.declaration)
 
-        const subcomponentFactoryLocator = new SubcomponentFactoryLocator(
-            this.typeChecker,
-            this.nodeDetector,
-            this.constructorHelper,
+        const subcomponentFactoryLocator = this.subcomponentFactoryLocatorFactory(
             new Set(this.moduleLocator.getInstalledSubcomponents(factory.decorator)),
         )
         const scope = this.nodeDetector.getScope(factory.declaration)
-        const graphBuilder: DependencyGraphBuilder = new DependencyGraphBuilder(
+        const graphBuilder = this.dependencyGraphBuilderFactory(
             typeResolver,
-            this.nodeDetector,
             dependencyMap,
             factories,
             setMultibindings,
             mapMultibindings,
             subcomponentFactoryLocator,
-            this.assistedFactoryLocator,
-            this.propertyExtractor,
-            this.constructorHelper,
-            this.errorReporter,
             {filterOnly: scope},
             parentCanBind,
         )
@@ -372,13 +350,7 @@ export class ComponentGenerator {
 
         const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...rootDependencies, ...missingSubcomponentDependencies]))
 
-        const subcomponentBuilder = new ComponentDeclarationBuilder(
-            this.typeChecker,
-            this.sourceFile,
-            this.nodeDetector,
-            this.nameGenerator,
-            this.importer,
-            this.errorReporter,
+        const subcomponentBuilder = this.componentDeclarationBuilderFactory(
             typeResolver,
             mergedGraph.resolved,
         )

@@ -17,6 +17,7 @@ import {
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {AssistedFactoryLocator} from "./AssistedFactoryLocator"
+import {Assisted, AssistedInject} from "karambit-inject"
 
 export interface Dependency {
     readonly type: QualifiedType
@@ -30,22 +31,40 @@ export interface DependencyGraph {
 
 export type DependencyProvider = InstanceProvider & { dependencies: ReadonlySet<QualifiedType> }
 
+interface ScopeFilter {
+    filterOnly?: ts.Symbol
+}
+
+type CanBind = (type: QualifiedType) => boolean
+
+export type DependencyGraphBuilderFactory = (
+    typeResolver: TypeResolver,
+    dependencyMap:  ReadonlyMap<QualifiedType, PropertyProvider>,
+    factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
+    setMultibindings: ReadonlyMap<QualifiedType, SetMultibinding>,
+    mapMultibindings: ReadonlyMap<[QualifiedType, ts.Type], MapMultibinding>,
+    subcomponentFactoryLocator: SubcomponentFactoryLocator,
+    scopeFilter?: ScopeFilter,
+    parentGraph?: CanBind,
+) => DependencyGraphBuilder
+
+@AssistedInject
 export class DependencyGraphBuilder {
 
     constructor(
-        private readonly typeResolver: TypeResolver,
+        @Assisted private readonly typeResolver: TypeResolver,
         private readonly nodeDetector: InjectNodeDetector,
-        private readonly dependencyMap:  ReadonlyMap<QualifiedType, PropertyProvider>,
-        private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
-        private readonly setMultibindings: ReadonlyMap<QualifiedType, SetMultibinding>,
-        private readonly mapMultibindings: ReadonlyMap<[QualifiedType, ts.Type], MapMultibinding>,
-        private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
-        private readonly assistedFactoryLocation: AssistedFactoryLocator,
+        @Assisted private readonly dependencyMap:  ReadonlyMap<QualifiedType, PropertyProvider>,
+        @Assisted private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
+        @Assisted private readonly setMultibindings: ReadonlyMap<QualifiedType, SetMultibinding>,
+        @Assisted private readonly mapMultibindings: ReadonlyMap<[QualifiedType, ts.Type], MapMultibinding>,
+        @Assisted private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
+        private readonly assistedFactoryLocator: AssistedFactoryLocator,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly constructorHelper: ConstructorHelper,
         private readonly errorReporter: ErrorReporter,
-        private readonly scopeFilter?: { filterOnly?: ts.Symbol },
-        private readonly parentGraph?: (type: QualifiedType) => boolean,
+        @Assisted private readonly scopeFilter?: ScopeFilter,
+        @Assisted private readonly parentGraph?: CanBind,
     ) {
         this.assertNoDuplicateBindings()
     }
@@ -134,7 +153,7 @@ export class DependencyGraphBuilder {
             }
         }
 
-        const assistedFactory = this.assistedFactoryLocation.asAssistedFactory(boundType.type)
+        const assistedFactory = this.assistedFactoryLocator.asAssistedFactory(boundType.type)
         if (assistedFactory) {
             const dependencies = assistedFactory.constructorParams.filter(it => !it.decorators.some(this.nodeDetector.isAssistedDecorator))
             return {

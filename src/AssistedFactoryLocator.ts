@@ -3,9 +3,10 @@ import {createQualifiedType, internalQualifier} from "./QualifiedType"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {AssistedFactory, ProviderType} from "./Providers"
-import {Inject} from "karambit-inject"
+import {Inject, Reusable} from "karambit-inject"
 
 @Inject
+@Reusable
 export class AssistedFactoryLocator {
 
     #cache = new Map<ts.Type, AssistedFactory | undefined>()

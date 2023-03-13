@@ -4,7 +4,11 @@ import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Container} from "./Util"
 import {ProviderType, SubcomponentFactory} from "./Providers"
+import {Assisted, AssistedInject} from "karambit-inject"
 
+export type SubcomponentFactoryLocatorFactory = (installedSubcomponents: Container<ts.Symbol>) => SubcomponentFactoryLocator
+
+@AssistedInject
 export class SubcomponentFactoryLocator {
 
     #cache = new Map<ts.Type, SubcomponentFactory | undefined>()
@@ -13,7 +17,7 @@ export class SubcomponentFactoryLocator {
         private readonly typeChecker: ts.TypeChecker,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly constructorHelper: ConstructorHelper,
-        private readonly installedSubcomponents: Container<ts.Symbol>
+        @Assisted private readonly installedSubcomponents: Container<ts.Symbol>,
     ) {
         this.asSubcomponentFactory = this.asSubcomponentFactory.bind(this)
     }
