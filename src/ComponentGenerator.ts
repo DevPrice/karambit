@@ -155,9 +155,49 @@ export class ComponentGenerator {
                     ...providesMethod,
                     type: createQualifiedType({...providesMethod.type, discriminator: Symbol("element")}),
                     optional: true, // TODO
+                    isIterableProvider: false,
                 })
                 setMultibindings.set(providesMethod.type, existing)
-            } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isIntoMapDecorator)) {
+            } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isElementsIntoSetDecorator)) {
+                const iterableType = this.nodeDetector.isIterable(providesMethod.type.type)
+                if (!iterableType) this.errorReporter.reportParseFailed("@ElementsIntoSet provider must return an iterable!", providesMethod.declaration)
+                const qualifiedType = createQualifiedType({...providesMethod.type, type: iterableType})
+                const existing: SetMultibinding = setMultibindings.get(qualifiedType) ?? {
+                    providerType: ProviderType.SET_MULTIBINDING,
+                    type: providesMethod.type,
+                    elementBindings: [],
+                    elementProviders: [],
+                }
+                existing.elementProviders.push({
+                    ...providesMethod,
+                    type: createQualifiedType({...qualifiedType, discriminator: Symbol("element")}),
+                    optional: true, // TODO
+                    isIterableProvider: true,
+                })
+                setMultibindings.set(providesMethod.type, existing)
+            } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isElementsIntoMapDecorator)) {
+                const iterableType = this.nodeDetector.isIterable(providesMethod.type.type)
+                if (!iterableType) this.errorReporter.reportParseFailed("@ElementsIntoMap provider must return an iterable!", providesMethod.declaration)
+
+                const qualifiedType = createQualifiedType({...providesMethod.type, type: iterableType})
+                const info = this.nodeDetector.getMapTupleBindingInfo(qualifiedType)
+                if (!info) this.errorReporter.reportParseFailed("@ElementsIntoMap provider must return an iterable of a tuple of size 2.", providesMethod.declaration)
+
+                const existing: MapMultibinding = mapMultibindings.get([info.valueType, info.keyType]) ?? {
+                    providerType: ProviderType.MAP_MULTIBINDING,
+                    type: info.valueType,
+                    entryProviders: [],
+                    entryBindings: []
+                }
+                existing.entryProviders.push({
+                    ...providesMethod,
+                    type: createQualifiedType({...qualifiedType, discriminator: Symbol("entry")}),
+                    optional: true, // TODO
+                    isIterableProvider: true,
+                })
+                mapMultibindings.set([info.valueType, info.keyType], existing)
+            } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isIntoMapDecorator)
+                || providesMethod.declaration.modifiers?.some(this.nodeDetector.isElementsIntoMapDecorator)) {
                 const info = this.nodeDetector.getMapBindingInfo(providesMethod.type, providesMethod.declaration)
                 if (!info) this.errorReporter.reportParseFailed("@IntoMap provider must have @MapKey or return tuple of size 2.", providesMethod.declaration)
 
@@ -172,6 +212,7 @@ export class ComponentGenerator {
                     type: createQualifiedType({...providesMethod.type, discriminator: Symbol("entry")}),
                     key: info.expression,
                     optional: true, // TODO
+                    isIterableProvider: false,
                 })
                 mapMultibindings.set([info.valueType, info.keyType], existing)
             } else {

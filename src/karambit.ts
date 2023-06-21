@@ -94,6 +94,18 @@ export function IntoMap(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
+export function ElementsIntoSet(): MethodDecorator | PropertyDecorator
+export function ElementsIntoSet(target: unknown, propertyKey: string | symbol): void
+export function ElementsIntoSet(): never {
+    ErrorReporter.reportCodeNotTransformed()
+}
+
+export function ElementsIntoMap(): MethodDecorator | PropertyDecorator
+export function ElementsIntoMap(target: unknown, propertyKey: string | symbol): void
+export function ElementsIntoMap(): never {
+    ErrorReporter.reportCodeNotTransformed()
+}
+
 export function MapKey<T>(key: T): MethodDecorator | PropertyDecorator | any {
     ErrorReporter.reportCodeNotTransformed()
 }

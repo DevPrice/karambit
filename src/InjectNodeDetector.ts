@@ -3,6 +3,7 @@ import {Inject, Reusable} from "karambit-inject"
 import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType"
 import {ErrorReporter} from "./ErrorReporter"
 import type {KarambitTransformOptions} from "./karambit"
+import {ElementsIntoSet} from "./karambit"
 
 const injectModuleName = require("../package.json").name
 const injectSourceFileName = require("../package.json").main
@@ -38,6 +39,8 @@ export class InjectNodeDetector {
         this.isModuleDecorator = this.isModuleDecorator.bind(this)
         this.isIntoSetDecorator = this.isIntoSetDecorator.bind(this)
         this.isIntoMapDecorator = this.isIntoMapDecorator.bind(this)
+        this.isElementsIntoSetDecorator = this.isElementsIntoSetDecorator.bind(this)
+        this.isElementsIntoMapDecorator = this.isElementsIntoMapDecorator.bind(this)
         this.isMapKeyDecorator = this.isMapKeyDecorator.bind(this)
         this.isCompileTimeConstant = this.isCompileTimeConstant.bind(this)
         this.isEraseable = this.isEraseable.bind(this)
@@ -163,6 +166,14 @@ export class InjectNodeDetector {
         return this.isKarambitDecorator(decorator, "IntoMap")
     }
 
+    isElementsIntoSetDecorator(decorator: ts.Node): decorator is ts.Decorator {
+        return this.isKarambitDecorator(decorator, "ElementsIntoSet")
+    }
+
+    isElementsIntoMapDecorator(decorator: ts.Node): decorator is ts.Decorator {
+        return this.isKarambitDecorator(decorator, "ElementsIntoMap")
+    }
+
     isMapKeyDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "MapKey")
     }
@@ -171,6 +182,10 @@ export class InjectNodeDetector {
         const keyInfo = this.getMapKey(declaration)
         if (keyInfo) return {...keyInfo, valueType: returnType}
 
+        return this.getMapTupleBindingInfo(returnType)
+    }
+
+    getMapTupleBindingInfo(returnType: QualifiedType): {keyType: ts.Type, valueType: QualifiedType} | undefined {
         const type = returnType.type as any
         if (type.target && type.target.fixedLength === 2) {
             const typeArgs = type.resolvedTypeArguments as ts.Type[] ?? []
@@ -249,6 +264,16 @@ export class InjectNodeDetector {
             const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
             if (typeArguments.length != 2) ErrorReporter.reportParseFailed("Invalid ReadonlyMap type!")
             return typeArguments as [ts.Type, ts.Type]
+        }
+    }
+
+    isIterable(type: ts.Type): ts.Type | undefined {
+        // TODO: This almost certainly isn't robust or even correct
+        const iterator = type.getProperties().find(it => it.name.startsWith("__@iterator@"))
+        if (iterator) {
+            const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
+            if (typeArguments.length != 1) ErrorReporter.reportParseFailed("Invalid Iterable type!")
+            return typeArguments[0]
         }
     }
 

@@ -303,9 +303,14 @@ export class ComponentDeclarationBuilder {
             undefined,
             [ts.factory.createArrayLiteralExpression(
                 provider.elementProviders
-                    .map(it => it.type)
-                    .concat(provider.elementBindings)
-                    .map(this.getParamExpression)
+                    .map(it => {
+                        if (it.isIterableProvider) {
+                            return ts.factory.createSpreadElement(this.getParamExpression(it.type))
+                        } else {
+                            return this.getParamExpression(it.type)
+                        }
+                    })
+                    .concat(provider.elementBindings.map(this.getParamExpression))
                     .concat(parentAccessExpression ?? []),
                 false
             )]
@@ -326,7 +331,13 @@ export class ComponentDeclarationBuilder {
             undefined,
             [ts.factory.createArrayLiteralExpression(
                 provider.entryProviders
-                    .map(entryProvider => this.getMapEntryExpression(entryProvider.type, entryProvider.key))
+                    .map(entryProvider => {
+                        if (entryProvider.isIterableProvider) {
+                            return ts.factory.createSpreadElement(this.getMapEntryExpression(entryProvider.type, entryProvider.key))
+                        } else {
+                            return this.getMapEntryExpression(entryProvider.type, entryProvider.key)
+                        }
+                    })
                     .concat(provider.entryBindings.map(it => this.getMapEntryExpression(it.valueType, it.key)))
                     .concat(parentAccessExpression ?? []),
                 false

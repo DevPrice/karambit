@@ -7,6 +7,7 @@ export type ProviderParameter = ProvidesMethodParameter | ConstructorParameter
 
 export interface MultibindingElementProvider extends ProvidesMethod {
     optional: boolean
+    isIterableProvider: boolean
 }
 
 export interface MapEntryProvider extends MultibindingElementProvider {

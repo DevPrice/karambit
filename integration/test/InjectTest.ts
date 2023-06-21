@@ -15,12 +15,13 @@ import {
     BindsInstance,
     Binds,
     IntoSet,
+    ElementsIntoSet,
     IntoMap,
     MapKey,
     createComponent,
     getConstructor,
     Assisted,
-    AssistedInject,
+    AssistedInject, ElementsIntoMap,
 } from "karambit-inject"
 import * as k from "karambit-inject"
 
@@ -149,10 +150,13 @@ describe("Injection", () => {
     })
     describe("Multibindings", () => {
         it("multibinding set provides all elements", () => {
-            assert.strictEqual(multibindingComponent.numberSet.size, 3)
+            assert.strictEqual(multibindingComponent.numberSet.size, 6)
             assert.ok(multibindingComponent.numberSet.has(1))
             assert.ok(multibindingComponent.numberSet.has(2))
             assert.ok(multibindingComponent.numberSet.has(3))
+            assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(10))
+            assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(11))
+            assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(12))
         })
         it("multibinding set via @Binds", () => {
             assert.strictEqual(multibindingComponent.boundSet.size, 2)
@@ -166,22 +170,28 @@ describe("Injection", () => {
             assert.ok(multibindingComponent.qualifiedSet.has(2))
         })
         it("multibinding set provides scoped elements", () => {
-            assert.strictEqual(multibindingComponent.numberSet.size, 3)
-            assert.strictEqual(multibindingComponent.numberSet.size, 3)
+            assert.strictEqual(multibindingComponent.numberSet.size, 6)
+            assert.strictEqual(multibindingComponent.numberSet.size, 6)
             assert.strictEqual(multibindingScopedProvidedCount, 1)
         })
         it("subcomponent multibinding provides additional set elements", () => {
-            assert.strictEqual(multibindingComponent.subcomponentFactory().numberSetExtension.size, 4)
+            assert.strictEqual(multibindingComponent.subcomponentFactory().numberSetExtension.size, 7)
             assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(1))
             assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(2))
             assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(3))
             assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(4))
+            assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(10))
+            assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(11))
+            assert.ok(multibindingComponent.subcomponentFactory().numberSetExtension.has(12))
         })
         it("multibinding map provides all elements", () => {
-            assert.strictEqual(multibindingComponent.numberMap.size, 3)
+            assert.strictEqual(multibindingComponent.numberMap.size, 6)
             assert.strictEqual(multibindingComponent.numberMap.get("one"), 1)
             assert.strictEqual(multibindingComponent.numberMap.get("two"), 2)
             assert.strictEqual(multibindingComponent.numberMap.get("three"), 3)
+            assert.strictEqual(multibindingComponent.numberMap.get("ten"), 10)
+            assert.strictEqual(multibindingComponent.numberMap.get("eleven"), 11)
+            assert.strictEqual(multibindingComponent.numberMap.get("twelve"), 12)
         })
         it("multibinding map via @Binds", () => {
             assert.strictEqual(multibindingComponent.boundMap.size, 2)
@@ -194,16 +204,19 @@ describe("Injection", () => {
             assert.strictEqual(multibindingComponent.qualifiedMap.get("two"), 2)
         })
         it("multibinding map provides scoped elements", () => {
-            assert.strictEqual(multibindingComponent.numberMap.size, 3)
-            assert.strictEqual(multibindingComponent.numberMap.size, 3)
+            assert.strictEqual(multibindingComponent.numberMap.size, 6)
+            assert.strictEqual(multibindingComponent.numberMap.size, 6)
             assert.strictEqual(multibindingScopedProvidedCount, 1)
         })
         it("subcomponent multibinding provides additional map elements", () => {
-            assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.size, 4)
+            assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.size, 7)
             assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("one"), 1)
             assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("two"), 2)
             assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("three"), 3)
             assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("four"), 4)
+            assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("ten"), 10)
+            assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("eleven"), 11)
+            assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("twelve"), 12)
         })
     })
     describe("Configuration", () => {
@@ -611,10 +624,16 @@ abstract class MultibindingSetModule {
         return two
     }
 
+    //@Provides
+    //@IntoSet({optional: true})
+    //static provideOptionalIntoSet(missing: MissingOptional): number {
+    //    return NaN
+    //}
+
     @Provides
-    @IntoSet({optional: true})
-    static provideOptionalIntoSet(missing: MissingOptional): number {
-        return NaN
+    @ElementsIntoSet
+    static provideIterableIntoSet(): number[] {
+        return [10, 11, 12]
     }
 
     @Provides
@@ -679,11 +698,17 @@ abstract class MultibindingMapModule {
         return holder.three
     }
 
+    //@Provides
+    //@MapKey("NaN")
+    //@IntoMap({optional: true})
+    //static provideOptionalIntoSet(missing: MissingOptional): number {
+    //    return NaN
+    //}
+
     @Provides
-    @MapKey("NaN")
-    @IntoMap({optional: true})
-    static provideOptionalIntoSet(missing: MissingOptional): number {
-        return NaN
+    @ElementsIntoMap
+    static provideIterableIntoSet(): [string, number][] {
+        return [["ten", 10], ["eleven", 11], ["twelve", 12]]
     }
 
     @Provides
