@@ -33,6 +33,10 @@ interface ModuleInfo {
     includes: unknown[]
 }
 
+interface MultibindingOptions {
+    optional: boolean
+}
+
 export function Module(info: ModuleInfo): ClassDecorator
 export function Module(target: unknown): void
 export function Module(): ClassDecorator
@@ -76,14 +80,16 @@ export function BindsInstance(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
-export function IntoSet(): MethodDecorator | PropertyDecorator
+export function IntoSet(options: Partial<MultibindingOptions>): MethodDecorator | PropertyDecorator
 export function IntoSet(target: unknown, propertyKey: string | symbol): void
+export function IntoSet(): PropertyDecorator
 export function IntoSet(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
-export function IntoMap(): MethodDecorator | PropertyDecorator
+export function IntoMap(options: Partial<MultibindingOptions>): MethodDecorator | PropertyDecorator
 export function IntoMap(target: unknown, propertyKey: string | symbol): void
+export function IntoMap(): PropertyDecorator
 export function IntoMap(): never {
     ErrorReporter.reportCodeNotTransformed()
 }

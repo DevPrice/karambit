@@ -175,7 +175,7 @@ export class DependencyGraphBuilder {
                         ...multibinding,
                         type: boundType,
                         dependencies: new Set(dependencies.map(it => it.type)),
-                        parentBinding
+                        parentBinding,
                     },
                     dependencies,
                 }
@@ -195,7 +195,7 @@ export class DependencyGraphBuilder {
                         ...multibinding,
                         type: boundType,
                         dependencies: new Set(dependencies.map(it => it.type)),
-                        parentBinding
+                        parentBinding,
                     },
                     dependencies,
                 }

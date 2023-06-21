@@ -568,7 +568,7 @@ abstract class MultibindingSetSubcomponentModule {
 
     @Provides
     @MapKey("four")
-    @IntoMap
+    @IntoMap({optional: false})
     static provideFourIntoMap(): number {
         return 4
     }
@@ -609,6 +609,12 @@ abstract class MultibindingSetModule {
     @IntoSet
     static provideTwoIntoSet(two: number): number {
         return two
+    }
+
+    @Provides
+    @IntoSet({optional: true})
+    static provideOptionalIntoSet(missing: MissingOptional): number {
+        return NaN
     }
 
     @Provides
@@ -671,6 +677,13 @@ abstract class MultibindingMapModule {
     @IntoMap
     static provideThree(holder: ThreeHolder): number {
         return holder.three
+    }
+
+    @Provides
+    @MapKey("NaN")
+    @IntoMap({optional: true})
+    static provideOptionalIntoSet(missing: MissingOptional): number {
+        return NaN
     }
 
     @Provides

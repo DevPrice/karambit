@@ -1,12 +1,15 @@
 import * as ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
-import {ParameterDeclaration} from "typescript"
 
 export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | AssistedFactory | UndefinedProvider | ParentProvider | SetMultibinding | MapMultibinding
-export type MultibindingProvider = SetMultibinding
+export type MultibindingProvider = SetMultibinding | MapMultibinding
 export type ProviderParameter = ProvidesMethodParameter | ConstructorParameter
 
-export interface MapEntryProvider extends ProvidesMethod {
+export interface MultibindingElementProvider extends ProvidesMethod {
+    optional: boolean
+}
+
+export interface MapEntryProvider extends MultibindingElementProvider {
     key?: ts.Expression
 }
 
@@ -108,7 +111,7 @@ export interface UndefinedProvider {
 export interface SetMultibinding {
     readonly providerType: ProviderType.SET_MULTIBINDING
     readonly type: QualifiedType
-    readonly elementProviders: ProvidesMethod[]
+    readonly elementProviders: MultibindingElementProvider[]
     readonly elementBindings: QualifiedType[]
     readonly parentBinding?: boolean
     readonly declaration?: undefined

@@ -303,8 +303,9 @@ export class ComponentDeclarationBuilder {
             undefined,
             [ts.factory.createArrayLiteralExpression(
                 provider.elementProviders
-                    .map(elementProvider => this.getParamExpression(elementProvider.type))
-                    .concat(provider.elementBindings.map(this.getParamExpression))
+                    .map(it => it.type)
+                    .concat(provider.elementBindings)
+                    .map(this.getParamExpression)
                     .concat(parentAccessExpression ?? []),
                 false
             )]

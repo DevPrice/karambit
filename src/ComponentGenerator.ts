@@ -149,9 +149,13 @@ export class ComponentGenerator {
                     providerType: ProviderType.SET_MULTIBINDING,
                     type: providesMethod.type,
                     elementBindings: [],
-                    elementProviders: []
+                    elementProviders: [],
                 }
-                existing.elementProviders.push({...providesMethod, type: createQualifiedType({...providesMethod.type, discriminator: Symbol("element")})})
+                existing.elementProviders.push({
+                    ...providesMethod,
+                    type: createQualifiedType({...providesMethod.type, discriminator: Symbol("element")}),
+                    optional: true, // TODO
+                })
                 setMultibindings.set(providesMethod.type, existing)
             } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isIntoMapDecorator)) {
                 const info = this.nodeDetector.getMapBindingInfo(providesMethod.type, providesMethod.declaration)
@@ -166,7 +170,8 @@ export class ComponentGenerator {
                 existing.entryProviders.push({
                     ...providesMethod,
                     type: createQualifiedType({...providesMethod.type, discriminator: Symbol("entry")}),
-                    key: info.expression
+                    key: info.expression,
+                    optional: true, // TODO
                 })
                 mapMultibindings.set([info.valueType, info.keyType], existing)
             } else {
