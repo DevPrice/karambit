@@ -166,9 +166,7 @@ export class DependencyGraphBuilder {
         if (readonlySetType) {
             const multibinding = this.setMultibindings.get(createQualifiedType({...boundType, type: readonlySetType}))
             if (multibinding) {
-                const dependencies = multibinding.elementBindings
-                    .map(type => { return {type, optional: false} })
-                    .concat(multibinding.elementProviders.flatMap(it => it.parameters))
+                const dependencies = multibinding.elementProviders
                 const parentBinding = this.parentGraph ? this.parentGraph(boundType) : false
                 return {
                     provider: {
@@ -186,9 +184,7 @@ export class DependencyGraphBuilder {
         if (readonlyMapTypes) {
             const multibinding = this.mapMultibindings.get([createQualifiedType({...boundType, type: readonlyMapTypes[1]}), readonlyMapTypes[0]])
             if (multibinding) {
-                const dependencies = multibinding.entryBindings
-                    .map(type => { return {type: type.valueType, optional: false} })
-                    .concat(multibinding.entryProviders.flatMap(it => it.parameters))
+                const dependencies = multibinding.entryProviders
                 const parentBinding = this.parentGraph ? this.parentGraph(boundType) : false
                 return {
                     provider: {

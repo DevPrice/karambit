@@ -150,18 +150,20 @@ export class ComponentGenerator {
                 const existing: SetMultibinding = setMultibindings.get(providesMethod.type) ?? {
                     providerType: ProviderType.SET_MULTIBINDING,
                     type: providesMethod.type,
-                    elementBindings: [],
                     elementProviders: [],
                 }
                 const optional = this.nodeDetector.getBooleanPropertyNode(intoSetDecorator, "optional") ?? false
                 if (optional) this.errorReporter.reportParseFailed("Optional multibindings not currently supported!", intoSetDecorator)
+                const elementProviderType = createQualifiedType({...providesMethod.type, discriminator: Symbol("element")})
                 existing.elementProviders.push({
-                    ...providesMethod,
-                    type: createQualifiedType({...providesMethod.type, discriminator: Symbol("element")}),
+                    type: elementProviderType,
                     optional,
                     isIterableProvider: false,
                 })
                 setMultibindings.set(providesMethod.type, existing)
+                const existingFactory = factories.get(elementProviderType)
+                if (existingFactory) throw this.errorReporter.reportDuplicateProviders(elementProviderType, [existingFactory, providesMethod])
+                factories.set(elementProviderType, {...providesMethod, type: elementProviderType})
             } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isElementsIntoSetDecorator)) {
                 const iterableType = this.nodeDetector.isIterable(providesMethod.type.type)
                 if (!iterableType) this.errorReporter.reportParseFailed("@ElementsIntoSet provider must return an iterable!", providesMethod.declaration)
@@ -169,16 +171,18 @@ export class ComponentGenerator {
                 const existing: SetMultibinding = setMultibindings.get(qualifiedType) ?? {
                     providerType: ProviderType.SET_MULTIBINDING,
                     type: providesMethod.type,
-                    elementBindings: [],
                     elementProviders: [],
                 }
+                const elementsProviderType = createQualifiedType({...qualifiedType, discriminator: Symbol("element")})
                 existing.elementProviders.push({
-                    ...providesMethod,
-                    type: createQualifiedType({...qualifiedType, discriminator: Symbol("element")}),
+                    type: elementsProviderType,
                     optional: false,
                     isIterableProvider: true,
                 })
                 setMultibindings.set(providesMethod.type, existing)
+                const existingFactory = factories.get(elementsProviderType)
+                if (existingFactory) throw this.errorReporter.reportDuplicateProviders(elementsProviderType, [existingFactory, providesMethod])
+                factories.set(elementsProviderType, {...providesMethod, type: elementsProviderType})
             } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isElementsIntoMapDecorator)) {
                 const iterableType = this.nodeDetector.isIterable(providesMethod.type.type)
                 if (!iterableType) this.errorReporter.reportParseFailed("@ElementsIntoMap provider must return an iterable!", providesMethod.declaration)
@@ -191,15 +195,17 @@ export class ComponentGenerator {
                     providerType: ProviderType.MAP_MULTIBINDING,
                     type: info.valueType,
                     entryProviders: [],
-                    entryBindings: [],
                 }
+                const entriesProviderType = createQualifiedType({...qualifiedType, discriminator: Symbol("entry")})
                 existing.entryProviders.push({
-                    ...providesMethod,
-                    type: createQualifiedType({...qualifiedType, discriminator: Symbol("entry")}),
+                    type: entriesProviderType,
                     optional: false,
                     isIterableProvider: true,
                 })
                 mapMultibindings.set([info.valueType, info.keyType], existing)
+                const existingFactory = factories.get(entriesProviderType)
+                if (existingFactory) throw this.errorReporter.reportDuplicateProviders(entriesProviderType, [existingFactory, providesMethod])
+                factories.set(entriesProviderType, {...providesMethod, type: entriesProviderType})
             } else if (intoMapDecorator) {
                 const info = this.nodeDetector.getMapBindingInfo(providesMethod.type, providesMethod.declaration)
                 if (!info) this.errorReporter.reportParseFailed("@IntoMap provider must have @MapKey or return tuple of size 2.", providesMethod.declaration)
@@ -208,18 +214,20 @@ export class ComponentGenerator {
                     providerType: ProviderType.MAP_MULTIBINDING,
                     type: info.valueType,
                     entryProviders: [],
-                    entryBindings: [],
                 }
                 const optional = this.nodeDetector.getBooleanPropertyNode(intoMapDecorator, "optional") ?? false
                 if (optional) this.errorReporter.reportParseFailed("Optional multibindings not currently supported!", intoMapDecorator)
+                const entryProviderType = createQualifiedType({...providesMethod.type, discriminator: Symbol("entry")})
                 existing.entryProviders.push({
-                    ...providesMethod,
-                    type: createQualifiedType({...providesMethod.type, discriminator: Symbol("entry")}),
+                    type: entryProviderType,
                     key: info.expression,
                     optional,
                     isIterableProvider: false,
                 })
                 mapMultibindings.set([info.valueType, info.keyType], existing)
+                const existingFactory = factories.get(entryProviderType)
+                if (existingFactory) throw this.errorReporter.reportDuplicateProviders(entryProviderType, [existingFactory, providesMethod])
+                factories.set(entryProviderType, {...providesMethod, type: entryProviderType})
             } else {
                 const existing = factories.get(providesMethod.type)
                 if (existing) throw this.errorReporter.reportDuplicateProviders(providesMethod.type, [existing, providesMethod])
@@ -232,11 +240,18 @@ export class ComponentGenerator {
                 const existing: SetMultibinding = setMultibindings.get(binding.returnType) ?? {
                     providerType: ProviderType.SET_MULTIBINDING,
                     type: binding.returnType,
-                    elementBindings: [],
-                    elementProviders: []
+                    elementProviders: [],
                 }
-                existing.elementBindings.push(binding.paramType)
+                const elementProviderType = createQualifiedType({...binding.returnType, discriminator: Symbol("element")})
+                existing.elementProviders.push({
+                    type: binding.paramType,
+                    optional: false,
+                    isIterableProvider: false,
+                })
                 setMultibindings.set(binding.returnType, existing)
+
+                const entryBinding: Binding = {...binding, returnType: elementProviderType}
+                bindings.push(entryBinding)
             } else if (binding.declaration.modifiers?.some(this.nodeDetector.isIntoMapDecorator)) {
                 const info = this.nodeDetector.getMapBindingInfo(binding.returnType, binding.declaration)
                 if (!info) this.errorReporter.reportParseFailed("@IntoMap binding must have @MapKey or return tuple of size 2.", binding.declaration)
@@ -244,10 +259,18 @@ export class ComponentGenerator {
                     providerType: ProviderType.MAP_MULTIBINDING,
                     type: info.valueType,
                     entryProviders: [],
-                    entryBindings: [],
                 }
-                existing.entryBindings.push({valueType: binding.paramType, key: info.expression})
+                const entryProviderType = createQualifiedType({...binding.returnType, discriminator: Symbol("entry")})
+                existing.entryProviders.push({
+                    type: binding.paramType,
+                    optional: false,
+                    isIterableProvider: false,
+                    key: info.expression,
+                })
                 mapMultibindings.set([info.valueType, info.keyType], existing)
+
+                const entryBinding: Binding = {...binding, returnType: entryProviderType}
+                bindings.push(entryBinding)
             } else {
                 bindings.push(binding)
             }

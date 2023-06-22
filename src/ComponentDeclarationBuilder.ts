@@ -290,8 +290,7 @@ export class ComponentDeclarationBuilder {
     }
 
     private getSetMultibindingProviderDeclaration(provider: SetMultibinding, componentScope?: ts.Symbol): ts.ClassElement[] {
-        const members = provider.elementProviders.flatMap(it => this.getProviderDeclaration(it, componentScope))
-        return [...members, this.getterMethodDeclaration(provider.type, this.createSetMultibindingExpression(provider))]
+        return [this.getterMethodDeclaration(provider.type, this.createSetMultibindingExpression(provider))]
     }
 
     private createSetMultibindingExpression(provider: SetMultibinding): ts.Expression {
@@ -310,7 +309,6 @@ export class ComponentDeclarationBuilder {
                             return this.getParamExpression(it.type)
                         }
                     })
-                    .concat(provider.elementBindings.map(this.getParamExpression))
                     .concat(parentAccessExpression ?? []),
                 false
             )]
@@ -318,8 +316,7 @@ export class ComponentDeclarationBuilder {
     }
 
     private getMapMultibindingProviderDeclaration(provider: MapMultibinding, componentScope?: ts.Symbol): ts.ClassElement[] {
-        const members = provider.entryProviders.flatMap(it => this.getProviderDeclaration(it, componentScope))
-        return [...members, this.getterMethodDeclaration(provider.type, this.createMapMultibindingExpression(provider))]
+        return [this.getterMethodDeclaration(provider.type, this.createMapMultibindingExpression(provider))]
     }
 
     private createMapMultibindingExpression(provider: MapMultibinding): ts.Expression {
@@ -338,7 +335,6 @@ export class ComponentDeclarationBuilder {
                             return this.getMapEntryExpression(entryProvider.type, entryProvider.key)
                         }
                     })
-                    .concat(provider.entryBindings.map(it => this.getMapEntryExpression(it.valueType, it.key)))
                     .concat(parentAccessExpression ?? []),
                 false
             )]

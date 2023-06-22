@@ -5,7 +5,8 @@ export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableCon
 export type MultibindingProvider = SetMultibinding | MapMultibinding
 export type ProviderParameter = ProvidesMethodParameter | ConstructorParameter
 
-export interface MultibindingElementProvider extends ProvidesMethod {
+export interface MultibindingElementProvider {
+    type: QualifiedType
     optional: boolean
     isIterableProvider: boolean
 }
@@ -113,7 +114,6 @@ export interface SetMultibinding {
     readonly providerType: ProviderType.SET_MULTIBINDING
     readonly type: QualifiedType
     readonly elementProviders: MultibindingElementProvider[]
-    readonly elementBindings: QualifiedType[]
     readonly parentBinding?: boolean
     readonly declaration?: undefined
 }
@@ -122,7 +122,6 @@ export interface MapMultibinding {
     readonly providerType: ProviderType.MAP_MULTIBINDING
     readonly type: QualifiedType
     readonly entryProviders: MapEntryProvider[]
-    readonly entryBindings: MapEntryBinding[]
     readonly parentBinding?: boolean
     readonly declaration?: undefined
 }
