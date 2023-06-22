@@ -387,6 +387,38 @@ export class InjectNodeDetector {
         }
     }
 
+    getPropertyNode(decorator: ts.Decorator, propertyName: string): ts.Node | undefined {
+        if (ts.isCallExpression(decorator.expression)) {
+            if (decorator.expression.arguments.length === 1) {
+                const componentInfo = decorator.expression.arguments[0]
+                if (ts.isObjectLiteralExpression(componentInfo)) {
+                    for (const child of componentInfo.getChildren().flatMap(it => it.kind === ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])) {
+                        if (ts.isPropertyAssignment(child) && child.name.getText() === propertyName) {
+                            return child.initializer
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    getStringPropertyNode(decorator: ts.Decorator, propertyName: string): string | undefined {
+        const valueExpression = this.getPropertyNode(decorator, propertyName)
+        if (valueExpression) {
+            if (!ts.isStringLiteral(valueExpression)) this.errorReporter.reportParseFailed(`${propertyName} must be a string literal!`, decorator)
+            return this.resolveStringLiteral(valueExpression)
+        }
+    }
+
+    getBooleanPropertyNode(decorator: ts.Decorator, propertyName: string): boolean | undefined {
+        const valueExpression = this.getPropertyNode(decorator, propertyName)
+        if (valueExpression) {
+            if (valueExpression.kind === ts.SyntaxKind.TrueKeyword) return true
+            if (valueExpression.kind === ts.SyntaxKind.FalseKeyword) return false
+            this.errorReporter.reportParseFailed(`${propertyName} must be a boolean literal!`, decorator)
+        }
+    }
+
     resolveStringLiteral(literal: ts.StringLiteral): string {
         const match = literal.getText().match(/^['"](.*)['"]$/)
         if (!match || match.length < 2) throw ErrorReporter.reportParseFailed(`Failed to resolve string literal: ${literal.getText()}`)

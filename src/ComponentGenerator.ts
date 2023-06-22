@@ -144,17 +144,21 @@ export class ComponentGenerator {
             if (providesMethod.scope && !this.nodeDetector.isReusableScope(providesMethod.scope) && providesMethod.scope != componentScope) {
                 this.errorReporter.reportInvalidScope(providesMethod, componentScope)
             }
-            if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isIntoSetDecorator)) {
+            const intoSetDecorator = providesMethod.declaration.modifiers?.find(this.nodeDetector.isIntoSetDecorator)
+            const intoMapDecorator = providesMethod.declaration.modifiers?.find(this.nodeDetector.isIntoMapDecorator)
+            if (intoSetDecorator) {
                 const existing: SetMultibinding = setMultibindings.get(providesMethod.type) ?? {
                     providerType: ProviderType.SET_MULTIBINDING,
                     type: providesMethod.type,
                     elementBindings: [],
                     elementProviders: [],
                 }
+                const optional = this.nodeDetector.getBooleanPropertyNode(intoSetDecorator, "optional") ?? false
+                if (optional) this.errorReporter.reportParseFailed("Optional multibindings not currently supported!", intoSetDecorator)
                 existing.elementProviders.push({
                     ...providesMethod,
                     type: createQualifiedType({...providesMethod.type, discriminator: Symbol("element")}),
-                    optional: true, // TODO
+                    optional,
                     isIterableProvider: false,
                 })
                 setMultibindings.set(providesMethod.type, existing)
@@ -171,7 +175,7 @@ export class ComponentGenerator {
                 existing.elementProviders.push({
                     ...providesMethod,
                     type: createQualifiedType({...qualifiedType, discriminator: Symbol("element")}),
-                    optional: true, // TODO
+                    optional: false,
                     isIterableProvider: true,
                 })
                 setMultibindings.set(providesMethod.type, existing)
@@ -187,17 +191,16 @@ export class ComponentGenerator {
                     providerType: ProviderType.MAP_MULTIBINDING,
                     type: info.valueType,
                     entryProviders: [],
-                    entryBindings: []
+                    entryBindings: [],
                 }
                 existing.entryProviders.push({
                     ...providesMethod,
                     type: createQualifiedType({...qualifiedType, discriminator: Symbol("entry")}),
-                    optional: true, // TODO
+                    optional: false,
                     isIterableProvider: true,
                 })
                 mapMultibindings.set([info.valueType, info.keyType], existing)
-            } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isIntoMapDecorator)
-                || providesMethod.declaration.modifiers?.some(this.nodeDetector.isElementsIntoMapDecorator)) {
+            } else if (intoMapDecorator) {
                 const info = this.nodeDetector.getMapBindingInfo(providesMethod.type, providesMethod.declaration)
                 if (!info) this.errorReporter.reportParseFailed("@IntoMap provider must have @MapKey or return tuple of size 2.", providesMethod.declaration)
 
@@ -205,13 +208,15 @@ export class ComponentGenerator {
                     providerType: ProviderType.MAP_MULTIBINDING,
                     type: info.valueType,
                     entryProviders: [],
-                    entryBindings: []
+                    entryBindings: [],
                 }
+                const optional = this.nodeDetector.getBooleanPropertyNode(intoMapDecorator, "optional") ?? false
+                if (optional) this.errorReporter.reportParseFailed("Optional multibindings not currently supported!", intoMapDecorator)
                 existing.entryProviders.push({
                     ...providesMethod,
                     type: createQualifiedType({...providesMethod.type, discriminator: Symbol("entry")}),
                     key: info.expression,
-                    optional: true, // TODO
+                    optional,
                     isIterableProvider: false,
                 })
                 mapMultibindings.set([info.valueType, info.keyType], existing)

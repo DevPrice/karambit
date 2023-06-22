@@ -624,12 +624,6 @@ abstract class MultibindingSetModule {
         return two
     }
 
-    //@Provides
-    //@IntoSet({optional: true})
-    //static provideOptionalIntoSet(missing: MissingOptional): number {
-    //    return NaN
-    //}
-
     @Provides
     @ElementsIntoSet
     static provideIterableIntoSet(): number[] {
@@ -697,13 +691,6 @@ abstract class MultibindingMapModule {
     static provideThree(holder: ThreeHolder): number {
         return holder.three
     }
-
-    //@Provides
-    //@MapKey("NaN")
-    //@IntoMap({optional: true})
-    //static provideOptionalIntoSet(missing: MissingOptional): number {
-    //    return NaN
-    //}
 
     @Provides
     @ElementsIntoMap

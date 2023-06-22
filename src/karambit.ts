@@ -34,6 +34,10 @@ interface ModuleInfo {
 }
 
 interface MultibindingOptions {
+    /**
+     * When true, Karambit will skip binding this element if it is unable to resolve its dependencies,
+     * rather than failing compilation.
+     */
     optional: boolean
 }
 
