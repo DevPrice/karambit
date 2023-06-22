@@ -68,7 +68,7 @@ export function Provides(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
-export function Binds(): MethodDecorator | PropertyDecorator
+export function Binds(): MethodDecorator & PropertyDecorator
 export function Binds(target: unknown, propertyKey: string | symbol): void
 export function Binds(): never {
     ErrorReporter.reportCodeNotTransformed()
@@ -80,33 +80,33 @@ export function BindsInstance(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
-export function IntoSet(options: Partial<MultibindingOptions>): MethodDecorator | PropertyDecorator
+export function IntoSet(options: Partial<MultibindingOptions>): MethodDecorator & PropertyDecorator
 export function IntoSet(target: unknown, propertyKey: string | symbol): void
 export function IntoSet(): PropertyDecorator
 export function IntoSet(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
-export function IntoMap(options: Partial<MultibindingOptions>): MethodDecorator | PropertyDecorator
+export function IntoMap(options: Partial<MultibindingOptions>): MethodDecorator & PropertyDecorator
 export function IntoMap(target: unknown, propertyKey: string | symbol): void
 export function IntoMap(): PropertyDecorator
 export function IntoMap(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
-export function ElementsIntoSet(): MethodDecorator | PropertyDecorator
+export function ElementsIntoSet(): MethodDecorator & PropertyDecorator
 export function ElementsIntoSet(target: unknown, propertyKey: string | symbol): void
 export function ElementsIntoSet(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
-export function ElementsIntoMap(): MethodDecorator | PropertyDecorator
+export function ElementsIntoMap(): MethodDecorator & PropertyDecorator
 export function ElementsIntoMap(target: unknown, propertyKey: string | symbol): void
 export function ElementsIntoMap(): never {
     ErrorReporter.reportCodeNotTransformed()
 }
 
-export function MapKey<T>(key: T): MethodDecorator | PropertyDecorator | any {
+export function MapKey<T>(key: T): MethodDecorator & PropertyDecorator {
     ErrorReporter.reportCodeNotTransformed()
 }
 
