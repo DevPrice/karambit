@@ -268,11 +268,14 @@ export class InjectNodeDetector {
     }
 
     isIterable(type: ts.Type): ts.Type | undefined {
-        // TODO: This almost certainly isn't robust or even correct
         const iterator = type.getProperties().find(it => it.name.startsWith("__@iterator@"))
-        if (iterator) {
-            const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
-            if (typeArguments.length != 1) ErrorReporter.reportParseFailed("Invalid Iterable type!")
+        const iterableType = iterator?.valueDeclaration && this.typeChecker.getTypeOfSymbolAtLocation(iterator, iterator?.valueDeclaration)
+        if (iterableType) {
+            const iteratorTypes = this.typeChecker.getSignaturesOfType(iterableType, ts.SignatureKind.Call).map(this.typeChecker.getReturnTypeOfSignature)
+            if (iteratorTypes.length !== 1) this.errorReporter.reportParseFailed(`Invalid Iterable type: ${this.typeChecker.typeToString(type)}!`)
+            const iteratorType = iteratorTypes[0]
+            const typeArguments = (iteratorType as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
+            if (typeArguments.length != 1) this.errorReporter.reportParseFailed(`Invalid Iterable type: ${this.typeChecker.typeToString(type)}!`)
             return typeArguments[0]
         }
     }
