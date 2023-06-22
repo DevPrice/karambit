@@ -393,6 +393,25 @@ In both cases, the type of map is inferred based on the key and value types used
 @MapKey<"enum1" | "enum2">("enum1")
 ```
 
+You can also bind several elements in a single provider with `@ElementsIntoSet` or `@ElementsIntoMap`. These work basically the same as the non-elements equivalent, except they return an iterable of the element type instead of a single element. For maps, this means returning an iterable of `[KeyType, ValueType]` tuples (you cannot use `@MapKey` in conjunction with `@ElementsIntoMap`).
+
+```typescript
+@Module
+abstract class MoreNumbersModule {
+    @Provides
+    @ElementsIntoSet
+    static provideVegetables(): string[] {
+        return ["brocolli", "carrot", "lettuce"]
+    }
+
+    @Provides
+    @ElementsIntoMap
+    static provideSpecialNumbers(): Set<[string, number]> { // note that these can return any iterable type
+        return new Set([["NaN", NaN], ["Infinity", Infinity]])
+    }
+}
+```
+
 ### Multibindings in subcomponents
 
 Multibindings are unique in that they are the only opportunity a subcomponent has to modify the bindings of its parent. Any `@IntoSet` or `@IntoMap` bindings in a subcomponent will be provided *in addition* to those provided by its parent.
