@@ -11,13 +11,15 @@ export class Importer {
 
     constructor(
         private readonly sourceFile: ts.SourceFile,
-        //private readonly options: KarambitTransformOptions,
     ) {
         this.addImportsToSourceFile = this.addImportsToSourceFile.bind(this)
     }
 
     getImportForSymbol(symbol: ts.Symbol): ts.ImportDeclaration | undefined {
-        const sourcePath = `${"karambit-out"}/${this.sourceFile.fileName}`.replace(/[^/]+$/, "")
+        const declarations = symbol.getDeclarations()
+        if (!declarations || declarations.length === 0) return undefined
+
+        const sourcePath = `${Importer.outDir}/${this.sourceFile.fileName}`.replace(/[^/]+$/, "")
         const importPath = symbol.getDeclarations()![0].getSourceFile().fileName
         if (Path.basename(importPath) !== "typescript.d.ts" && this.getImportSpecifier(sourcePath, importPath) === "typescript") {
             return undefined
@@ -38,15 +40,8 @@ export class Importer {
     }
 
     getExpressionForDeclaration(symbol: ts.Symbol, sourceFile: ts.SourceFile, identifier?: ts.Identifier): ts.Expression {
-        //if (this.sourceFile === sourceFile) return identifier ?? ts.factory.createIdentifier(symbol.getName())
-
         this.getImportForSymbol(symbol)
         return ts.factory.createIdentifier(symbol.getName())
-
-        return ts.factory.createPropertyAccessExpression(
-            ts.factory.getGeneratedNameForNode(this.getImportForSymbol(symbol)),
-            identifier ?? ts.factory.createIdentifier(symbol.getName())
-        )
     }
 
     private createImportForSymbol(symbol: ts.Symbol, sourcePath: string, importPath: string): ts.ImportDeclaration {
@@ -75,4 +70,6 @@ export class Importer {
         if (match) return match[1]
         return Path.relative(sourcePath, importPath).replace(/\.ts$/, "")
     }
+
+    static outDir: string = "karambit-generated"
 }
