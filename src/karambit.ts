@@ -4,6 +4,7 @@ import * as Path from "path"
 import {createProgramComponent} from "./Component"
 import {ErrorReporter} from "./ErrorReporter"
 import * as fs from "fs"
+import {Importer} from "./Importer"
 
 interface ComponentLikeInfo {
     readonly modules?: unknown[]
@@ -194,21 +195,13 @@ export interface KarambitTransformOptions {
 
 export default function(program: ts.Program, options?: Partial<KarambitTransformOptions>) {
     const transformOptions = {...defaultOptions, ...options}
+    // TODO: fix injection and remove this hack
+    Importer.outDir = transformOptions.outDir
     const programComponent = createProgramComponent(program, transformOptions)
-    let originalWriteFile: any = undefined
     return (ctx: ts.TransformationContext) => {
         const emitHost = (ctx as any).getEmitHost()
-        if (!originalWriteFile) originalWriteFile = emitHost.writeFile
+        emitHost.writeFile = () => { }
 
-        let write = false
-        emitHost.writeFile = (filename: string, ...args: unknown[]) => {
-            if (write) {
-                console.log("writing ", filename)
-                originalWriteFile(filename, args)
-            } else {
-                console.log("skipping ", filename)
-            }
-        }
         const transformationContextComponent = programComponent.transformationContextSubcomponentFactory(ctx)
         return (sourceFile: ts.SourceFile) => {
             const {result, durationMs} = time(() => {
@@ -228,7 +221,6 @@ export default function(program: ts.Program, options?: Partial<KarambitTransform
                 if (!fs.existsSync(Path.dirname(p))) fs.mkdirSync(Path.dirname(p), {recursive: true})
                 fs.writeFileSync(p, ts.createPrinter().printNode(ts.EmitHint.Unspecified, result, sourceFile))
             }
-            write = !!resultText
             return result
         }
     }
@@ -244,5 +236,5 @@ function runTransformers<T extends ts.Node>(
 const defaultOptions: KarambitTransformOptions = {
     stripImports: true,
     printTransformDuration: false,
-    outDir: "karambit-out",
+    outDir: "karambit-generated",
 }
