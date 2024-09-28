@@ -443,7 +443,7 @@ export class ComponentGenerator {
         }
 
         const missingOptionals: [QualifiedType, ParentProvider][] = missing.map(it => {
-            return [it.type, {providerType: ProviderType.PARENT, type: it.type}]
+            return [it.type, {providerType: ProviderType.PARENT, type: it.type, optional: !parentCanBind(it.type)}]
         })
         const generatedDeps = new Map(
             Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals)
