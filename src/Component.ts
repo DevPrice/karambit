@@ -8,24 +8,21 @@ import {
     Provides,
     Reusable,
     Subcomponent,
-    SubcomponentFactory
+    SubcomponentFactory,
 } from "karambit-inject"
 import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
-import type {InjectNodeDetector} from "./InjectNodeDetector"
-import type {InjectConstructorExporter} from "./InjectConstructorExporter"
 import type {ComponentVisitor} from "./ComponentVisitor"
 import type {Importer} from "./Importer"
 import type {
     ComponentGenerator,
     ComponentGeneratorDependencies,
-    ComponentGeneratorDependenciesFactory
+    ComponentGeneratorDependenciesFactory,
 } from "./ComponentGenerator"
 import type {KarambitTransformOptions} from "./karambit"
-import type {CreateComponentTransformer} from "./CreateComponentTransformer"
 
 @Subcomponent
 @ComponentGenerationScope
-abstract class ComponentGenerationSubcomponent implements ComponentGeneratorDependencies {
+export abstract class ComponentGenerationSubcomponent implements ComponentGeneratorDependencies {
 
     constructor(@BindsInstance componentDeclaration: ts.ClassDeclaration) { }
 
@@ -33,7 +30,7 @@ abstract class ComponentGenerationSubcomponent implements ComponentGeneratorDepe
 }
 
 @Module
-abstract class SourceFileModule {
+export abstract class SourceFileModule {
 
     @Binds
     abstract bindComponentGeneratorDependenciesFactory: (
@@ -42,19 +39,11 @@ abstract class SourceFileModule {
 
     @Provides
     static provideTransformers(
-        classExporter: InjectConstructorExporter,
         componentVisitor: ComponentVisitor,
-        createComponentTransformer: CreateComponentTransformer,
-        nodeDetector: InjectNodeDetector,
         importer: Importer,
-        ctx: ts.TransformationContext,
     ): ts.Transformer<ts.SourceFile>[] {
         return [
-            classExporter.exportProviders,
             componentVisitor.visitComponents,
-            createComponentTransformer.replaceCreateComponent,
-            createComponentTransformer.replaceGetConstructor,
-            node => nodeDetector.eraseInjectRuntime(node, ctx),
             importer.addImportsToSourceFile,
         ]
     }
@@ -62,7 +51,7 @@ abstract class SourceFileModule {
 
 @Subcomponent({modules: [SourceFileModule], subcomponents: [ComponentGenerationSubcomponent]})
 @SourceFileScope
-abstract class SourceFileSubcomponent {
+export abstract class SourceFileSubcomponent {
 
     constructor(@BindsInstance sourceFile: ts.SourceFile) { }
 
@@ -70,7 +59,7 @@ abstract class SourceFileSubcomponent {
 }
 
 @Subcomponent({subcomponents: [SourceFileSubcomponent]})
-abstract class TransformationContextSubcomponent {
+export abstract class TransformationContextSubcomponent {
 
     constructor(@BindsInstance transformationContext: ts.TransformationContext) { }
 
@@ -78,7 +67,7 @@ abstract class TransformationContextSubcomponent {
 }
 
 @Module
-abstract class ProgramModule {
+export abstract class ProgramModule {
 
     @Provides
     @Reusable
@@ -95,7 +84,7 @@ abstract class ProgramModule {
 
 @Component({modules: [ProgramModule], subcomponents: [TransformationContextSubcomponent]})
 @ProgramScope
-abstract class ProgramComponent {
+export abstract class ProgramComponent {
 
     constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitTransformOptions) { }
 

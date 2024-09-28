@@ -25,8 +25,21 @@ export class ComponentVisitor {
             }
             const generatorDeps = this.componentGeneratorDependenciesFactory(node)
             return generatorDeps.generator.updateComponent()
-        } else {
+        } else if (ts.isImportDeclaration(node)) {
+            return node
+        } else if (this.hasComponentChild(node)) {
+            // TODO: This is inefficient
             return ts.visitEachChild(node, this.visitComponents, this.context)
+        } else if (ts.isSourceFile(node)) {
+            return ts.createSourceFile(node.fileName, "", ts.ScriptTarget.ES2021)
         }
+        return []
+    }
+
+    hasComponentChild(node: ts.Node): boolean {
+        if (ts.isClassDeclaration(node) && node.modifiers?.some(this.nodeDetector.isComponentDecorator)) return true
+        return node.getChildren()
+            .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
+            .some(it => this.hasComponentChild(it))
     }
 }
