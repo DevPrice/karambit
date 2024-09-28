@@ -101,6 +101,7 @@ export interface AssistedFactory {
 export interface ParentProvider {
     readonly providerType: ProviderType.PARENT
     readonly type: QualifiedType
+    readonly optional: boolean
     readonly declaration?: undefined
 }
 

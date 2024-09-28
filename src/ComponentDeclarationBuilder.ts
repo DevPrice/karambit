@@ -86,7 +86,7 @@ export class ComponentDeclarationBuilder {
     }
 
     getProviderDeclaration(provider: InstanceProvider, componentScope?: ts.Symbol): ts.ClassElement[] {
-        if (provider.providerType == ProviderType.PARENT) return [this.getParentProvidedDeclaration(provider.type)]
+        if (provider.providerType == ProviderType.PARENT) return [this.getParentProvidedDeclaration(provider.type, provider.optional)]
         if (provider.providerType == ProviderType.PROPERTY) return [this.getComponentProvidedDeclaration(provider)]
         if (provider.providerType == ProviderType.SUBCOMPONENT_FACTORY) return [this.getSubcomponentFactoryDeclaration(provider)]
         if (provider.providerType == ProviderType.ASSISTED_FACTORY) return [this.getAssistedFactoryDeclaration(provider)]
@@ -526,8 +526,8 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    private getParentProvidedDeclaration(type: QualifiedType): ts.ClassElement {
-        return this.getterMethodDeclaration(type, this.accessParentGetter(type))
+    private getParentProvidedDeclaration(type: QualifiedType, optional: boolean): ts.ClassElement {
+        return this.getterMethodDeclaration(type, this.accessParentGetter(type), optional)
     }
 
     private getComponentProvidedDeclaration(provider: PropertyProvider): ts.MethodDeclaration {
