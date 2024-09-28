@@ -79,7 +79,7 @@ export class NameGenerator {
         return newName
     }
 
-    private getValidIdentifier(type: ts.Type): string {
+    getValidIdentifier(type: ts.Type): string {
         return this.typeChecker.typeToString(type).replaceAll(/[^a-z\d]+/ig, "$")
     }
 }

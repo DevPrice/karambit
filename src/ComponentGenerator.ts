@@ -287,6 +287,9 @@ export class ComponentGenerator {
 
         const componentType = this.typeChecker.getTypeAtLocation(component)
 
+        const preferredClassName = this.moduleLocator.getGeneratedClassName(componentDecorator)
+        const componentIdentifier = this.nameGenerator.getComponentIdentifier(componentType, preferredClassName)
+
         const rootDependencies = this.getRootDependencies(componentType)
         if (rootDependencies.length === 0) this.errorReporter.reportParseFailed("Component exposes no properties! A Component must have at least one abstract property for Karambit to implement!", component)
 
@@ -320,7 +323,7 @@ export class ComponentGenerator {
             return graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
         }
         const generatedSubcomponents = subcomponents.map(it =>
-            this.generateSubcomponent(it, typeResolver, componentScope ? new Map([[componentScope, componentType.symbol.name]]) : new Map(), canBind)
+            this.generateSubcomponent(it, componentIdentifier, typeResolver, componentScope ? new Map([[componentScope, componentType.symbol.name]]) : new Map(), canBind)
         )
 
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
@@ -359,9 +362,8 @@ export class ComponentGenerator {
             Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals)
                 .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
         )
-        return [component, builder.declareComponent({
-            componentType: componentType,
-            preferredClassName: this.moduleLocator.getGeneratedClassName(componentDecorator),
+        return [builder.declareComponent({
+            identifier: componentIdentifier,
             declaration: component,
             constructorParams: this.constructorHelper.getConstructorParamsForDeclaration(component) ?? [],
             members: [
@@ -374,6 +376,7 @@ export class ComponentGenerator {
 
     private generateSubcomponent(
         factory: SubcomponentFactory,
+        parentType: ts.EntityName | string,
         resolver: TypeResolver,
         ancestorScopes: ReadonlyMap<ts.Symbol, string>,
         parentCanBind: (type: QualifiedType) => boolean,
@@ -401,11 +404,13 @@ export class ComponentGenerator {
         )
         const graph = graphBuilder.buildDependencyGraph(new Set(rootDependencies))
 
+        const subcomponentName = factory.subcomponentType.type.symbol.name
+        const subcomponentIdentifier = ts.factory.createUniqueName(subcomponentName)
+
         const subcomponents = Array.from(graph.resolved.keys()).map(it => it.type)
             .map(subcomponentFactoryLocator.asSubcomponentFactory)
             .filterNotNull()
             .distinctBy(it => it.subcomponentType)
-        const subcomponentName = factory.subcomponentType.type.symbol.name
         const duplicateScope = scope && ancestorScopes.get(scope)
         if (duplicateScope) {
             this.errorReporter.reportDuplicateScope(subcomponentName, duplicateScope)
@@ -414,7 +419,7 @@ export class ComponentGenerator {
             return parentCanBind(type) || graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
         }
         const generatedSubcomponents = subcomponents.map(it =>
-            this.generateSubcomponent(it, typeResolver, scope ? new Map([...ancestorScopes.entries(), [scope, subcomponentName]]) : ancestorScopes, graphResolver)
+            this.generateSubcomponent(it, subcomponentIdentifier, typeResolver, scope ? new Map([...ancestorScopes.entries(), [scope, subcomponentName]]) : ancestorScopes, graphResolver)
         )
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
 
@@ -450,7 +455,7 @@ export class ComponentGenerator {
             ...generatedSubcomponents.map(it => it.classElement),
         ]
         return {
-            classElement: subcomponentBuilder.declareSubcomponent(factory, members),
+            classElement: subcomponentBuilder.declareSubcomponent(factory, subcomponentIdentifier, parentType, members),
             type: factory.subcomponentType,
             graph: mergedGraph,
             name: subcomponentName,

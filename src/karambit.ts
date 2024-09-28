@@ -3,6 +3,7 @@ import * as ts from "typescript"
 import * as Path from "path"
 import {createProgramComponent} from "./Component"
 import {ErrorReporter} from "./ErrorReporter"
+import * as fs from "fs"
 
 interface ComponentLikeInfo {
     readonly modules?: unknown[]
@@ -188,12 +189,26 @@ export interface SubcomponentFactory<T extends ConstructorType<T>> {
 export interface KarambitTransformOptions {
     stripImports: boolean
     printTransformDuration: boolean
+    outDir: string
 }
 
 export default function(program: ts.Program, options?: Partial<KarambitTransformOptions>) {
     const transformOptions = {...defaultOptions, ...options}
     const programComponent = createProgramComponent(program, transformOptions)
+    let originalWriteFile: any = undefined
     return (ctx: ts.TransformationContext) => {
+        const emitHost = (ctx as any).getEmitHost()
+        if (!originalWriteFile) originalWriteFile = emitHost.writeFile
+
+        let write = false
+        emitHost.writeFile = (filename: string, ...args: unknown[]) => {
+            if (write) {
+                console.log("writing ", filename)
+                originalWriteFile(filename, args)
+            } else {
+                console.log("skipping ", filename)
+            }
+        }
         const transformationContextComponent = programComponent.transformationContextSubcomponentFactory(ctx)
         return (sourceFile: ts.SourceFile) => {
             const {result, durationMs} = time(() => {
@@ -205,6 +220,15 @@ export default function(program: ts.Program, options?: Partial<KarambitTransform
                 const relativePath = Path.relative(".", sourceFile.fileName)
                 console.info(`Transformed ${relativePath} in ${durationString}ms.`)
             }
+
+            const resultText = ts.createPrinter().printNode(ts.EmitHint.Unspecified, result, result)
+            if (resultText) {
+                console.log("manual writing", sourceFile.fileName)
+                const p = `${transformOptions.outDir}/${Path.relative(".", sourceFile.fileName)}`
+                if (!fs.existsSync(Path.dirname(p))) fs.mkdirSync(Path.dirname(p), {recursive: true})
+                fs.writeFileSync(p, ts.createPrinter().printNode(ts.EmitHint.Unspecified, result, sourceFile))
+            }
+            write = !!resultText
             return result
         }
     }
@@ -220,4 +244,5 @@ function runTransformers<T extends ts.Node>(
 const defaultOptions: KarambitTransformOptions = {
     stripImports: true,
     printTransformDuration: false,
+    outDir: "karambit-out",
 }
