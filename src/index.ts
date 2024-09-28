@@ -30,7 +30,7 @@ const tsConfigPath = "./tsconfig.json"
 
 const configFile = ts.readConfigFile(tsConfigPath, ts.sys.readFile)
 if (configFile.error) {
-    console.warn(ts.flattenDiagnosticMessageText(configFile.error.messageText, "\n"))
+    console.error(ts.flattenDiagnosticMessageText(configFile.error.messageText, "\n"))
     process.exit(1)
 }
 
