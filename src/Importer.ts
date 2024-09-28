@@ -19,7 +19,7 @@ export class Importer {
         const declarations = symbol.getDeclarations()
         if (!declarations || declarations.length === 0) return undefined
 
-        const sourcePath = `${Importer.outDir}/${this.sourceFile.fileName}`.replace(/[^/]+$/, "")
+        const sourcePath = `${Importer.outDir}/${Path.relative(".", this.sourceFile.fileName)}`.replace(/[^/]+$/, "")
         const importPath = symbol.getDeclarations()![0].getSourceFile().fileName
         if (Path.basename(importPath) !== "typescript.d.ts" && this.getImportSpecifier(sourcePath, importPath) === "typescript") {
             return undefined
@@ -68,6 +68,7 @@ export class Importer {
         const nodeModuleRegex = /(?:^|\/)node_modules\/((?:@[^/]+\/)?[^/]+)/
         const match = nodeModuleRegex.exec(importPath)
         if (match) return match[1]
+        console.log(sourcePath, importPath)
         return Path.relative(sourcePath, importPath).replace(/\.ts$/, "")
     }
 

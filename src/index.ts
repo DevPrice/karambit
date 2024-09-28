@@ -1,10 +1,10 @@
 import * as ts from "typescript"
-import {ModuleKind, ScriptTarget} from "typescript"
+import * as Path from "node:path"
 import karambit from "./karambit"
 
 function generateComponents(fileNames: string[], options: ts.CompilerOptions): void {
-    const program = ts.createProgram(fileNames, {...options, target: ScriptTarget.ES2021, module: ModuleKind.CommonJS, outDir: "build-test"})
-    const factory = karambit(program, {printTransformDuration: true})
+    const program = ts.createProgram(fileNames, {...options})
+    const factory = karambit(program)
     const emitResult = program.emit(undefined, undefined, undefined, undefined, {before: [factory]})
 
     const allDiagnostics = ts
@@ -26,6 +26,14 @@ function generateComponents(fileNames: string[], options: ts.CompilerOptions): v
     process.exit(exitCode)
 }
 
-const tsconfig = require("../tsconfig.json")
+const tsConfigPath = "./tsconfig.json"
 
-generateComponents(process.argv.slice(2), tsconfig.compilerOptions)
+const configFile = ts.readConfigFile(tsConfigPath, ts.sys.readFile)
+if (configFile.error) {
+    console.warn(ts.flattenDiagnosticMessageText(configFile.error.messageText, "\n"))
+    process.exit(1)
+}
+
+const basePath = Path.dirname(tsConfigPath)
+const parsedCommandLine = ts.parseJsonConfigFileContent(configFile.config, ts.sys, basePath)
+generateComponents(parsedCommandLine.fileNames, parsedCommandLine.options)
