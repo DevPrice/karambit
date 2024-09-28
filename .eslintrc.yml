@@ -8,3 +8,4 @@ parserOptions:
   sourceType: module
 ignorePatterns:
   - "**/build/**"
+  - "karambit-generated/**"
