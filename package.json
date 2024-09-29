@@ -21,7 +21,8 @@
   ],
   "scripts": {
     "prepare": "husky install",
-    "build": "ttsc",
+    "prebuild": "karambit",
+    "build": "tsc",
     "test": "jest && npm run --prefix integration test",
     "lint": "eslint 'src/**/*.ts'",
     "fix": "eslint 'src/**/*.ts' --fix",
@@ -46,10 +47,9 @@
     "eslint": "^8.18.0",
     "husky": "^8.0.1",
     "jest": "^28.1.1",
-    "karambit-inject": "^2.3.0",
+    "karambit-inject": "^3.0.0-alpha.15",
     "lint-staged": "^13.0.3",
     "ts-jest": "^28.0.4",
-    "ttypescript": "^1.5.15",
     "typescript": "^4.8.0"
   },
   "peerDependencies": {

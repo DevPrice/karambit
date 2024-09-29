@@ -1,9 +1,9 @@
 import {time} from "./Util"
 import * as ts from "typescript"
 import * as Path from "path"
-import {createProgramComponent} from "./Component"
 import * as fs from "fs"
 import {Importer} from "./Importer"
+import {KarambitProgramComponent} from "./karambit-generated/src/Component"
 
 interface ComponentLikeInfo {
     readonly modules?: unknown[]
@@ -177,7 +177,7 @@ export default function(program: ts.Program, options?: Partial<KarambitTransform
     const transformOptions = {...defaultOptions, ...options}
     // TODO: fix injection and remove this hack
     Importer.outDir = transformOptions.outDir
-    const programComponent = createProgramComponent(program, transformOptions)
+    const programComponent = new KarambitProgramComponent(program, transformOptions)
     return (ctx: ts.TransformationContext) => {
         const emitHost = (ctx as any).getEmitHost()
         emitHost.writeFile = () => { }
@@ -215,5 +215,5 @@ function runTransformers<T extends ts.Node>(
 const defaultOptions: KarambitTransformOptions = {
     stripImports: true,
     printTransformDuration: false,
-    outDir: "karambit-generated",
+    outDir: "src/karambit-generated",
 }

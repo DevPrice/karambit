@@ -3,7 +3,6 @@ import {
     Binds,
     BindsInstance,
     Component,
-    createComponent,
     Module,
     Provides,
     Reusable,
@@ -89,8 +88,4 @@ export abstract class ProgramComponent {
     constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitTransformOptions) { }
 
     abstract readonly transformationContextSubcomponentFactory: SubcomponentFactory<typeof TransformationContextSubcomponent>
-}
-
-export function createProgramComponent(program: ts.Program, options: KarambitTransformOptions): ProgramComponent {
-    return createComponent<typeof ProgramComponent>(program, options)
 }
