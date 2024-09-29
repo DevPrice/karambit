@@ -9,9 +9,7 @@
     "strictNullChecks": true,
     "sourceMap": true,
     "experimentalDecorators": true,
-    "plugins": [
-      { "transform": "karambit-inject" }
-    ]
+    "incremental": true
   },
   "include": [
     "src/**/*.ts"

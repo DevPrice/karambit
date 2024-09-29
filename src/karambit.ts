@@ -215,5 +215,5 @@ function runTransformers<T extends ts.Node>(
 const defaultOptions: KarambitTransformOptions = {
     stripImports: true,
     printTransformDuration: false,
-    outDir: "src/karambit-generated",
+    outDir: "karambit-generated",
 }
