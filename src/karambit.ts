@@ -175,13 +175,12 @@ export default function(program: ts.Program, options?: Partial<KarambitTransform
             })
             if (transformOptions.printTransformDuration) {
                 const durationString = durationMs < 1 ? "<1" : durationMs.toString()
-                const relativePath = Path.relative(".", sourceFile.fileName)
+                const relativePath = Path.relative(".", Path.join(Path.dirname(sourceFile.fileName), "Karambit" + Path.basename(sourceFile.fileName)))
                 console.info(`Transformed ${relativePath} in ${durationString}ms.`)
             }
 
             const resultText = ts.createPrinter().printNode(ts.EmitHint.Unspecified, result, result)
             if (resultText) {
-                console.log("manual writing", sourceFile.fileName)
                 const p = `${transformOptions.outDir}/${Path.relative(".", sourceFile.fileName)}`
                 if (!fs.existsSync(Path.dirname(p))) fs.mkdirSync(Path.dirname(p), {recursive: true})
                 fs.writeFileSync(p, ts.createPrinter().printNode(ts.EmitHint.Unspecified, result, sourceFile))
