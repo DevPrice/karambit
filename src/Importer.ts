@@ -68,7 +68,6 @@ export class Importer {
         const nodeModuleRegex = /(?:^|\/)node_modules\/((?:@[^/]+\/)?[^/]+)/
         const match = nodeModuleRegex.exec(importPath)
         if (match) return match[1]
-        console.log(sourcePath, importPath)
         return Path.relative(sourcePath, importPath).replace(/\.ts$/, "")
     }
 
