@@ -17,8 +17,8 @@ interface ComponentInfo extends ComponentLikeInfo {
 export function Component(info: ComponentInfo): ClassDecorator
 export function Component(target: unknown): void
 export function Component(): ClassDecorator
-export function Component() {
-    return function () { }
+export function Component(target?: unknown) {
+    return classAnnotation(target)
 }
 
 interface SubcomponentInfo extends ComponentLikeInfo { }
@@ -26,8 +26,8 @@ interface SubcomponentInfo extends ComponentLikeInfo { }
 export function Subcomponent(info: SubcomponentInfo): ClassDecorator
 export function Subcomponent(target: unknown): void
 export function Subcomponent(): ClassDecorator
-export function Subcomponent() {
-    return function () { }
+export function Subcomponent(target?: unknown) {
+    return classAnnotation(target)
 }
 
 interface ModuleInfo {
@@ -45,20 +45,20 @@ interface MultibindingOptions {
 export function Module(info: ModuleInfo): ClassDecorator
 export function Module(target: unknown): void
 export function Module(): ClassDecorator
-export function Module() {
-    return function () { }
+export function Module(target?: unknown) {
+    return classAnnotation(target)
 }
 
 export function Inject(): ClassDecorator
 export function Inject(target: unknown): void
-export function Inject() {
-    return function () { }
+export function Inject(target?: unknown) {
+    return classAnnotation(target)
 }
 
 export function AssistedInject(): ClassDecorator
 export function AssistedInject(target: unknown): void
-export function AssistedInject() {
-    return function () { }
+export function AssistedInject(target?: unknown) {
+    return classAnnotation(target)
 }
 
 export function Assisted(): ParameterDecorator
@@ -68,15 +68,19 @@ export function Assisted() {
 }
 
 export function Provides(): MethodDecorator
-export function Provides(target: unknown, propertyKey: string | symbol): void
-export function Provides() {
-    return function () { }
+export function Provides(target?: unknown, propertyKey?: unknown): void
+export function Provides(target?: {[key: string | symbol]: unknown}, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor): MethodDecorator | void {
+    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
+        return function () { }
+    }
 }
 
 export function Binds(): MethodDecorator & PropertyDecorator
-export function Binds(target: unknown, propertyKey: string | symbol): void
-export function Binds() {
-    return function () { }
+export function Binds(target?: unknown, propertyKey?: unknown): void
+export function Binds(target?: {[key: string | symbol]: unknown}, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor): MethodDecorator | void {
+    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
+        return function () { }
+    }
 }
 
 export function BindsInstance(): ParameterDecorator
@@ -88,27 +92,35 @@ export function BindsInstance() {
 export function IntoSet(options: Partial<MultibindingOptions>): MethodDecorator & PropertyDecorator
 export function IntoSet(target: unknown, propertyKey: string | symbol): void
 export function IntoSet(): PropertyDecorator
-export function IntoSet() {
-    return function () { }
+export function IntoSet(target?: {[key: string | symbol]: unknown}, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor): MethodDecorator | void {
+    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
+        return function () { }
+    }
 }
 
 export function IntoMap(options: Partial<MultibindingOptions>): MethodDecorator & PropertyDecorator
 export function IntoMap(target: unknown, propertyKey: string | symbol): void
 export function IntoMap(): PropertyDecorator
-export function IntoMap() {
-    return function () { }
+export function IntoMap(target?: {[key: string | symbol]: unknown}, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor): MethodDecorator | void {
+    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
+        return function () { }
+    }
 }
 
 export function ElementsIntoSet(): MethodDecorator & PropertyDecorator
-export function ElementsIntoSet(target: unknown, propertyKey: string | symbol): void
-export function ElementsIntoSet() {
-    return function () { }
+export function ElementsIntoSet(target: unknown, propertyKey: unknown): void
+export function ElementsIntoSet(target?: {[key: string | symbol]: unknown}, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor): MethodDecorator | void {
+    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
+        return function () { }
+    }
 }
 
 export function ElementsIntoMap(): MethodDecorator & PropertyDecorator
-export function ElementsIntoMap(target: unknown, propertyKey: string | symbol): void
-export function ElementsIntoMap() {
-    return function () { }
+export function ElementsIntoMap(target: unknown, propertyKey: unknown): void
+export function ElementsIntoMap(target?: {[key: string | symbol]: unknown}, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor): MethodDecorator | void {
+    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
+        return function () { }
+    }
 }
 
 export function MapKey<T>(key: T): MethodDecorator & PropertyDecorator {
@@ -119,8 +131,11 @@ export function Scope(): ScopeDecorator {
     return function () { }
 }
 
-export const Reusable: ReusableScopeDecorator = () => {
-    return function () { }
+export const Reusable: ReusableScopeDecorator = classAnnotation
+
+function classAnnotation(target?: unknown) {
+    if (typeof target === "function") return target
+    return classAnnotation
 }
 
 type ConstructorType<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> = abstract new (...args: ConstructorParameters<T>) => InstanceType<T>
