@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import * as ts from "typescript"
 import * as Path from "node:path"
 import karambit from "./karambit"

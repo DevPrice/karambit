@@ -1,6 +1,6 @@
 {
   "name": "karambit-inject",
-  "version": "3.0.0-alpha.4",
+  "version": "3.0.0-alpha.5",
   "description": "A compile-time and type-safe dependency injector for Typescript.",
   "keywords": [
     "dependency injection",
@@ -8,9 +8,9 @@
     "ioc",
     "inject"
   ],
-  "main": "build/index.js",
+  "main": "build/karambit.js",
   "bin": {
-    "karambit": "./build/index.js"
+    "karambit": "build/index.js"
   },
   "license": "Apache-2.0",
   "files": [
@@ -21,6 +21,7 @@
   "scripts": {
     "prepare": "husky install",
     "build": "ttsc",
+    "postbuild": "echo '#!/usr/bin/env node' | cat - build/index.js > temp && mv temp build/index.js",
     "test": "jest && npm run --prefix integration test",
     "lint": "eslint 'src/**/*.ts'",
     "fix": "eslint 'src/**/*.ts' --fix",
@@ -28,7 +29,10 @@
     "release": "npm run build && npm run check"
   },
   "author": "DevPrice",
-  "repository": "github:DevPrice/karambit",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DevPrice/karambit.git"
+  },
   "bugs": "https://github.com/DevPrice/karambit/issues",
   "dependencies": {
     "chalk": "^4.1.2"
@@ -42,7 +46,7 @@
     "eslint": "^8.18.0",
     "husky": "^8.0.1",
     "jest": "^28.1.1",
-    "karambit-inject": "^3.0.0-alpha.3",
+    "karambit-inject": "^3.0.0-alpha.4",
     "lint-staged": "^13.0.3",
     "ts-jest": "^28.0.4",
     "ttypescript": "^1.5.15",
