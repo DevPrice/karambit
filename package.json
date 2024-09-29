@@ -1,6 +1,6 @@
 {
   "name": "karambit-inject",
-  "version": "3.0.0-alpha.2",
+  "version": "3.0.0-alpha.3",
   "description": "A compile-time and type-safe dependency injector for Typescript.",
   "keywords": [
     "dependency injection",
@@ -8,7 +8,7 @@
     "ioc",
     "inject"
   ],
-  "main": "build/karambit.js",
+  "main": "build/index.js",
   "license": "Apache-2.0",
   "files": [
     "FEATURES.md",
