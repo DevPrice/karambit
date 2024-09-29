@@ -9,4 +9,4 @@ parserOptions:
 ignorePatterns:
   - "*.js"
   - "**/build/**"
-  - "karambit-generated/**"
+  - "**/karambit-generated/**"
