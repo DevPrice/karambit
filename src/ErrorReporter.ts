@@ -185,13 +185,6 @@ export class ErrorReporter {
         )
     }
 
-    static reportCodeNotTransformed(): never {
-        ErrorReporter.fail(
-            KarambitErrorScope.TRANSFORM,
-            "Decorated code was not processed by transformer! Ensure this project is configured to use the Karambit compiler plugin.",
-        )
-    }
-
     static reportParseFailed(message: string, component?: ts.ClassLikeDeclaration): never {
         ErrorReporter.fail(KarambitErrorScope.PARSE, message, component)
     }

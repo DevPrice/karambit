@@ -2,7 +2,6 @@ import {time} from "./Util"
 import * as ts from "typescript"
 import * as Path from "path"
 import {createProgramComponent} from "./Component"
-import {ErrorReporter} from "./ErrorReporter"
 import * as fs from "fs"
 import {Importer} from "./Importer"
 
@@ -18,8 +17,8 @@ interface ComponentInfo extends ComponentLikeInfo {
 export function Component(info: ComponentInfo): ClassDecorator
 export function Component(target: unknown): void
 export function Component(): ClassDecorator
-export function Component(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function Component() {
+    return function () { }
 }
 
 interface SubcomponentInfo extends ComponentLikeInfo { }
@@ -27,8 +26,8 @@ interface SubcomponentInfo extends ComponentLikeInfo { }
 export function Subcomponent(info: SubcomponentInfo): ClassDecorator
 export function Subcomponent(target: unknown): void
 export function Subcomponent(): ClassDecorator
-export function Subcomponent(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function Subcomponent() {
+    return function () { }
 }
 
 interface ModuleInfo {
@@ -46,119 +45,85 @@ interface MultibindingOptions {
 export function Module(info: ModuleInfo): ClassDecorator
 export function Module(target: unknown): void
 export function Module(): ClassDecorator
-export function Module(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function Module() {
+    return function () { }
 }
 
 export function Inject(): ClassDecorator
 export function Inject(target: unknown): void
-export function Inject(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function Inject() {
+    return function () { }
 }
 
 export function AssistedInject(): ClassDecorator
 export function AssistedInject(target: unknown): void
-export function AssistedInject(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function AssistedInject() {
+    return function () { }
 }
 
 export function Assisted(): ParameterDecorator
 export function Assisted(target: Object, propertyKey: string | symbol, parameterIndex: number): void
-export function Assisted(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function Assisted() {
+    return function () { }
 }
 
 export function Provides(): MethodDecorator
 export function Provides(target: unknown, propertyKey: string | symbol): void
-export function Provides(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function Provides() {
+    return function () { }
 }
 
 export function Binds(): MethodDecorator & PropertyDecorator
 export function Binds(target: unknown, propertyKey: string | symbol): void
-export function Binds(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function Binds() {
+    return function () { }
 }
 
 export function BindsInstance(): ParameterDecorator
 export function BindsInstance(target: Object, propertyKey: string | symbol, parameterIndex: number): void
-export function BindsInstance(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function BindsInstance() {
+    return function () { }
 }
 
 export function IntoSet(options: Partial<MultibindingOptions>): MethodDecorator & PropertyDecorator
 export function IntoSet(target: unknown, propertyKey: string | symbol): void
 export function IntoSet(): PropertyDecorator
-export function IntoSet(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function IntoSet() {
+    return function () { }
 }
 
 export function IntoMap(options: Partial<MultibindingOptions>): MethodDecorator & PropertyDecorator
 export function IntoMap(target: unknown, propertyKey: string | symbol): void
 export function IntoMap(): PropertyDecorator
-export function IntoMap(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function IntoMap() {
+    return function () { }
 }
 
 export function ElementsIntoSet(): MethodDecorator & PropertyDecorator
 export function ElementsIntoSet(target: unknown, propertyKey: string | symbol): void
-export function ElementsIntoSet(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function ElementsIntoSet() {
+    return function () { }
 }
 
 export function ElementsIntoMap(): MethodDecorator & PropertyDecorator
 export function ElementsIntoMap(target: unknown, propertyKey: string | symbol): void
-export function ElementsIntoMap(): never {
-    ErrorReporter.reportCodeNotTransformed()
+export function ElementsIntoMap() {
+    return function () { }
 }
 
 export function MapKey<T>(key: T): MethodDecorator & PropertyDecorator {
-    ErrorReporter.reportCodeNotTransformed()
+    return function () { }
 }
 
 export function Scope(): ScopeDecorator {
-    ErrorReporter.reportCodeNotTransformed()
+    return function () { }
 }
 
 export const Reusable: ReusableScopeDecorator = () => {
-    ErrorReporter.reportCodeNotTransformed()
-}
-
-/**
- * @deprecated Use {@link Qualified} to qualify a type instead.
- */
-export function Qualifier(): QualifierDecorator {
-    ErrorReporter.reportCodeNotTransformed()
-}
-
-// noinspection JSUnusedLocalSymbols
-/**
- * @deprecated Use {@link Named} (type) to qualify a type instead.
- */
-export function Named(name: string): NamedQualifierDecorator {
-    ErrorReporter.reportCodeNotTransformed()
+    return function () { }
 }
 
 type ConstructorType<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> = abstract new (...args: ConstructorParameters<T>) => InstanceType<T>
-
-/**
- * Create a Component instance. Used to access a generated Component from the same compilation unit.
- * @param args the constructor arguments of the component.
- */
-// noinspection JSUnusedLocalSymbols
-export function createComponent<T extends ConstructorType<T>>(...args: ConstructorParameters<T>): InstanceType<T> {
-    ErrorReporter.reportCodeNotTransformed()
-}
-
-/**
- * Get a reference to the generated Component constructor.
- * Used to access a generated Component from the same compilation unit.
- * @param type the constructor of the type decorated with @{@link Component}
- */
-// noinspection JSUnusedLocalSymbols
-export function getConstructor<T extends ConstructorType<T>>(type: T): new (...args: ConstructorParameters<T>) => InstanceType<T> {
-    ErrorReporter.reportCodeNotTransformed()
-}
 
 export interface ScopeDecorator {
     <T>(target: any, propertyKey?: string | symbol, descriptor?: TypedPropertyDescriptor<T>): any | void
