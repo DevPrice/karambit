@@ -1,6 +1,6 @@
 {
   "name": "karambit-inject",
-  "version": "3.0.0-alpha.6",
+  "version": "3.0.0-alpha.11",
   "description": "A compile-time and type-safe dependency injector for Typescript.",
   "keywords": [
     "dependency injection",
@@ -10,14 +10,14 @@
   ],
   "main": "build/karambit.js",
   "bin": {
-    "karambit": "index.js"
+    "karambit": "bin/index.js"
   },
   "license": "Apache-2.0",
   "files": [
     "FEATURES.md",
     "build/karambit.d.ts",
-    "build/*.js",
-    "index.js"
+    "bin/*.js",
+    "build/*.js"
   ],
   "scripts": {
     "prepare": "husky install",
