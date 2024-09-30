@@ -128,7 +128,7 @@ export function MapKey<T>(key: T): MethodDecorator & PropertyDecorator {
 }
 
 export function Scope(): ScopeDecorator {
-    return function () { }
+    return classAnnotation
 }
 
 export const Reusable: ReusableScopeDecorator = classAnnotation
