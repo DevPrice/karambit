@@ -3,14 +3,17 @@
   "version": "1.0.0",
   "description": "Hello world sample",
   "scripts": {
-    "build": "ttsc",
+    "prebuild": "karambit -o src/karambit-generated",
+    "build": "tsc",
     "start": "node build/index.js"
   },
   "author": "DevPrice",
   "devDependencies": {
     "@types/node": "^17.0.31",
     "karambit-inject": "file:../..",
-    "ttypescript": "^1.5.13",
     "typescript": "^4.7.3"
+  },
+  "dependencies": {
+    "karambit-decorators": "file:../../decorators"
   }
 }
