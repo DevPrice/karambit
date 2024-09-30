@@ -1,5 +1,5 @@
 import * as ts from "typescript"
-import {Inject, Reusable} from "karambit-inject"
+import {Inject, Reusable} from "karambit-decorators"
 import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {
     InjectableConstructor,

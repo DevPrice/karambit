@@ -4,7 +4,7 @@ import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Container} from "./Util"
 import {ProviderType, SubcomponentFactory} from "./Providers"
-import {Assisted, AssistedInject} from "karambit-inject"
+import {Assisted, AssistedInject} from "karambit-decorators"
 
 export type SubcomponentFactoryLocatorFactory = (installedSubcomponents: Container<ts.Symbol>) => SubcomponentFactoryLocator
 

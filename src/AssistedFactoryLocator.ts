@@ -3,7 +3,7 @@ import {createQualifiedType, internalQualifier} from "./QualifiedType"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {AssistedFactory, ProviderType} from "./Providers"
-import {Inject, Reusable} from "karambit-inject"
+import {Inject, Reusable} from "karambit-decorators"
 
 @Inject
 @Reusable

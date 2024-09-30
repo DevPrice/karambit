@@ -7,8 +7,8 @@ import {
     Provides,
     Reusable,
     Subcomponent,
-    SubcomponentFactory,
-} from "karambit-inject"
+} from "karambit-decorators"
+import {SubcomponentFactory} from "karambit-inject"
 import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
 import type {ComponentVisitor} from "./ComponentVisitor"
 import type {Importer} from "./Importer"

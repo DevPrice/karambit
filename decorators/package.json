@@ -1,0 +1,41 @@
+{
+  "name": "karambit-decorators",
+  "version": "0.0.1",
+  "description": "Runtime dependencies of Karambit.",
+  "keywords": [
+    "dependency injection",
+    "di",
+    "ioc",
+    "inject"
+  ],
+  "main": "lib/karambit-decorators.js",
+  "license": "Apache-2.0",
+  "files": [
+    "lib/karambit-decorators.d.ts",
+    "lib/**/*.js"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "check": "npm run lint",
+    "release": "npm run build && npm run check"
+  },
+  "author": "DevPrice",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DevPrice/karambit.git"
+  },
+  "bugs": "https://github.com/DevPrice/karambit/issues",
+  "dependencies": {
+    "@types/node": "^22.7.4"
+  },
+  "devDependencies": {
+    "@devprice/eslint-config": "^1.0.1",
+    "@devprice/version-from-git": "^1.1.2",
+    "eslint": "^8.18.0",
+    "lint-staged": "^13.0.3",
+    "typescript": "^4.8.0"
+  },
+  "lint-staged": {
+    "*.ts": "eslint --fix"
+  }
+}

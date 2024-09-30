@@ -2,7 +2,7 @@ import {findCycles} from "./Util"
 import {ErrorReporter} from "./ErrorReporter"
 import {QualifiedType} from "./QualifiedType"
 import {Binding} from "./ModuleLocator"
-import {Assisted, AssistedInject} from "karambit-inject"
+import {Assisted, AssistedInject} from "karambit-decorators"
 
 export type TypeResolverFactory = (bindings: Iterable<Binding>) => TypeResolver
 
