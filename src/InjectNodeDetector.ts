@@ -64,6 +64,11 @@ export class InjectNodeDetector {
         return this.isScope(type)
     }
 
+    isIterableProvider(item: ts.MethodDeclaration): boolean {
+        const modifiers = item.modifiers ?? []
+        return modifiers.some(it => this.isElementsIntoMapDecorator(it) || this.isElementsIntoSetDecorator(it))
+    }
+
     getScope(item: Decorated): ts.Symbol | undefined {
         const scopeDecorators = item.modifiers?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)).filterNotNull() ?? []
         if (scopeDecorators.length > 1) ErrorReporter.reportParseFailed(`Scoped element may only have one scope! ${item.name?.getText()} has ${scopeDecorators.length}.`)

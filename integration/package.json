@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "Integration tests",
   "scripts": {
-    "build": "ttsc",
-    "test": "jest --no-cache"
+    "karambit": "karambit -o src/karambit-generated",
+    "prebuild": "npm run karambit",
+    "build": "tsc",
+    "test": "jest"
   },
   "author": "DevPrice",
   "devDependencies": {
@@ -13,7 +15,6 @@
     "jest": "^28.1.1",
     "karambit-inject": "file:..",
     "ts-jest": "^28.0.4",
-    "ttypescript": "^1.5.13",
     "typescript": "^4.8.0"
   },
   "jest": {
@@ -27,12 +28,9 @@
     ],
     "extensionsToTreatAsEsm": [
       ".ts"
-    ],
-    "globals": {
-      "ts-jest": {
-        "useEsm": true,
-        "compiler": "ttypescript"
-      }
-    }
+    ]
+  },
+  "dependencies": {
+    "karambit-decorators": "file:../decorators"
   }
 }

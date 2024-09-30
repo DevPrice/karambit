@@ -119,8 +119,9 @@ export class ModuleLocator {
                     }
                 })
             const scope = nodeDetector.getScope(method)
+            const isIterableProvider = nodeDetector.isIterableProvider(method)
 
-            factories.push({providerType: ProviderType.PROVIDES_METHOD, module, declaration: method, type: returnType, parameters, scope})
+            factories.push({providerType: ProviderType.PROVIDES_METHOD, module, declaration: method, type: returnType, parameters, scope, isIterableProvider})
         }
         function visitBinding(method: ts.MethodDeclaration) {
             if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {

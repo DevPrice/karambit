@@ -73,14 +73,15 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    declareComponentProperty(options: {type: QualifiedType, name: ts.PropertyName, typeNode?: ts.TypeNode}) {
+    declareComponentProperty(options: {type: QualifiedType, name: ts.PropertyName, optional: boolean, typeNode?: ts.TypeNode}) {
+        const typeNode = this.typeToTypeNode(options.type.type)
         const resolvedType = this.typeResolver.resolveBoundType(options.type)
         const expression = this.getParamExpression(resolvedType)
         return ts.factory.createGetAccessorDeclaration(
             [],
             options.name,
             [],
-            this.typeToTypeNode(options.type.type),
+            options.optional && typeNode ? ts.factory.createUnionTypeNode([typeNode, ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)]) : typeNode,
             ts.factory.createBlock([ts.factory.createReturnStatement(expression)])
         )
     }
@@ -352,6 +353,10 @@ export class ComponentDeclarationBuilder {
 
     private getterMethodDeclaration(type: QualifiedType, expression: ts.Expression, optional: boolean = false): ts.MethodDeclaration {
         const typeNode = this.typeToTypeNode(type.type)
+        return this.getterMethodDeclarationWithTypeNode(type, typeNode, expression, optional)
+    }
+
+    private getterMethodDeclarationWithTypeNode(type: QualifiedType, typeNode: ts.TypeNode | undefined, expression: ts.Expression, optional: boolean = false): ts.MethodDeclaration {
         return ts.factory.createMethodDeclaration(
             [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
             undefined,
@@ -413,13 +418,13 @@ export class ComponentDeclarationBuilder {
         return [self.getterMethodDeclaration(qualifiedType, constructorCallExpression())]
     }
 
-    private getUnsetPropertyExpression(type?: ts.Type): ts.Expression {
+    private getUnsetPropertyExpression(): ts.Expression {
         return ts.factory.createCallExpression(
             ts.factory.createPropertyAccessExpression(
                 ts.factory.createIdentifier("Symbol"),
                 ts.factory.createIdentifier("for")
             ),
-            type && [this.typeToTypeNode(type)!],
+            undefined,
             [ts.factory.createStringLiteral("unset")]
         )
     }
@@ -484,7 +489,15 @@ export class ComponentDeclarationBuilder {
 
     private getFactoryDeclaration(factory: ProvidesMethod): ts.ClassElement[] {
         if (factory.scope) return this.getCachedFactoryDeclaration(factory)
-        return [this.getterMethodDeclaration(factory.type, this.factoryCallExpression(factory))]
+
+        const typeNode = this.typeToTypeNode(factory.type.type)
+        return [
+            this.getterMethodDeclarationWithTypeNode(
+                factory.type,
+                typeNode && factory.isIterableProvider ? iterableType(typeNode) : typeNode,
+                this.factoryCallExpression(factory),
+            )
+        ]
     }
 
     private getMissingOptionalDeclaration(type: QualifiedType): ts.ClassElement {
@@ -497,6 +510,7 @@ export class ComponentDeclarationBuilder {
     }
 
     private getCachedFactoryDeclaration(factory: ProvidesMethod): ts.ClassElement[] {
+        // TODO: Should handle iterable providers?
         return [
             this.getCachedPropertyDeclaration(factory.type),
             this.getterMethodDeclaration(
@@ -520,9 +534,9 @@ export class ComponentDeclarationBuilder {
         return ts.factory.createPropertyDeclaration(
             [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
             propIdentifier,
-            ts.factory.createToken(ts.SyntaxKind.QuestionToken),
+            nullable ? undefined : ts.factory.createToken(ts.SyntaxKind.QuestionToken),
             this.typeToTypeNode(type.type),
-            nullable ? this.getUnsetPropertyExpression(type.type) : undefined
+            nullable ? this.getUnsetPropertyExpression() : undefined
         )
     }
 
@@ -539,15 +553,27 @@ export class ComponentDeclarationBuilder {
 
     private getExpressionForDeclaration(node: ts.Declaration): ts.Expression {
         const type = this.typeChecker.getTypeAtLocation(node)!
-        const symbol = type.getSymbol()!
+        const symbol = this.symbolForType(type)
         return this.importer.getExpressionForDeclaration(symbol, node.getSourceFile())
     }
 
     private typeToTypeNode(type: ts.Type, enclosingDeclaration: ts.Node | undefined = undefined): ts.TypeNode | undefined {
-        const symbol = type.aliasSymbol ?? type.symbol
-        symbol && this.importer.getImportForSymbol(symbol)
-        this.importTypeArguments(type)
+        const symbol = this.symbolForType(type)
+        if (symbol && symbol.getName && symbol.getName() === "__type") {
+            // no import needed
+        } else if (symbol) {
+            this.importer.getImportForSymbol(symbol)
+            this.importTypeArguments(type)
+        }
+        if (type.isUnionOrIntersection()) {
+            // TODO: Maybe this could break with recursively defined types
+            type.types.forEach(it => this.typeToTypeNode(it))
+        }
         return this.typeChecker.typeToTypeNode(type, enclosingDeclaration, undefined)
+    }
+
+    private symbolForType(type: ts.Type) {
+        return type.aliasSymbol ?? type.symbol
     }
 
     private importTypeArguments(type: ts.Type) {
@@ -581,6 +607,10 @@ function paramType(type: ts.TypeNode, index: number) {
         ),
         ts.factory.createLiteralTypeNode(ts.factory.createNumericLiteral(index)),
     )
+}
+
+function iterableType(type: ts.TypeNode) {
+    return ts.factory.createExpressionWithTypeArguments(ts.factory.createIdentifier("Iterable"), [type])
 }
 
 function accessDependencyProperty(memberName: ts.Identifier | ts.PrivateIdentifier, propertyName?: string): ts.PropertyAccessExpression {
