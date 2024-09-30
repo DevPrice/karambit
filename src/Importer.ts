@@ -20,14 +20,15 @@ export class Importer {
         if (!declarations || declarations.length === 0) return undefined
 
         const sourcePath = `${Importer.outDir}/${Path.relative(".", this.sourceFile.fileName)}`.replace(/[^/]+$/, "")
-        const importPath = symbol.getDeclarations()![0].getSourceFile().fileName
-        if (Path.basename(importPath) !== "typescript.d.ts" && this.getImportSpecifier(sourcePath, importPath) === "typescript") {
+        const importSourceFile = declarations[0].getSourceFile()
+        const importSpecifier = this.getImportSpecifier(sourcePath, importSourceFile)
+        if (Path.basename(importSourceFile.fileName) !== "typescript.d.ts" && importSpecifier === "typescript") {
             return undefined
         }
 
         const existingImport = this.#newImports.get(symbol)
         if (existingImport) return existingImport
-        const newImport = this.createImportForSymbol(symbol, sourcePath, importPath)
+        const newImport = this.createImportForSymbol(symbol, importSpecifier)
         this.#newImports.set(symbol, newImport)
         return newImport
     }
@@ -44,8 +45,7 @@ export class Importer {
         return ts.factory.createIdentifier(symbol.getName())
     }
 
-    private createImportForSymbol(symbol: ts.Symbol, sourcePath: string, importPath: string): ts.ImportDeclaration {
-        const importLiteral = this.getImportSpecifier(sourcePath, importPath)
+    private createImportForSymbol(symbol: ts.Symbol, importSpecifier: string): ts.ImportDeclaration {
         return ts.factory.createImportDeclaration(
             undefined,
             ts.factory.createImportClause(
@@ -59,16 +59,16 @@ export class Importer {
                     ),
                 ])
             ),
-            ts.factory.createStringLiteral(importLiteral),
+            ts.factory.createStringLiteral(importSpecifier),
             undefined
         )
     }
 
-    private getImportSpecifier(sourcePath: string, importPath: string): string {
+    private getImportSpecifier(sourcePath: string, importFile: ts.SourceFile): string {
         const nodeModuleRegex = /(?:^|\/)node_modules\/((?:@[^/]+\/)?[^/]+)/
-        const match = nodeModuleRegex.exec(importPath)
+        const match = nodeModuleRegex.exec(importFile.fileName)
         if (match) return match[1]
-        return Path.relative(sourcePath, importPath).replace(/\.ts$/, "")
+        return Path.relative(sourcePath, importFile.fileName).replace(/\.ts$/, "")
     }
 
     static outDir: string = "karambit-generated"

@@ -40,6 +40,7 @@ export interface ProvidesMethod {
     readonly type: QualifiedType
     readonly parameters: ProvidesMethodParameter[]
     readonly scope: ts.Symbol | undefined
+    readonly isIterableProvider: boolean
 }
 
 export function isProvidesMethod(provider: InstanceProvider): provider is ProvidesMethod {

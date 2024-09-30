@@ -1,32 +1,18 @@
 import * as assert from "assert"
 import {
-    Inject,
-    Provides,
-    Scope,
-    Provider,
-    SubcomponentFactory,
-    Module,
-    Component,
-    Subcomponent,
-    Reusable,
-    Named,
-    Qualifier,
-    Qualified,
-    BindsInstance,
-    Binds,
-    IntoSet,
-    ElementsIntoSet,
-    IntoMap,
-    MapKey,
-    createComponent,
-    getConstructor,
-    Assisted,
-    AssistedInject, ElementsIntoMap,
-} from "karambit-inject"
-import * as k from "karambit-inject"
+    CustomComponentName,
+    KarambitAssistedInjectComponent,
+    KarambitIncludesComponent,
+    KarambitMultibindingsComponent,
+    KarambitOptionalComponent,
+    KarambitProviderComponent,
+    KarambitScopedComponent,
+} from "../src/karambit-generated/src/TestComponents"
+import {ChildComponent, childInstance, multibindingScopedProvidedCount, nullProvidedCount} from "../src/TestComponents"
 
 describe("Injection", () => {
     describe("Scope", () => {
+        const scopedComponent = new KarambitScopedComponent()
         it("unscoped returns new instance", () => {
             assert.notStrictEqual(scopedComponent.unscopedClass, scopedComponent.unscopedClass)
         })
@@ -66,6 +52,7 @@ describe("Injection", () => {
         })
     })
     describe("Providers", () => {
+        const providerComponent = new KarambitProviderComponent()
         it("provider type provides instance of Provider", () => {
             assert.ok(providerComponent.providedOnlyProvider())
         })
@@ -84,12 +71,6 @@ describe("Injection", () => {
         })
     })
     describe("Qualifiers", () => {
-        it("deprecated named parameter provides named provider", () => {
-            assert.strictEqual(includesComponent.deprecatedNamedValue, 4321)
-        })
-        it("deprecated qualified parameter provides qualified provider", () => {
-            assert.strictEqual(includesComponent.deprecatedQualifiedValue, 8765)
-        })
         it("named parameter provides named provider", () => {
             assert.strictEqual(includesComponent.namedValue, 1234)
         })
@@ -101,6 +82,7 @@ describe("Injection", () => {
         })
     })
     describe("Optionals", () => {
+        const optionalComponent = new KarambitOptionalComponent()
         it("not provided optional class is not present", () => {
             assert.strictEqual(optionalComponent.missingOptional, undefined)
         })
@@ -149,6 +131,7 @@ describe("Injection", () => {
         })
     })
     describe("Multibindings", () => {
+        const multibindingComponent = new KarambitMultibindingsComponent()
         it("multibinding set provides all elements", () => {
             assert.strictEqual(multibindingComponent.numberSet.size, 6)
             assert.ok(multibindingComponent.numberSet.has(1))
@@ -163,11 +146,6 @@ describe("Injection", () => {
             const values = Array.from(multibindingComponent.boundSet.values())
             assert.ok(values.some(it => it.property === "impl"))
             assert.ok(values.some(it => it.property === "provided"))
-        })
-        it("multibinding set provides qualified elements", () => {
-            assert.strictEqual(multibindingComponent.qualifiedSet.size, 2)
-            assert.ok(multibindingComponent.qualifiedSet.has(1))
-            assert.ok(multibindingComponent.qualifiedSet.has(2))
         })
         it("multibinding set provides scoped elements", () => {
             assert.strictEqual(multibindingComponent.numberSet.size, 6)
@@ -198,11 +176,6 @@ describe("Injection", () => {
             assert.ok(multibindingComponent.boundMap.get("impl")?.property, "impl")
             assert.ok(multibindingComponent.boundMap.get("provided")?.property, "provided")
         })
-        it("multibinding map provides qualified elements", () => {
-            assert.strictEqual(multibindingComponent.qualifiedMap.size, 2)
-            assert.strictEqual(multibindingComponent.qualifiedMap.get("one"), 1)
-            assert.strictEqual(multibindingComponent.qualifiedMap.get("two"), 2)
-        })
         it("multibinding map provides scoped elements", () => {
             assert.strictEqual(multibindingComponent.numberMap.size, 6)
             assert.strictEqual(multibindingComponent.numberMap.size, 6)
@@ -225,6 +198,7 @@ describe("Injection", () => {
         })
     })
     describe("Assisted factory", () => {
+        const assistedInjectComponent = new KarambitAssistedInjectComponent()
         it("Assisted factory can be provided", () => {
             const instance = assistedInjectComponent.assistedFactory(1337)
             assert.strictEqual(instance.string, "provided-string")
@@ -242,545 +216,5 @@ describe("Injection", () => {
     })
 })
 
-const TestScope = Scope()
-const TestSubcomponentScope = Scope()
-
-class ScopedClass { }
-class UnscopedClass { }
-class ReusableClass { }
-
-@Inject
-class InjectClass { }
-
-@Inject
-@TestScope
-class ScopedInjectClass { }
-
-@Inject
-@Reusable
-class ReusableInjectClass { }
-
-let nullProvidedCount: number = 0
-
-@Module
-abstract class ScopeModule {
-
-    @Provides
-    static provideUnscopedClass(): UnscopedClass {
-        return new UnscopedClass()
-    }
-
-    @Provides
-    @TestScope
-    static provideScopedClass(): ScopedClass {
-        return new ScopedClass()
-    }
-
-    @Provides
-    @Reusable
-    static provideReusableClass(): ReusableClass {
-        return new ReusableClass()
-    }
-
-    @Provides
-    @Reusable
-    static provideNullableClass(): NullableClass {
-        nullProvidedCount++
-        return null
-    }
-}
-
-type NullableClass = InjectClass | null
-
-@Component({modules: [ScopeModule]})
-@TestScope
-abstract class ScopedComponent {
-
-    abstract readonly unscopedClass: UnscopedClass
-
-    abstract readonly scopedClass: ScopedClass
-
-    abstract readonly unscopedInjectClass: InjectClass
-
-    abstract readonly scopedInjectClass: ScopedInjectClass
-
-    abstract readonly reusableInjectClass: ReusableInjectClass
-
-    abstract readonly reusableClass: ReusableClass
-
-    abstract readonly nullableClass: NullableClass
-}
-
-const scopedComponent = createComponent<typeof ScopedComponent>()
-
-class ChildClass { }
-
-@Inject
-class ParentClass implements ParentClassInterface {
-    constructor(readonly child: ChildClass, readonly subcomponentFactory: SubcomponentFactory<typeof ChildSubcomponent>) { }
-}
-
-const childInstance = new ChildClass()
-
-class ChildComponent {
-
-    readonly childClass: ChildClass = childInstance
-}
-
-@Inject
-class ProviderHolder {
-    constructor(readonly provider: Provider<ChildClass>) { }
-}
-
-interface ProvidedOnly { }
-
-@Module
-class SubcomponentModule {
-
-    @Provides
-    static provideSum(values: number[]): number {
-        return values.reduce((l, r) => l + r, 0)
-    }
-}
-
-interface GrandChildDependency { }
-
-@k.Inject
-@k.Reusable
-class GrandChildClass {
-
-    constructor(
-        readonly values: number[],
-        readonly parentClass: ParentClass,
-        readonly parentInterface: ParentInterface,
-        readonly dep: GrandChildDependency,
-    ) { }
-}
-
-@k.Subcomponent
-abstract class GrandChildSubcomponent {
-
-    protected constructor(@BindsInstance dep: GrandChildDependency) { }
-
-    abstract readonly grandChildClass: GrandChildClass
-}
-
-interface ChildSubcomponentInterface {
-    readonly sum: number
-    readonly parentClass: ParentClass
-    readonly grandChildSubcomponentFactory: (dep: GrandChildDependency) => GrandChildSubcomponent
-}
-
-@Subcomponent({modules: [SubcomponentModule], subcomponents: [GrandChildSubcomponent]})
-abstract class ChildSubcomponent implements ChildSubcomponentInterface {
-
-    constructor(@k.BindsInstance values: number[]) { }
-
-    abstract readonly sum: number
-    abstract readonly parentClass: ParentClass
-    abstract readonly grandChildSubcomponentFactory: (dep: GrandChildDependency) => GrandChildSubcomponent
-}
-type ChildSubcomponentFactory = (values: number[]) => ChildSubcomponentInterface
-
-@Inject
-@TestSubcomponentScope
-class ScopedSubcomponentClass {
-    constructor(readonly value: string) { }
-}
-
-interface ScopedSubcomponentInterface {
-    value: string
-}
-
-@k.Module
-class ScopedSubcomponentModule {
-
-    @k.Provides
-    @TestSubcomponentScope
-    static provideScopedSubcomponentInterface(str: string): ScopedSubcomponentInterface {
-        return {value: str + ":scoped"}
-    }
-}
-
-@Subcomponent({modules: [ScopedSubcomponentModule]})
-@TestSubcomponentScope
-abstract class ScopedSubcomponent {
-
-    abstract readonly scopedClass: ScopedSubcomponentClass
-    abstract readonly scopedInterface: ScopedSubcomponentInterface
-}
-
-interface ParentInterface { }
-
-@Module
-abstract class ParentModule {
-
-    @Binds
-    abstract bindParentClassInterface: (concrete: ParentClass) => ParentClassInterface
-
-    @Binds
-    abstract bindChildSubcomponentFactory: (factory: (values: number[]) => ChildSubcomponent) => ChildSubcomponentFactory
-
-    @Provides
-    static provideParentInterface(): ParentInterface {
-        return {}
-    }
-}
-
-interface ParentClassInterface {
-    readonly child: ChildClass
-}
-
-abstract class InheritedClass {
-    abstract readonly value: symbol
-    abstract readonly implementedProperty: boolean
-}
-
-@Component({generatedClassName: "CustomComponentName", modules: [ParentModule], subcomponents: [ChildSubcomponent, ScopedSubcomponent]})
-abstract class ParentComponent extends InheritedClass {
-
-    constructor(child: ChildComponent, typeLiteralChild: {value: symbol}, @BindsInstance public boundString: string) {
-        super()
-    }
-
-    abstract readonly parentClass: ParentClass
-    abstract readonly parentClassInterface: ParentClassInterface
-    abstract readonly providerHolder: ProviderHolder
-
-    abstract readonly subcomponentFactory: (values: number[]) => ChildSubcomponent
-    abstract readonly scopedSubcomponentFactory: () => ScopedSubcomponent
-    abstract readonly aliasedSubcomponentFactory: ChildSubcomponentFactory
-    abstract readonly builtInTypeSubcomponentFactory: SubcomponentFactory<typeof ChildSubcomponent>
-
-    override readonly implementedProperty = true
-}
-
-const ParentComponentConstructor = getConstructor(ParentComponent)
-const parentComponent = new ParentComponentConstructor(new ChildComponent(), {value: Symbol.for("value")}, "bound")
-
-@Module
-abstract class ProviderModule {
-
-    @Provides
-    static provideProvider(): ProvidedOnly {
-        return { }
-    }
-}
-
-@Component({modules: [ProviderModule]})
-abstract class ProviderComponent {
-
-    abstract readonly providedOnlyProvider: Provider<ProvidedOnly>
-}
-
-const providerComponent = createComponent<typeof ProviderComponent>()
-
-const MyQualifier = Qualifier()
-declare const testQualifier: unique symbol
-export type TestQualifier = Qualified<typeof testQualifier>
-declare const anotherQualifier: unique symbol
-export type AnotherQualifier = Qualified<typeof anotherQualifier>
-
-@Module
-class AnotherIncludedModule {
-
-    @Provides
-    static provideNumber(): number {
-        return 1337
-    }
-}
-
-@Module({includes: [AnotherIncludedModule]})
-class IncludedModule { }
-
-@Module({includes: [IncludedModule]})
-class IncludesModule {
-
-    @Provides
-    @Named("my name")
-    static provideDeprecatedNamedNumber(): number {
-        return 4321
-    }
-
-    @Provides
-    static provideNamedNumber(): number & Named<"my name"> {
-        return 1234
-    }
-
-    @Provides
-    @MyQualifier
-    static provideDeprecatedQualifiedNumber(): number {
-        return 8765
-    }
-
-    @Provides
-    static provideQualifiedNumber(): number & TestQualifier {
-        return 5678
-    }
-
-    @Provides
-    static provideAnotherQualifiedNumber(): number & AnotherQualifier {
-        return 2222
-    }
-}
-
-@Component({modules: [IncludesModule]})
-abstract class IncludesComponent {
-
-    abstract readonly includedValue: number
-
-    @Named("my name") abstract readonly deprecatedNamedValue: number
-
-    @MyQualifier abstract readonly deprecatedQualifiedValue: number
-
-    abstract readonly namedValue: number & Named<"my name">
-
-    abstract readonly qualifiedValue: number & TestQualifier
-
-    abstract readonly anotherQualifiedValue: number & AnotherQualifier
-}
-
-const includesComponent = createComponent<typeof IncludesComponent>()
-
-@Inject
-class ProvidedOptional {
-    constructor(requiredString: "overload")
-    constructor(readonly requiredString?: string, readonly initializedValue: boolean = true, readonly optionalValue?: number) { }
-}
-
-class MissingOptional {
-    constructor(readonly requiredValue: number) { }
-}
-
-@Module
-class OptionalModule {
-
-    @Provides
-    static provideRequiredString(): string {
-        return "not optional"
-    }
-}
-
-@Component({modules: [OptionalModule]})
-abstract class OptionalComponent {
-
-    abstract readonly providedOptional?: ProvidedOptional
-    abstract readonly missingOptional?: MissingOptional
-}
-
-const optionalComponent = createComponent<typeof OptionalComponent>()
-
-@Module
-abstract class MultibindingSetSubcomponentModule {
-
-    @Provides
-    @IntoSet
-    static provideFour(): number {
-        return 4
-    }
-
-    @Provides
-    @MapKey("four")
-    @IntoMap({optional: false})
-    static provideFourIntoMap(): number {
-        return 4
-    }
-}
-
-@Subcomponent({modules: [MultibindingSetSubcomponentModule]})
-abstract class MultibindingSetSubcomponent {
-
-    abstract readonly numberSetExtension: ReadonlySet<number>
-    abstract readonly numberMapExtension: ReadonlyMap<string, number>
-}
-
-interface ThreeHolder {
-    three: number
-}
-
-let multibindingScopedProvidedCount = 0
-
-@Module
-abstract class MultibindingSetModule {
-
-    @k.Binds
-    @k.IntoSet
-    abstract bindMultibindingType: (impl: MultibindingTypeImpl) => MultibindingType
-
-    @Provides
-    @IntoSet
-    static provideOne(): number {
-        return 1
-    }
-
-    @Provides
-    static provideTwo(): number {
-        return 2
-    }
-
-    @Provides
-    @IntoSet
-    static provideTwoIntoSet(two: number): number {
-        return two
-    }
-
-    @Provides
-    @ElementsIntoSet
-    static provideIterableIntoSet(): number[] {
-        return [10, 11, 12]
-    }
-
-    @Provides
-    @Reusable
-    @IntoSet
-    static provideThree(holder: ThreeHolder): number {
-        multibindingScopedProvidedCount++
-        return holder.three
-    }
-
-    @Provides
-    static provideThreeHolder(): ThreeHolder {
-        return {three: 3}
-    }
-
-    @Provides
-    @IntoSet
-    static provideMultibindingType(): MultibindingType {
-        return {property: "provided"}
-    }
-
-    @Provides
-    @IntoSet
-    @MyQualifier
-    static provideQualifiedOne(): number {
-        return 1
-    }
-
-    @Provides
-    @IntoSet
-    @MyQualifier
-    static provideQualifiedTwo(): number {
-        return 2
-    }
-}
-
-@Module
-abstract class MultibindingMapModule {
-
-    @Binds
-    @MapKey("impl")
-    @IntoMap
-    abstract bindMultibindingType: (impl: MultibindingTypeImpl) => MultibindingType
-
-    @Provides
-    @MapKey("one")
-    @IntoMap
-    static provideOne(): number {
-        return 1
-    }
-
-    @Provides
-    @IntoMap
-    static provideTwo(): [string, number] {
-        return ["two", 2]
-    }
-
-    @Provides
-    @MapKey("three")
-    @IntoMap
-    static provideThree(holder: ThreeHolder): number {
-        return holder.three
-    }
-
-    @Provides
-    @ElementsIntoMap
-    static provideIterableIntoSet(): [string, number][] {
-        return [["ten", 10], ["eleven", 11], ["twelve", 12]]
-    }
-
-    @Provides
-    @MapKey("one")
-    @IntoMap
-    @MyQualifier
-    static provideQualifiedOne(): number {
-        return 1
-    }
-
-    @Provides
-    @IntoMap
-    @MyQualifier
-    static provideQualifiedTwo(): [string, number] {
-        return ["two", 2]
-    }
-
-    @Provides
-    @k.MapKey("provided")
-    @k.IntoMap
-    static provideMultibindingType(): MultibindingType {
-        return {property: "provided"}
-    }
-}
-
-interface MultibindingType {
-    property: string
-}
-
-@Inject
-class MultibindingTypeImpl {
-    property = "impl"
-}
-
-@k.Component({modules: [MultibindingSetModule, MultibindingMapModule], subcomponents: [MultibindingSetSubcomponent]})
-abstract class MultibindingsComponent {
-
-    abstract readonly numberSet: ReadonlySet<number>
-    abstract readonly boundSet: ReadonlySet<MultibindingType>
-    @MyQualifier abstract readonly qualifiedSet: ReadonlySet<number>
-    @MyQualifier abstract readonly qualifiedMap: ReadonlyMap<string, number>
-
-    abstract readonly numberMap: ReadonlyMap<string, number>
-    abstract readonly boundMap: ReadonlyMap<string, MultibindingType>
-
-    abstract readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
-}
-
-const multibindingComponent = k.createComponent<typeof MultibindingsComponent>()
-
-@AssistedInject
-class AssistedInjectClass {
-
-    constructor(
-        readonly string: string,
-        @Assisted readonly assistedNumber: number,
-    ) { }
-}
-
-@AssistedInject
-class AnotherAssistedInjectClass {
-
-    constructor(
-        @Assisted readonly assistedNumber: number,
-        readonly string: string,
-        @Assisted readonly assistedSymbol: symbol,
-        @Assisted readonly assistedObject: object,
-    ) { }
-}
-
-@Module
-abstract class AssistedInjectModule {
-
-    @Provides
-    static provideString(): string {
-        return "provided-string"
-    }
-}
-
-type AnotherAssistedInjectClassFactory = (symbol: symbol, object: object, number: number) => AnotherAssistedInjectClass
-
-@Component({modules: [AssistedInjectModule]})
-abstract class AssistedInjectComponent {
-    abstract readonly assistedFactory: (number: number) => AssistedInjectClass
-    abstract readonly anotherAssistedFactory: AnotherAssistedInjectClassFactory
-}
-
-const assistedInjectComponent = createComponent<typeof AssistedInjectComponent>()
+const parentComponent = new CustomComponentName(new ChildComponent(), {value: Symbol.for("value")}, "bound")
+const includesComponent = new KarambitIncludesComponent()
