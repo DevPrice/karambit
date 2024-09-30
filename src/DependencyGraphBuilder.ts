@@ -17,7 +17,7 @@ import {
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {AssistedFactoryLocator} from "./AssistedFactoryLocator"
-import {Assisted, AssistedInject} from "karambit-inject"
+import {Assisted, AssistedInject} from "karambit-decorators"
 
 export interface Dependency {
     readonly type: QualifiedType

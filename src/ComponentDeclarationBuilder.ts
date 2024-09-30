@@ -15,7 +15,7 @@ import {
     SubcomponentFactory, ConstructorParameter, AssistedFactory
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
-import {Assisted, AssistedInject} from "karambit-inject"
+import {Assisted, AssistedInject} from "karambit-decorators"
 
 export type ComponentDeclarationBuilderFactory = (typeResolver: TypeResolver, instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>) => ComponentDeclarationBuilder
 

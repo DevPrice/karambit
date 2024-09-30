@@ -21,7 +21,7 @@ import {
     UndefinedProvider
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
-import {Inject, Reusable} from "karambit-inject"
+import {Inject, Reusable} from "karambit-decorators"
 import {TupleMap} from "./Util"
 import {AssistedFactoryLocator} from "./AssistedFactoryLocator"
 import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"

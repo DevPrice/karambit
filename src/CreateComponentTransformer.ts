@@ -1,4 +1,4 @@
-import {Inject, Reusable} from "karambit-inject"
+import {Inject, Reusable} from "karambit-decorators"
 import * as ts from "typescript"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {Importer} from "./Importer"

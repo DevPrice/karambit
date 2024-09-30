@@ -1,4 +1,4 @@
-import {Scope} from "karambit-inject"
+import {Scope} from "karambit-decorators"
 
 export const ProgramScope = Scope()
 export const SourceFileScope = Scope()

@@ -1,11 +1,9 @@
 import * as ts from "typescript"
-import {Inject, Reusable} from "karambit-inject"
+import {Inject, Reusable} from "karambit-decorators"
 import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType"
 import {ErrorReporter} from "./ErrorReporter"
 import type {KarambitTransformOptions} from "./karambit"
-import {ElementsIntoSet} from "./karambit"
 
-const injectModuleName = require("../package.json").name
 const injectSourceFileName = require("../package.json").main
 const injectSourceFileNameWithoutExtension = injectSourceFileName.replace(/\..*$/, "")
 
@@ -43,8 +41,6 @@ export class InjectNodeDetector {
         this.isElementsIntoMapDecorator = this.isElementsIntoMapDecorator.bind(this)
         this.isMapKeyDecorator = this.isMapKeyDecorator.bind(this)
         this.isCompileTimeConstant = this.isCompileTimeConstant.bind(this)
-        this.isEraseable = this.isEraseable.bind(this)
-        this.eraseInjectRuntime = this.eraseInjectRuntime.bind(this)
     }
 
     isCreateComponentCall(expression: ts.CallExpression): ts.Type | undefined {
@@ -307,57 +303,14 @@ export class InjectNodeDetector {
         return typeSymbol?.name == "ReusableScopeDecorator" && this.isInjectSymbol(typeSymbol)
     }
 
-    isInjectionModuleImport(node: ts.Node) {
-        return ts.isImportDeclaration(node) && node.getChildren().some(child => ts.isStringLiteral(child) && this.resolveStringLiteral(child) === injectModuleName)
-    }
-
-    isEraseable(node: ts.Node) {
-        return this.isScopeDecorator(node) ||
-            this.isQualifierDecorator(node) ||
-            (this.karambitOptions.stripImports && this.isInjectionModuleImport(node)) ||
-            (ts.isDecorator(node) && this.getKarambitNodeName(node) !== undefined)
-    }
-
-    eraseInjectRuntime<T extends ts.Node>(node: T, ctx: ts.TransformationContext): T {
-        const detector = this
-        function visitNode(n: ts.Node): ts.Node | undefined {
-            if (detector.isEraseable(n)) {
-                return undefined
-            }
-            if (ts.isVariableDeclaration(n)) {
-                // TODO: Replace calls to Scope() and Qualifier() instead
-                const type = detector.typeChecker.getTypeAtLocation(n.type ?? n)
-                if (detector.isScope(type) || detector.isQualifier(type)) {
-                    return ts.factory.updateVariableDeclaration(
-                        n,
-                        n.name,
-                        n.exclamationToken,
-                        n.type,
-                        ts.factory.createArrowFunction(
-                            undefined,
-                            undefined,
-                            [],
-                            undefined,
-                            ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-                            ts.factory.createBlock(
-                                [],
-                                false
-                            )
-                        )
-                    )
-                }
-            }
-            return ts.visitEachChild(n, visitNode, ctx)
-        }
-        return ts.visitEachChild(node, visitNode, ctx)
-    }
-
     private isInjectSymbol(symbol: ts.Symbol): boolean {
         const aliasedSymbol = this.getAliasedSymbol(symbol)
         const declarations = aliasedSymbol.getDeclarations() ?? []
         for (const declaration of declarations) {
             const sourceWithoutExtension = declaration.getSourceFile().fileName.replace(/\..*$/, "")
-            if (sourceWithoutExtension.endsWith(injectSourceFileNameWithoutExtension)) return true
+            // if (sourceWithoutExtension.endsWith(injectSourceFileNameWithoutExtension)) return true
+            // TODO: Verify module
+            return true
         }
         return false
     }

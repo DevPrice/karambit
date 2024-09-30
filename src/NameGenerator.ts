@@ -1,6 +1,6 @@
 import * as ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
-import {Inject} from "karambit-inject"
+import {Inject} from "karambit-decorators"
 import {SourceFileScope} from "./Scopes"
 
 @Inject
