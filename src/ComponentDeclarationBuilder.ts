@@ -389,7 +389,7 @@ export class ComponentDeclarationBuilder {
                 ts.factory.createPropertyDeclaration(
                     [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
                     propIdentifier,
-                    undefined,
+                    ts.factory.createToken(ts.SyntaxKind.QuestionToken),
                     this.typeToTypeNode(constructor.type),
                     undefined
                 ),
