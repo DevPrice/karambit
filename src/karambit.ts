@@ -44,17 +44,19 @@ export default function(program: ts.Program, options?: Partial<KarambitTransform
                 const sourceFileComponent = transformationContextComponent.sourceFileSubcomponentFactory(sourceFile)
                 return runTransformers(sourceFile, ...sourceFileComponent.transformers)
             })
+
+            const outputFilename = Path.basename(sourceFile.fileName)
             if (transformOptions.printTransformDuration) {
                 const durationString = durationMs < 1 ? "<1" : durationMs.toString()
-                const relativePath = Path.relative(".", Path.join(Path.dirname(sourceFile.fileName), "Karambit" + Path.basename(sourceFile.fileName)))
+                const relativePath = Path.relative(".", Path.join(Path.dirname(sourceFile.fileName), `Karambit${outputFilename}`))
                 console.info(`Transformed ${relativePath} in ${durationString}ms.`)
             }
 
-            const resultText = ts.createPrinter().printNode(ts.EmitHint.Unspecified, result, result)
+            const resultText = programComponent.printer.printFile(result)
             if (resultText) {
-                const p = `${transformOptions.outDir}/${Path.relative(".", sourceFile.fileName)}`
+                const p = `${transformOptions.outDir}/${Path.relative(".", Path.join(Path.dirname(sourceFile.fileName), outputFilename))}`
                 if (!fs.existsSync(Path.dirname(p))) fs.mkdirSync(Path.dirname(p), {recursive: true})
-                fs.writeFileSync(p, ts.createPrinter().printNode(ts.EmitHint.Unspecified, result, sourceFile))
+                fs.writeFileSync(p, resultText)
             }
             return result
         }

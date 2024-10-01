@@ -75,6 +75,12 @@ export abstract class ProgramModule {
     }
 
     @Provides
+    @Reusable
+    static providePrinter(): ts.Printer {
+        return ts.createPrinter()
+    }
+
+    @Provides
     @ProgramScope
     static provideComponentIdentifiers(): Map<ts.Type, ts.Identifier> {
         return new Map()
@@ -88,4 +94,5 @@ export abstract class ProgramComponent {
     constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitTransformOptions) { }
 
     abstract readonly transformationContextSubcomponentFactory: SubcomponentFactory<typeof TransformationContextSubcomponent>
+    abstract readonly printer: ts.Printer
 }
