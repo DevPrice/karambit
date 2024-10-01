@@ -36,13 +36,46 @@ export class Importer {
     addImportsToSourceFile(sourceFile: ts.SourceFile): ts.SourceFile {
         return ts.factory.updateSourceFile(
             sourceFile,
-            [...Array.from(this.#newImports.values()), ...sourceFile.statements.filter(it => it.kind !== ts.SyntaxKind.ImportDeclaration)]
+            [...Array.from(this.#newImports.values()), ...sourceFile.statements.filter(it => it.kind !== ts.SyntaxKind.ImportDeclaration && it.kind !== ts.SyntaxKind.ImportEqualsDeclaration)]
         )
     }
 
-    getExpressionForDeclaration(symbol: ts.Symbol, sourceFile: ts.SourceFile, identifier?: ts.Identifier): ts.Expression {
+    getExpressionForDeclaration(node: ts.Declaration): ts.Expression {
+        const type = Importer.typeChecker.getTypeAtLocation(node)!
+        const symbol = this.symbolForType(type)
+        return this.getExpressionForSymbol(symbol)
+    }
+
+    getExpressionForSymbol(symbol: ts.Symbol): ts.Expression {
         this.getImportForSymbol(symbol)
         return ts.factory.createIdentifier(symbol.getName())
+    }
+
+    getTypeNode(type: ts.Type): ts.TypeNode | undefined {
+        const symbol = this.symbolForType(type)
+        if (symbol && symbol.getName && symbol.getName() === "__type") {
+            // no import needed
+        } else if (symbol) {
+            this.getImportForSymbol(symbol)
+            this.importTypeArguments(type)
+        }
+        if (type.isUnionOrIntersection()) {
+            // TODO: Maybe this could break with recursively defined types
+            type.types.forEach(it => this.getTypeNode(it))
+        }
+        return Importer.typeChecker.typeToTypeNode(type, undefined, undefined)
+    }
+
+    private symbolForType(type: ts.Type) {
+        return type.aliasSymbol ?? type.symbol
+    }
+
+    private importTypeArguments(type: ts.Type) {
+        const withTypeArguments = type as any as {typeArguments?: ts.Type[]}
+        if (withTypeArguments.typeArguments) {
+            withTypeArguments.typeArguments
+                .forEach(it => it && this.getTypeNode(it))
+        }
     }
 
     private createImportForSymbol(symbol: ts.Symbol, importSpecifier: string): ts.ImportDeclaration {
@@ -72,4 +105,5 @@ export class Importer {
     }
 
     static outDir: string = "karambit-generated"
+    static typeChecker: ts.TypeChecker
 }
