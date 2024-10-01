@@ -56,11 +56,13 @@ export class Importer {
         if (symbol && symbol.getName && symbol.getName() === "__type") {
             // no import needed
         } else if (symbol) {
+            if (this.#newImports.has(symbol)) {
+                return Importer.typeChecker.typeToTypeNode(type, undefined, undefined)
+            }
             this.getImportForSymbol(symbol)
             this.importTypeArguments(type)
         }
         if (type.isUnionOrIntersection()) {
-            // TODO: Maybe this could break with recursively defined types
             type.types.forEach(it => this.getTypeNode(it))
         }
         return Importer.typeChecker.typeToTypeNode(type, undefined, undefined)
