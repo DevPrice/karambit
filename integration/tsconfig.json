@@ -4,8 +4,7 @@
     "outDir": "build",
     "module": "CommonJS",
     "removeComments": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
+    "strict": true,
     "sourceMap": true,
     "experimentalDecorators": true
   },
