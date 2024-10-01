@@ -17,6 +17,7 @@ export class NameGenerator {
     private getterNames = new Map<QualifiedType, ts.Identifier | ts.PrivateIdentifier>()
 
     readonly parentName: ts.Identifier = ts.factory.createUniqueName("parent")
+    readonly unsetSymbolName: ts.Identifier = ts.factory.createUniqueName("__karambitUnsetSymbol")
 
     getComponentIdentifier(type: ts.Type, preferredName?: string): ts.Identifier {
         const existingName = this.componentIdentifiers.get(type)
@@ -81,6 +82,10 @@ export class NameGenerator {
 
     getValidIdentifier(type: ts.Type): string {
         return this.typeChecker.typeToString(type).replaceAll(/[^a-z\d]+/ig, "$")
+    }
+
+    getUnsetSymbolIdentifier(): ts.Identifier {
+        return this.unsetSymbolName
     }
 }
 

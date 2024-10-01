@@ -27,7 +27,7 @@ export class UnscopedClass { }
 export class ReusableClass { }
 
 @Inject
-export class InjectClass { }
+export class InjectClass { x: number = 1 }
 
 @Inject
 @TestScope

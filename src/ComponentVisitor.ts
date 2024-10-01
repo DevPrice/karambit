@@ -3,6 +3,7 @@ import {Inject, Reusable} from "karambit-decorators"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ComponentGeneratorDependenciesFactory} from "./ComponentGenerator"
 import {ErrorReporter} from "./ErrorReporter"
+import {NameGenerator} from "./NameGenerator"
 
 @Inject
 @Reusable
@@ -12,6 +13,7 @@ export class ComponentVisitor {
         private readonly context: ts.TransformationContext,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly errorReporter: ErrorReporter,
+        private readonly nameGenerator: NameGenerator,
         private readonly componentGeneratorDependenciesFactory: ComponentGeneratorDependenciesFactory,
     ) {
         this.visitComponents = this.visitComponents.bind(this)
@@ -29,7 +31,38 @@ export class ComponentVisitor {
             return node
         } else if (this.hasComponentChild(node)) {
             // TODO: This is inefficient
-            return ts.visitEachChild(node, this.visitComponents, this.context)
+            if (ts.isSourceFile(node)) {
+                const updatedSource = ts.visitEachChild(node, this.visitComponents, this.context)
+                const unsetSymbolDeclaration = ts.factory.createVariableStatement(
+                    undefined,
+                    ts.factory.createVariableDeclarationList([
+                        ts.factory.createVariableDeclaration(
+                            this.nameGenerator.unsetSymbolName,
+                            undefined,
+                            ts.factory.createTypeOperatorNode(
+                                ts.SyntaxKind.UniqueKeyword,
+                                ts.factory.createKeywordTypeNode(ts.SyntaxKind.SymbolKeyword),
+                            ),
+                            ts.factory.createCallExpression(
+                                ts.factory.createIdentifier("Symbol"),
+                                undefined,
+                                [],
+                            ),
+                        )
+                    ], ts.NodeFlags.Const))
+                const afterImportIndex = updatedSource.statements.findIndex(it => it.kind !== ts.SyntaxKind.ImportDeclaration && it.kind !== ts.SyntaxKind.ImportEqualsDeclaration)
+                return ts.factory.updateSourceFile(
+                    updatedSource,
+                    [...updatedSource.statements.slice(0, afterImportIndex), unsetSymbolDeclaration, ...updatedSource.statements.slice(afterImportIndex)],
+                    updatedSource.isDeclarationFile,
+                    updatedSource.referencedFiles,
+                    updatedSource.typeReferenceDirectives,
+                    updatedSource.hasNoDefaultLib,
+                    updatedSource.libReferenceDirectives,
+                )
+            } else {
+                return ts.visitEachChild(node, this.visitComponents, this.context)
+            }
         } else if (ts.isSourceFile(node)) {
             return ts.createSourceFile(node.fileName, "", ts.ScriptTarget.ES2021)
         }
