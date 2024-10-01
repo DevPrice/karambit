@@ -419,14 +419,7 @@ export class ComponentDeclarationBuilder {
     }
 
     private getUnsetPropertyExpression(): ts.Expression {
-        return ts.factory.createCallExpression(
-            ts.factory.createPropertyAccessExpression(
-                ts.factory.createIdentifier("Symbol"),
-                ts.factory.createIdentifier("for")
-            ),
-            undefined,
-            [ts.factory.createStringLiteral("unset")]
-        )
+        return this.nameGenerator.unsetSymbolName
     }
 
     private createScopedExpression(propIdentifier: ts.Identifier | ts.PrivateIdentifier, expression: ts.Expression) {
@@ -531,11 +524,12 @@ export class ComponentDeclarationBuilder {
     private getCachedPropertyDeclaration(type: QualifiedType): ts.ClassElement {
         const propIdentifier = this.nameGenerator.getPropertyIdentifier(type)
         const nullable = this.isTypeNullable(type.type)
+        const typeNode = this.typeToTypeNode(type.type)
         return ts.factory.createPropertyDeclaration(
             [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
             propIdentifier,
             nullable ? undefined : ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-            this.typeToTypeNode(type.type),
+            nullable ? typeNode && ts.factory.createUnionTypeNode([this.typeOfUnsetSymbol(), typeNode]) : typeNode,
             nullable ? this.getUnsetPropertyExpression() : undefined
         )
     }
@@ -582,6 +576,13 @@ export class ComponentDeclarationBuilder {
             withTypeArguments.typeArguments
                 .forEach(it => it && this.typeToTypeNode(it))
         }
+    }
+
+    private typeOfUnsetSymbol() {
+        return ts.factory.createTypeQueryNode(
+            this.nameGenerator.getUnsetSymbolIdentifier(),
+            undefined
+        )
     }
 
     accessParentGetter(type: QualifiedType): ts.Expression {

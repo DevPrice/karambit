@@ -278,7 +278,7 @@ export class ComponentGenerator {
         return {factories, bindings, setMultibindings, mapMultibindings}
     }
 
-    updateComponent(): ts.ClassDeclaration | ts.ClassDeclaration[] {
+    updateComponent(): ts.ClassDeclaration {
         const component = this.component
         const componentDecorator = component.modifiers?.find(this.nodeDetector.isComponentDecorator)!
         const componentScope = this.nodeDetector.getScope(component)
@@ -362,7 +362,7 @@ export class ComponentGenerator {
             Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals)
                 .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
         )
-        return [builder.declareComponent({
+        return builder.declareComponent({
             identifier: componentIdentifier,
             declaration: component,
             constructorParams: this.constructorHelper.getConstructorParamsForDeclaration(component) ?? [],
@@ -371,7 +371,7 @@ export class ComponentGenerator {
                 ...Array.from(generatedDeps.values()).flatMap(it => builder.getProviderDeclaration(it, componentScope)),
                 ...generatedSubcomponents.map(it => it.classElement)
             ]
-        })]
+        })
     }
 
     private generateSubcomponent(
