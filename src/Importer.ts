@@ -40,15 +40,15 @@ export class Importer {
         )
     }
 
-    getExpressionForDeclaration(node: ts.Declaration): ts.Expression {
+    getExpressionForDeclaration(node: ts.Declaration, flags: ts.SymbolFlags = ts.SymbolFlags.Constructor): ts.Expression {
         const type = Importer.typeChecker.getTypeAtLocation(node)!
         const symbol = this.symbolForType(type)
-        return this.getExpressionForSymbol(symbol)
+        return this.getExpressionForSymbol(symbol, flags)
     }
 
-    getExpressionForSymbol(symbol: ts.Symbol): ts.Expression {
+    getExpressionForSymbol(symbol: ts.Symbol, flags: ts.SymbolFlags): ts.Expression {
         this.getImportForSymbol(symbol)
-        return ts.factory.createIdentifier(symbol.getName())
+        return Importer.typeChecker.symbolToExpression(symbol, flags, undefined, undefined) ?? ts.factory.createIdentifier(symbol.getName())
     }
 
     getTypeNode(type: ts.Type): ts.TypeNode | undefined {
