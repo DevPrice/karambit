@@ -49,6 +49,6 @@ export class CreateComponentTransformer {
         if (!identifier) this.errorReporter.reportParseFailed(`Cannot create instance of ${this.typeChecker.typeToString(componentType)}! Is the type decorated with @Component?`, contextNode)
         const symbol = componentType.getSymbol()
         if (!symbol) this.errorReporter.reportParseFailed(`Couldn't find symbol of type ${this.typeChecker.typeToString(componentType)}!`, contextNode)
-        return this.importer.getExpressionForSymbol(componentType.symbol)
+        return this.importer.getExpressionForSymbol(componentType.symbol, ts.SymbolFlags.Constructor)
     }
 }
