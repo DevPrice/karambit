@@ -12,7 +12,9 @@ import {
     ProvidesMethod,
     SetMultibinding,
     MapMultibinding,
-    SubcomponentFactory, ConstructorParameter, AssistedFactory
+    SubcomponentFactory,
+    ConstructorParameter,
+    AssistedFactory,
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {Assisted, AssistedInject} from "karambit-decorators"
@@ -42,7 +44,7 @@ export class ComponentDeclarationBuilder {
             [ts.factory.createHeritageClause(
                 ts.SyntaxKind.ExtendsKeyword,
                 [ts.factory.createExpressionWithTypeArguments(
-                    this.getExpressionForDeclaration(options.declaration),
+                    this.importer.getExpressionForDeclaration(options.declaration),
                     undefined
                 )]
             )],
@@ -55,7 +57,7 @@ export class ComponentDeclarationBuilder {
                             undefined,
                             this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                             undefined,
-                            this.typeToTypeNode(this.typeChecker.getTypeAtLocation(param.declaration)),
+                            this.importer.getTypeNode(this.typeChecker.getTypeAtLocation(param.declaration)),
                             undefined
                         )
                     ),
@@ -74,7 +76,7 @@ export class ComponentDeclarationBuilder {
     }
 
     declareComponentProperty(options: {type: QualifiedType, name: ts.PropertyName, optional: boolean, typeNode?: ts.TypeNode}) {
-        const typeNode = this.typeToTypeNode(options.type.type)
+        const typeNode = this.importer.getTypeNode(options.type.type)
         const resolvedType = this.typeResolver.resolveBoundType(options.type)
         const expression = this.getParamExpression(resolvedType)
         return ts.factory.createGetAccessorDeclaration(
@@ -118,7 +120,7 @@ export class ComponentDeclarationBuilder {
                 [ts.factory.createHeritageClause(
                     ts.SyntaxKind.ExtendsKeyword,
                     [ts.factory.createExpressionWithTypeArguments(
-                        this.getExpressionForDeclaration(declaration),
+                        this.importer.getExpressionForDeclaration(declaration),
                         undefined
                     )]
                 )],
@@ -138,7 +140,7 @@ export class ComponentDeclarationBuilder {
                                 undefined,
                                 this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                                 undefined,
-                                this.typeToTypeNode(param.type.type),
+                                this.importer.getTypeNode(param.type.type),
                                 undefined
                             )
                         )],
@@ -207,7 +209,7 @@ export class ComponentDeclarationBuilder {
                                     undefined,
                                     it.name,
                                     undefined,
-                                    this.typeToTypeNode(it.type.type),
+                                    this.importer.getTypeNode(it.type.type),
                                     undefined
                                 )
                             ),
@@ -234,7 +236,7 @@ export class ComponentDeclarationBuilder {
     }
 
     private getAssistedFactoryDeclaration(factory: AssistedFactory): ts.ClassElement {
-        const typeNode = this.typeToTypeNode(factory.type.type)
+        const typeNode = this.importer.getTypeNode(factory.type.type)
         return ts.factory.createMethodDeclaration(
             [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
             undefined,
@@ -286,7 +288,7 @@ export class ComponentDeclarationBuilder {
 
     private createAssistedFactoryExpression(factory: AssistedFactory, params: ts.Expression[]): ts.Expression {
         return ts.factory.createNewExpression(
-            this.getExpressionForDeclaration(factory.declaration),
+            this.importer.getExpressionForDeclaration(factory.declaration),
             undefined,
             params,
         )
@@ -352,7 +354,7 @@ export class ComponentDeclarationBuilder {
     }
 
     private getterMethodDeclaration(type: QualifiedType, expression: ts.Expression, optional: boolean = false): ts.MethodDeclaration {
-        const typeNode = this.typeToTypeNode(type.type)
+        const typeNode = this.importer.getTypeNode(type.type)
         return this.getterMethodDeclarationWithTypeNode(type, typeNode, expression, optional)
     }
 
@@ -373,7 +375,7 @@ export class ComponentDeclarationBuilder {
         const self = this
         function constructorCallExpression(): ts.Expression {
             return ts.factory.createNewExpression(
-                self.getExpressionForDeclaration(constructor.declaration),
+                self.importer.getExpressionForDeclaration(constructor.declaration),
                 undefined,
                 constructor.parameters.map(it => it.type).map(self.typeResolver.resolveBoundType).map(self.getParamExpression)
             )
@@ -390,7 +392,7 @@ export class ComponentDeclarationBuilder {
                     [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
                     propIdentifier,
                     ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-                    this.typeToTypeNode(constructor.type),
+                    this.importer.getTypeNode(constructor.type),
                     undefined
                 ),
                 self.getterMethodDeclaration(
@@ -472,7 +474,7 @@ export class ComponentDeclarationBuilder {
     private factoryCallExpression(providesMethod: ProvidesMethod): ts.Expression {
         return ts.factory.createCallExpression(
             ts.factory.createPropertyAccessExpression(
-                this.getExpressionForDeclaration(providesMethod.module),
+                this.importer.getExpressionForDeclaration(providesMethod.module),
                 ts.factory.createIdentifier(providesMethod.declaration.name.getText())
             ),
             undefined,
@@ -483,7 +485,7 @@ export class ComponentDeclarationBuilder {
     private getFactoryDeclaration(factory: ProvidesMethod): ts.ClassElement[] {
         if (factory.scope) return this.getCachedFactoryDeclaration(factory)
 
-        const typeNode = this.typeToTypeNode(factory.type.type)
+        const typeNode = this.importer.getTypeNode(factory.type.type)
         return [
             this.getterMethodDeclarationWithTypeNode(
                 factory.type,
@@ -524,7 +526,7 @@ export class ComponentDeclarationBuilder {
     private getCachedPropertyDeclaration(type: QualifiedType): ts.ClassElement {
         const propIdentifier = this.nameGenerator.getPropertyIdentifier(type)
         const nullable = this.isTypeNullable(type.type)
-        const typeNode = this.typeToTypeNode(type.type)
+        const typeNode = this.importer.getTypeNode(type.type)
         return ts.factory.createPropertyDeclaration(
             [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
             propIdentifier,
@@ -545,44 +547,8 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    private getExpressionForDeclaration(node: ts.Declaration): ts.Expression {
-        const type = this.typeChecker.getTypeAtLocation(node)!
-        const symbol = this.symbolForType(type)
-        return this.importer.getExpressionForDeclaration(symbol, node.getSourceFile())
-    }
-
-    private typeToTypeNode(type: ts.Type, enclosingDeclaration: ts.Node | undefined = undefined): ts.TypeNode | undefined {
-        const symbol = this.symbolForType(type)
-        if (symbol && symbol.getName && symbol.getName() === "__type") {
-            // no import needed
-        } else if (symbol) {
-            this.importer.getImportForSymbol(symbol)
-            this.importTypeArguments(type)
-        }
-        if (type.isUnionOrIntersection()) {
-            // TODO: Maybe this could break with recursively defined types
-            type.types.forEach(it => this.typeToTypeNode(it))
-        }
-        return this.typeChecker.typeToTypeNode(type, enclosingDeclaration, undefined)
-    }
-
-    private symbolForType(type: ts.Type) {
-        return type.aliasSymbol ?? type.symbol
-    }
-
-    private importTypeArguments(type: ts.Type) {
-        const withTypeArguments = type as any as {typeArguments?: ts.Type[]}
-        if (withTypeArguments.typeArguments) {
-            withTypeArguments.typeArguments
-                .forEach(it => it && this.typeToTypeNode(it))
-        }
-    }
-
     private typeOfUnsetSymbol() {
-        return ts.factory.createTypeQueryNode(
-            this.nameGenerator.getUnsetSymbolIdentifier(),
-            undefined
-        )
+        return ts.factory.createTypeQueryNode(this.nameGenerator.getUnsetSymbolIdentifier(), undefined)
     }
 
     accessParentGetter(type: QualifiedType): ts.Expression {

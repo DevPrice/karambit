@@ -32,6 +32,7 @@ export default function(program: ts.Program, options?: Partial<KarambitTransform
     const transformOptions = {...defaultOptions, ...options}
     // TODO: fix injection and remove this hack
     Importer.outDir = transformOptions.outDir
+    Importer.typeChecker = program.getTypeChecker()
     const programComponent = new KarambitProgramComponent(program, transformOptions)
     return (ctx: ts.TransformationContext) => {
         const emitHost = (ctx as any).getEmitHost()
