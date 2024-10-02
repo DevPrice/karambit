@@ -366,7 +366,8 @@ export class ComponentDeclarationBuilder {
             undefined,
             [],
             [],
-            optional && typeNode ? ts.factory.createUnionTypeNode([typeNode, ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)]) : typeNode,
+            // TODO: Leave this out for now, it causes too much trouble with imports
+            undefined, // optional && typeNode ? ts.factory.createUnionTypeNode([typeNode, ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)]) : typeNode,
             ts.factory.createBlock([ts.factory.createReturnStatement(expression)])
         )
     }
