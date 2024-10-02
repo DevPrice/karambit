@@ -33,6 +33,7 @@ export class ComponentVisitor {
             // TODO: This is inefficient
             if (ts.isSourceFile(node)) {
                 const updatedSource = ts.visitEachChild(node, this.visitComponents, this.context)
+                // TODO: Only generate this symbol declaration if it's actually used
                 const unsetSymbolDeclaration = ts.factory.createVariableStatement(
                     undefined,
                     ts.factory.createVariableDeclarationList([
