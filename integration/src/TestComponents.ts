@@ -135,7 +135,7 @@ export class GrandChildClass {
 @k.Subcomponent
 export abstract class GrandChildSubcomponent {
 
-    protected constructor(@BindsInstance dep: GrandChildDependency) { }
+    constructor(@BindsInstance dep: GrandChildDependency) { }
 
     abstract readonly grandChildClass: GrandChildClass
 }

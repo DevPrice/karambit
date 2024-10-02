@@ -376,7 +376,7 @@ export class ComponentGenerator {
 
     private generateSubcomponent(
         factory: SubcomponentFactory,
-        parentType: ts.EntityName | string,
+        parentType: ts.EntityName,
         resolver: TypeResolver,
         ancestorScopes: ReadonlyMap<ts.Symbol, string>,
         parentCanBind: (type: QualifiedType) => boolean,
