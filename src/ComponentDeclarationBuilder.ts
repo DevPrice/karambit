@@ -37,6 +37,10 @@ export class ComponentDeclarationBuilder {
     }
 
     declareComponent(options: {declaration: ts.ClassDeclaration, constructorParams: ConstructorParameter[], members: ts.ClassElement[], identifier: ts.Identifier}): ts.ClassDeclaration {
+        const parentName = options.declaration.name
+        if (!parentName) {
+            this.errorReporter.reportParseFailed("Component missing name!", options.declaration)
+        }
         return ts.factory.createClassDeclaration(
             [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
             options.identifier,
@@ -51,13 +55,13 @@ export class ComponentDeclarationBuilder {
             [
                 ts.factory.createConstructorDeclaration(
                     undefined,
-                    options.constructorParams.map(param =>
+                    options.constructorParams.map((param, index) =>
                         ts.factory.createParameterDeclaration(
                             [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword), ts.factory.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
                             undefined,
                             this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                             undefined,
-                            this.importer.getTypeNode(this.typeChecker.getTypeAtLocation(param.declaration)),
+                            constructorParamType(ts.factory.createTypeQueryNode(parentName), index),
                             undefined
                         )
                     ),
@@ -103,9 +107,13 @@ export class ComponentDeclarationBuilder {
     declareSubcomponent(
         factory: SubcomponentFactory,
         identifier: ts.Identifier | string,
-        parentType: ts.EntityName | string,
+        parentType: ts.EntityName,
         members: Iterable<ts.ClassElement>,
     ): ts.ClassElement {
+        const parentName = factory.declaration.name
+        if (!parentName) {
+            this.errorReporter.reportParseFailed("Component missing name!", factory.declaration)
+        }
         const symbol = factory.subcomponentType.type.symbol
         const declaration = symbol.declarations![0]
         return ts.factory.createPropertyDeclaration(
@@ -132,15 +140,15 @@ export class ComponentDeclarationBuilder {
                             undefined,
                             this.nameGenerator.parentName,
                             undefined,
-                            ts.factory.createTypeReferenceNode(parentType, undefined), //ts.factory.createKeywordTypeNode(ts.SyntaxKind.AnyKeyword),
+                            ts.factory.createTypeReferenceNode(parentType, undefined),
                             undefined,
-                        ), ...factory.constructorParams.map(param =>
+                        ), ...factory.constructorParams.map((param, index) =>
                             ts.factory.createParameterDeclaration(
                                 [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword), ts.factory.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
                                 undefined,
                                 this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                                 undefined,
-                                this.importer.getTypeNode(param.type.type),
+                                constructorParamType(ts.factory.createTypeQueryNode(parentName), index),
                                 undefined
                             )
                         )],
@@ -580,6 +588,16 @@ export class ComponentDeclarationBuilder {
             []
         )
     }
+}
+
+function constructorParamType(type: ts.TypeNode, index: number) {
+    return ts.factory.createIndexedAccessTypeNode(
+        ts.factory.createTypeReferenceNode(
+            ts.factory.createIdentifier("ConstructorParameters"),
+            [type],
+        ),
+        ts.factory.createLiteralTypeNode(ts.factory.createNumericLiteral(index)),
+    )
 }
 
 function paramType(type: ts.TypeNode, index: number) {
