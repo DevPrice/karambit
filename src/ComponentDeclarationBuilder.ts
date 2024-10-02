@@ -474,12 +474,16 @@ export class ComponentDeclarationBuilder {
 
     private factoryCallExpression(providesMethod: ProvidesMethod): ts.Expression {
         return ts.factory.createCallExpression(
-            ts.factory.createPropertyAccessExpression(
-                this.importer.getExpressionForDeclaration(providesMethod.module),
-                ts.factory.createIdentifier(providesMethod.declaration.name.getText())
-            ),
+            this.providesMethodExpression(providesMethod),
             undefined,
             providesMethod.parameters.map(it => it.type).map(this.typeResolver.resolveBoundType).map(this.getParamExpression)
+        )
+    }
+
+    private providesMethodExpression(providesMethod: ProvidesMethod): ts.Expression {
+        return ts.factory.createPropertyAccessExpression(
+            this.importer.getExpressionForDeclaration(providesMethod.module),
+            ts.factory.createIdentifier(providesMethod.declaration.name.getText())
         )
     }
 
@@ -506,12 +510,24 @@ export class ComponentDeclarationBuilder {
     }
 
     private getCachedFactoryDeclaration(factory: ProvidesMethod): ts.ClassElement[] {
-        // TODO: Should handle iterable providers?
+        const moduleName = factory.module.name
+        const methodName = factory.declaration.name
+        if (!moduleName || !ts.isIdentifier(methodName)) {
+            this.errorReporter.reportParseFailed("Invalid @Provides method!", factory.declaration)
+        }
         return [
-            this.getCachedPropertyDeclaration(factory.type),
+            this.getCachedPropertyDeclaration(
+                factory.type,
+                functionReturnType(
+                    ts.factory.createTypeQueryNode(
+                        ts.factory.createQualifiedName(moduleName, methodName),
+                        undefined,
+                    )
+                )
+            ),
             this.getterMethodDeclaration(
                 factory.type,
-                this.getCachedFactoryCallExpression(factory)
+                this.getCachedFactoryCallExpression(factory),
             )
         ]
     }
@@ -524,10 +540,9 @@ export class ComponentDeclarationBuilder {
             this.createScopedExpression(propIdentifier, this.factoryCallExpression(providesMethod))
     }
 
-    private getCachedPropertyDeclaration(type: QualifiedType): ts.ClassElement {
+    private getCachedPropertyDeclaration(type: QualifiedType, typeNode: ts.TypeNode): ts.ClassElement {
         const propIdentifier = this.nameGenerator.getPropertyIdentifier(type)
         const nullable = this.isTypeNullable(type.type)
-        const typeNode = this.importer.getTypeNode(type.type)
         return ts.factory.createPropertyDeclaration(
             [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
             propIdentifier,
@@ -574,6 +589,13 @@ function paramType(type: ts.TypeNode, index: number) {
             [type],
         ),
         ts.factory.createLiteralTypeNode(ts.factory.createNumericLiteral(index)),
+    )
+}
+
+function functionReturnType(type: ts.TypeNode) {
+    return ts.factory.createTypeReferenceNode(
+        ts.factory.createIdentifier("ReturnType"),
+        [type],
     )
 }
 
