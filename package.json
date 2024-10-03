@@ -22,12 +22,13 @@
   "scripts": {
     "prepare": "husky install",
     "karambit": "karambit -o src/karambit-generated",
+    "prebuild": "npm run karambit",
     "build": "tsc",
     "test": "jest && npm run --prefix integration test",
     "lint": "eslint 'src/**/*.ts'",
     "fix": "eslint 'src/**/*.ts' --fix",
     "check": "npm run lint && npm run test",
-    "release": "npm run karambit && npm run build && npm run check"
+    "release": "npm run build && npm run check"
   },
   "author": "DevPrice",
   "repository": {
@@ -49,7 +50,7 @@
     "eslint": "^8.18.0",
     "husky": "^8.0.1",
     "jest": "^28.1.1",
-    "karambit-inject": "^3.0.0-alpha.22",
+    "karambit-inject": "^3.0.0-alpha.23",
     "lint-staged": "^13.0.3",
     "ts-jest": "^28.0.4",
     "typescript": "^4.8.0"
