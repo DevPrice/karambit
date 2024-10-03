@@ -55,13 +55,13 @@ export class ComponentDeclarationBuilder {
             [
                 ts.factory.createConstructorDeclaration(
                     undefined,
-                    options.constructorParams.map((param, index) =>
+                    options.constructorParams.map(param =>
                         ts.factory.createParameterDeclaration(
                             [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword), ts.factory.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
                             undefined,
                             this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                             undefined,
-                            constructorParamType(ts.factory.createTypeQueryNode(parentName), index),
+                            constructorParamType(ts.factory.createTypeQueryNode(parentName), param.index),
                             undefined
                         )
                     ),
@@ -151,13 +151,13 @@ export class ComponentDeclarationBuilder {
                             undefined,
                             ts.factory.createTypeReferenceNode(parentType, undefined),
                             undefined,
-                        ), ...factory.constructorParams.map((param, index) =>
+                        ), ...factory.constructorParams.map(param =>
                             ts.factory.createParameterDeclaration(
                                 [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword), ts.factory.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
                                 undefined,
                                 this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                                 undefined,
-                                constructorParamType(ts.factory.createTypeQueryNode(parentName), index),
+                                constructorParamType(ts.factory.createTypeQueryNode(parentName), param.index),
                                 undefined
                             )
                         )],
@@ -253,7 +253,7 @@ export class ComponentDeclarationBuilder {
     }
 
     private getAssistedFactoryDeclaration(factory: AssistedFactory): ts.ClassElement {
-        const typeNode = this.importer.getTypeNode(factory.type.type)
+        const typeNode = factory.declaration.name && ts.factory.createTypeQueryNode(factory.declaration.name)
         return ts.factory.createMethodDeclaration(
             [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
             undefined,
@@ -261,7 +261,7 @@ export class ComponentDeclarationBuilder {
             undefined,
             undefined,
             [],
-            typeNode,
+            undefined,
             ts.factory.createBlock(
                 [
                     ts.factory.createReturnStatement(
@@ -269,13 +269,13 @@ export class ComponentDeclarationBuilder {
                             undefined,
                             undefined,
                             factory.factoryParams
-                                .map((it, index) =>
+                                .map(it =>
                                     ts.factory.createParameterDeclaration(
                                         undefined,
                                         undefined,
                                         it.name,
                                         undefined,
-                                        typeNode && paramType(typeNode, index),
+                                        typeNode && constructorParamType(typeNode, it.constructorParamIndex),
                                         undefined,
                                     )
                                 ),
