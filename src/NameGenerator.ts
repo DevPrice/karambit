@@ -12,7 +12,7 @@ export class NameGenerator {
         private readonly componentIdentifiers: Map<ts.Type, ts.Identifier>,
     ) { }
 
-    private propertyNames = new Map<QualifiedType, ts.Identifier | ts.PrivateIdentifier>()
+    private propertyNames = new Map<QualifiedType, ts.Identifier>()
     private paramPropertyNames = new Map<ts.ParameterDeclaration, ts.Identifier>()
     private getterNames = new Map<QualifiedType, ts.Identifier | ts.PrivateIdentifier>()
 
@@ -29,7 +29,7 @@ export class NameGenerator {
         return newName
     }
 
-    getPropertyIdentifier(type: QualifiedType): ts.Identifier | ts.PrivateIdentifier {
+    getPropertyIdentifier(type: QualifiedType): ts.Identifier {
         const existingName = this.propertyNames.get(type)
         if (existingName) return existingName
 
