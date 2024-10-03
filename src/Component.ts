@@ -18,6 +18,7 @@ import type {
     ComponentGeneratorDependenciesFactory,
 } from "./ComponentGenerator"
 import type {KarambitTransformOptions} from "./karambit"
+import {ExportVerifier} from "./ExportVerifier"
 
 @Subcomponent
 @ComponentGenerationScope
@@ -38,10 +39,12 @@ export abstract class SourceFileModule {
 
     @Provides
     static provideTransformers(
+        exporterChecker: ExportVerifier,
         componentVisitor: ComponentVisitor,
         importer: Importer,
     ): ts.Transformer<ts.SourceFile>[] {
         return [
+            exporterChecker.verifyExports,
             componentVisitor.visitComponents,
             importer.addImportsToSourceFile,
         ]
