@@ -376,7 +376,7 @@ export class ComponentDeclarationBuilder {
 
     private getMapEntryExpression(type: QualifiedType, keyExpression?: ts.Expression): ts.Expression {
         if (keyExpression) {
-            return ts.factory.createArrayLiteralExpression([keyExpression, this.getParamExpression(type)], false)
+            return ts.factory.createArrayLiteralExpression([asConst(keyExpression), this.getParamExpression(type)], false)
         }
         return this.getParamExpression(type)
     }
@@ -653,5 +653,12 @@ function accessDependencyProperty(memberName: ts.Identifier | ts.PrivateIdentifi
     return ts.factory.createPropertyAccessExpression(
         propertyAccess,
         ts.factory.createIdentifier(propertyName)
+    )
+}
+
+function asConst(literalExpression: ts.Expression) {
+    return ts.factory.createAsExpression(
+        literalExpression,
+        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("const"), undefined),
     )
 }
