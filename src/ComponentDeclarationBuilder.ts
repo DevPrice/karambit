@@ -423,8 +423,9 @@ export class ComponentDeclarationBuilder {
                     ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(symbol)),
                     undefined
                 ),
-                self.getterMethodDeclaration(
+                self.getterMethodDeclarationWithTypeNode(
                     qualifiedType,
+                    ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(symbol)),
                     ts.factory.createBinaryExpression(
                         ts.factory.createPropertyAccessExpression(
                             ts.factory.createThis(),
@@ -515,19 +516,33 @@ export class ComponentDeclarationBuilder {
     }
 
     private getFactoryDeclaration(factory: ProvidesMethod): ts.ClassElement[] {
-        if (factory.scope) return this.getCachedFactoryDeclaration(factory)
+        const typeNode = this.getFactoryReturnType(factory)
+        if (factory.scope) return this.getCachedFactoryDeclaration(factory, typeNode)
 
-        return [
-            this.getterMethodDeclarationWithTypeNode(
-                factory.type,
-                undefined, // typeNode && factory.isIterableProvider ? iterableType(typeNode) : typeNode,
-                this.factoryCallExpression(factory),
+        return [this.getterMethodDeclarationWithTypeNode(factory.type, typeNode, this.factoryCallExpression(factory))]
+    }
+
+    private getFactoryReturnType(factory: ProvidesMethod): ts.TypeNode {
+        const moduleName = factory.module.name
+        const methodName = factory.declaration.name
+        if (!moduleName || !ts.isIdentifier(methodName)) {
+            this.errorReporter.reportParseFailed("Invalid @Provides method!", factory.declaration)
+        }
+        const moduleSymbol = this.typeChecker.getSymbolAtLocation(moduleName)!
+        return functionReturnType(
+            ts.factory.createTypeQueryNode(
+                ts.factory.createQualifiedName(this.importer.getQualifiedNameForSymbol(moduleSymbol), methodName),
+                undefined,
             )
-        ]
+        )
     }
 
     private getMissingOptionalDeclaration(type: QualifiedType): ts.ClassElement {
-        return this.getterMethodDeclaration(type, ts.factory.createVoidExpression(ts.factory.createNumericLiteral(0)), true)
+        return this.getterMethodDeclarationWithTypeNode(
+            type,
+            ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
+            ts.factory.createVoidExpression(ts.factory.createNumericLiteral(0)),
+        )
     }
 
     private isTypeNullable(type: ts.Type): boolean {
@@ -535,25 +550,12 @@ export class ComponentDeclarationBuilder {
         return type.isUnionOrIntersection() && type.types.some(it => this.isTypeNullable(it))
     }
 
-    private getCachedFactoryDeclaration(factory: ProvidesMethod): ts.ClassElement[] {
-        const moduleName = factory.module.name
-        const methodName = factory.declaration.name
-        if (!moduleName || !ts.isIdentifier(methodName)) {
-            this.errorReporter.reportParseFailed("Invalid @Provides method!", factory.declaration)
-        }
-        const moduleSymbol = this.typeChecker.getSymbolAtLocation(moduleName)!
+    private getCachedFactoryDeclaration(factory: ProvidesMethod, typeNode: ts.TypeNode): ts.ClassElement[] {
         return [
-            this.getCachedPropertyDeclaration(
+            this.getCachedPropertyDeclaration(factory.type, typeNode),
+            this.getterMethodDeclarationWithTypeNode(
                 factory.type,
-                functionReturnType(
-                    ts.factory.createTypeQueryNode(
-                        ts.factory.createQualifiedName(this.importer.getQualifiedNameForSymbol(moduleSymbol), methodName),
-                        undefined,
-                    )
-                )
-            ),
-            this.getterMethodDeclaration(
-                factory.type,
+                typeNode,
                 this.getCachedFactoryCallExpression(factory),
             )
         ]
