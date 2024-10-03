@@ -371,8 +371,7 @@ export class ComponentDeclarationBuilder {
     }
 
     private getterMethodDeclaration(type: QualifiedType, expression: ts.Expression, optional: boolean = false): ts.MethodDeclaration {
-        const typeNode = this.importer.getTypeNode(type.type)
-        return this.getterMethodDeclarationWithTypeNode(type, typeNode, expression, optional)
+        return this.getterMethodDeclarationWithTypeNode(type, undefined, expression, optional)
     }
 
     private getterMethodDeclarationWithTypeNode(type: QualifiedType, typeNode: ts.TypeNode | undefined, expression: ts.Expression, optional: boolean = false): ts.MethodDeclaration {
@@ -383,8 +382,7 @@ export class ComponentDeclarationBuilder {
             undefined,
             [],
             [],
-            // TODO: Leave this out for now, it causes too much trouble with imports
-            undefined, // optional && typeNode ? ts.factory.createUnionTypeNode([typeNode, ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)]) : typeNode,
+            optional && typeNode ? ts.factory.createUnionTypeNode([typeNode, ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)]) : typeNode,
             ts.factory.createBlock([ts.factory.createReturnStatement(expression)])
         )
     }
@@ -507,11 +505,10 @@ export class ComponentDeclarationBuilder {
     private getFactoryDeclaration(factory: ProvidesMethod): ts.ClassElement[] {
         if (factory.scope) return this.getCachedFactoryDeclaration(factory)
 
-        const typeNode = this.importer.getTypeNode(factory.type.type)
         return [
             this.getterMethodDeclarationWithTypeNode(
                 factory.type,
-                typeNode && factory.isIterableProvider ? iterableType(typeNode) : typeNode,
+                undefined, // typeNode && factory.isIterableProvider ? iterableType(typeNode) : typeNode,
                 this.factoryCallExpression(factory),
             )
         ]
