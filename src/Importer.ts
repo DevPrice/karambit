@@ -2,13 +2,14 @@ import * as ts from "typescript"
 import * as Path from "path"
 import {Inject} from "karambit-decorators"
 import {SourceFileScope} from "./Scopes"
-import {ErrorReporter} from "./ErrorReporter"
 
 @Inject
 @SourceFileScope
 export class Importer {
 
-    #newImports: Map<ts.Symbol, ts.ImportDeclaration> = new Map()
+    private newImports = new Map<string, ts.ImportDeclaration>()
+    private symbolMap = new Map<ts.Symbol, ts.Identifier>()
+    private importNames = new Map<string, ts.Identifier>()
 
     constructor(
         private readonly sourceFile: ts.SourceFile,
@@ -16,88 +17,79 @@ export class Importer {
         this.addImportsToSourceFile = this.addImportsToSourceFile.bind(this)
     }
 
-    private getImportForSymbol(symbol: ts.Symbol): ts.ImportDeclaration | undefined {
+    private getImportForSymbol(symbol: ts.Symbol): ts.Identifier | undefined {
+        const cached = this.symbolMap.get(symbol)
+        if (cached) return cached
+
         const declarations = symbol.getDeclarations()
         if (!declarations || declarations.length === 0) return undefined
 
         const sourcePath = `${Importer.outDir}/${Path.relative(".", this.sourceFile.fileName)}`.replace(/[^/]+$/, "")
         const importSourceFile = declarations[0].getSourceFile()
         const importSpecifier = this.getImportSpecifier(sourcePath, importSourceFile)
+
+        const identifier = this.getImportIdentifier(importSpecifier)
+        this.symbolMap.set(symbol, identifier)
+
+        if (this.newImports.has(importSpecifier)) return identifier
         if (Path.basename(importSourceFile.fileName) !== "typescript.d.ts" && importSpecifier === "typescript") {
-            return undefined
+            return identifier
         }
 
-        const existingImport = this.#newImports.get(symbol)
-        if (existingImport) return existingImport
+        const newImport = this.createImport(importSpecifier)
+        this.newImports.set(importSpecifier, newImport)
+        return identifier
+    }
 
-        const newImport = this.createImportForSymbol(symbol, importSpecifier)
-        this.#newImports.set(symbol, newImport)
-        return newImport
+    getQualifiedNameForSymbol(symbol: ts.Symbol): ts.EntityName {
+        const left = this.getImportForSymbol(symbol)
+        const right = ts.factory.createIdentifier(symbol.name)
+        return left ? ts.factory.createQualifiedName(left, right) : right
     }
 
     addImportsToSourceFile(sourceFile: ts.SourceFile): ts.SourceFile {
         return ts.factory.updateSourceFile(
             sourceFile,
             [
-                ...this.#newImports.values(),
+                ...this.newImports.values(),
                 ...sourceFile.statements.filter(it => !ts.isImportDeclaration(it)),
             ]
         )
     }
 
-    getExpressionForDeclaration(node: ts.Declaration, flags: ts.SymbolFlags = ts.SymbolFlags.Constructor): ts.Expression {
+    getExpressionForDeclaration(node: ts.Declaration): ts.Expression {
         const type = Importer.typeChecker.getTypeAtLocation(node)!
         const symbol = this.symbolForType(type)
-        return this.getExpressionForSymbol(symbol, flags)
+        return this.getExpressionForSymbol(symbol)
     }
 
-    getExpressionForSymbol(symbol: ts.Symbol, flags: ts.SymbolFlags): ts.Expression {
-        this.getImportForSymbol(symbol)
-        return Importer.typeChecker.symbolToExpression(symbol, flags, undefined, undefined) ?? ts.factory.createIdentifier(symbol.getName())
-    }
-
-    getTypeNode(type: ts.Type): ts.TypeNode | undefined {
-        const symbol = this.symbolForType(type)
-        if (symbol && symbol.getName && symbol.getName() === "__type") {
-            // no import needed
-        } else if (symbol) {
-            if (this.#newImports.has(symbol)) {
-                return Importer.typeChecker.typeToTypeNode(type, undefined, undefined)
-            }
-            this.getImportForSymbol(symbol)
-            this.importTypeArguments(type)
-        }
-        if (type.isUnionOrIntersection()) {
-            type.types.forEach(it => this.getTypeNode(it))
-        }
-        return Importer.typeChecker.typeToTypeNode(type, undefined, undefined)
+    getExpressionForSymbol(symbol: ts.Symbol): ts.Expression {
+        const left = this.getImportForSymbol(symbol)
+        const right = ts.factory.createIdentifier(symbol.name)
+        return left ? ts.factory.createPropertyAccessExpression(left, right) : right
     }
 
     private symbolForType(type: ts.Type) {
         return type.aliasSymbol ?? type.symbol
     }
 
-    private importTypeArguments(type: ts.Type) {
-        const withTypeArguments = type as any as {typeArguments?: ts.Type[]}
-        if (withTypeArguments.typeArguments) {
-            withTypeArguments.typeArguments
-                .forEach(it => it && this.getTypeNode(it))
-        }
+    private getImportIdentifier(specifier: string): ts.Identifier {
+        const existingName = this.importNames.get(specifier)
+        if (existingName) return existingName
+
+        const identifierText = Path.basename(specifier).replaceAll(/[^a-z\d]+/ig, "$")
+        const newName = ts.factory.createUniqueName(identifierText)
+        this.importNames.set(specifier, newName)
+        return newName
     }
 
-    private createImportForSymbol(symbol: ts.Symbol, importSpecifier: string): ts.ImportDeclaration {
+    private createImport(importSpecifier: string): ts.ImportDeclaration {
         return ts.factory.createImportDeclaration(
             undefined,
             ts.factory.createImportClause(
                 false,
                 undefined,
-                ts.factory.createNamedImports([
-                    ts.factory.createImportSpecifier(
-                        false,
-                        undefined,
-                        ts.factory.createIdentifier(symbol.getName())
-                    ),
-                ])
+                ts.factory.createNamespaceImport(this.getImportIdentifier(importSpecifier)),
             ),
             ts.factory.createStringLiteral(importSpecifier),
             undefined
