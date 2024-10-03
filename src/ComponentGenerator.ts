@@ -367,7 +367,7 @@ export class ComponentGenerator {
             declaration: component,
             constructorParams: this.constructorHelper.getConstructorParamsForDeclaration(component) ?? [],
             members: [
-                ...rootDependencies.map(it => builder.declareComponentProperty(it)),
+                ...rootDependencies.map(it => builder.declareComponentProperty(component, it)),
                 ...Array.from(generatedDeps.values()).flatMap(it => builder.getProviderDeclaration(it, componentScope)),
                 ...generatedSubcomponents.map(it => it.classElement)
             ]
@@ -450,7 +450,7 @@ export class ComponentGenerator {
                 .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
         )
         const members = [
-            ...rootDependencies.map(it => subcomponentBuilder.declareComponentProperty(it)),
+            ...rootDependencies.map(it => subcomponentBuilder.declareComponentProperty(factory.declaration, it)),
             ...Array.from(generatedDeps.values()).flatMap(it => subcomponentBuilder.getProviderDeclaration(it, scope)),
             ...generatedSubcomponents.map(it => it.classElement),
         ]

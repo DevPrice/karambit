@@ -79,16 +79,25 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    declareComponentProperty(options: {type: QualifiedType, name: ts.PropertyName, optional: boolean, typeNode?: ts.TypeNode}) {
-        const typeNode = this.importer.getTypeNode(options.type.type)
+    declareComponentProperty(declaration: ts.ClassDeclaration, options: {type: QualifiedType, name: ts.PropertyName, optional: boolean}) {
+        const parentName = declaration.name
+        if (!parentName) {
+            this.errorReporter.reportParseFailed("Component missing name!", declaration)
+        }
+        if (!ts.isIdentifier(options.name)) {
+            this.errorReporter.reportParseFailed("Invalid property!")
+        }
+        const typeNode =ts.factory.createIndexedAccessTypeNode(
+            ts.factory.createTypeReferenceNode(parentName),
+            ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral(options.name.text)),
+        )
         const resolvedType = this.typeResolver.resolveBoundType(options.type)
-        const expression = this.getParamExpression(resolvedType)
         return ts.factory.createGetAccessorDeclaration(
             [],
             options.name,
             [],
             options.optional && typeNode ? ts.factory.createUnionTypeNode([typeNode, ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)]) : typeNode,
-            ts.factory.createBlock([ts.factory.createReturnStatement(expression)])
+            ts.factory.createBlock([ts.factory.createReturnStatement(this.getParamExpression(resolvedType))])
         )
     }
 
