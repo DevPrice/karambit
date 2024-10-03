@@ -98,7 +98,7 @@ export class ModuleLocator {
         const factories: ProvidesMethod[] = []
         function visitFactory(method: ts.MethodDeclaration) {
             if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.StaticKeyword)) {
-                throw Error(`Provider methods must be static! Provider: ${module.name?.getText()}.${method.name?.getText()}`)
+                throw errorReporter.reportParseFailed("Provider methods must be static!", method)
             }
             const signature = typeChecker.getSignatureFromDeclaration(method)!
             const returnType = createQualifiedType({
