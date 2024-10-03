@@ -41,6 +41,7 @@ export class ComponentDeclarationBuilder {
         if (!parentName) {
             this.errorReporter.reportParseFailed("Component missing name!", options.declaration)
         }
+        const parentSymbol = this.typeChecker.getSymbolAtLocation(parentName)!
         return ts.factory.createClassDeclaration(
             [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
             options.identifier,
@@ -48,7 +49,7 @@ export class ComponentDeclarationBuilder {
             [ts.factory.createHeritageClause(
                 ts.SyntaxKind.ExtendsKeyword,
                 [ts.factory.createExpressionWithTypeArguments(
-                    this.importer.getExpressionForDeclaration(options.declaration),
+                    this.importer.getExpressionForSymbol(parentSymbol),
                     undefined
                 )]
             )],
@@ -61,7 +62,7 @@ export class ComponentDeclarationBuilder {
                             undefined,
                             this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                             undefined,
-                            constructorParamType(ts.factory.createTypeQueryNode(parentName), param.index),
+                            constructorParamType(ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(parentSymbol)), param.index),
                             undefined
                         )
                     ),
@@ -87,8 +88,9 @@ export class ComponentDeclarationBuilder {
         if (!ts.isIdentifier(options.name)) {
             this.errorReporter.reportParseFailed("Invalid property!")
         }
-        const typeNode =ts.factory.createIndexedAccessTypeNode(
-            ts.factory.createTypeReferenceNode(parentName),
+        const parentSymbol = this.typeChecker.getSymbolAtLocation(parentName)!
+        const typeNode = ts.factory.createIndexedAccessTypeNode(
+            ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(parentSymbol)),
             ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral(options.name.text)),
         )
         const resolvedType = this.typeResolver.resolveBoundType(options.type)
@@ -157,7 +159,7 @@ export class ComponentDeclarationBuilder {
                                 undefined,
                                 this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                                 undefined,
-                                constructorParamType(ts.factory.createTypeQueryNode(parentName), param.index),
+                                constructorParamType(ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(symbol)), param.index),
                                 undefined
                             )
                         )],
@@ -261,7 +263,8 @@ export class ComponentDeclarationBuilder {
     }
 
     private getAssistedFactoryDeclaration(factory: AssistedFactory): ts.ClassElement {
-        const typeNode = factory.declaration.name && ts.factory.createTypeQueryNode(factory.declaration.name)
+        const symbol = this.typeChecker.getSymbolAtLocation(factory.declaration.name!)!
+        const typeNode = factory.declaration.name && ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(symbol))
         return ts.factory.createMethodDeclaration(
             [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
             undefined,
@@ -406,6 +409,7 @@ export class ComponentDeclarationBuilder {
         }
         const scope = constructor.scope
         const qualifiedType = createQualifiedType({type: constructor.type})
+        const symbol = this.typeChecker.getSymbolAtLocation(constructor.declaration.name!)!
         if (scope) {
             if (!this.nodeDetector.isReusableScope(scope) && scope !== componentScope) {
                 this.errorReporter.reportInvalidScope(constructor, componentScope)
@@ -416,7 +420,7 @@ export class ComponentDeclarationBuilder {
                     [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
                     propIdentifier,
                     ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-                    this.importer.getTypeNode(constructor.type),
+                    ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(symbol)),
                     undefined
                 ),
                 self.getterMethodDeclaration(
@@ -537,12 +541,13 @@ export class ComponentDeclarationBuilder {
         if (!moduleName || !ts.isIdentifier(methodName)) {
             this.errorReporter.reportParseFailed("Invalid @Provides method!", factory.declaration)
         }
+        const moduleSymbol = this.typeChecker.getSymbolAtLocation(moduleName)!
         return [
             this.getCachedPropertyDeclaration(
                 factory.type,
                 functionReturnType(
                     ts.factory.createTypeQueryNode(
-                        ts.factory.createQualifiedName(moduleName, methodName),
+                        ts.factory.createQualifiedName(this.importer.getQualifiedNameForSymbol(moduleSymbol), methodName),
                         undefined,
                     )
                 )
