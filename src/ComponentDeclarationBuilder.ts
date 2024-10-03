@@ -226,7 +226,15 @@ export class ComponentDeclarationBuilder {
                                     undefined,
                                     it.name,
                                     undefined,
-                                    this.importer.getTypeNode(it.type.type),
+                                    constructorParamType(
+                                        ts.factory.createTypeQueryNode(
+                                            ts.factory.createQualifiedName(
+                                                ts.factory.createIdentifier("this"),
+                                                this.nameGenerator.getPropertyIdentifier(factory.subcomponentType),
+                                            )
+                                        ),
+                                        it.index + 1,
+                                    ),
                                     undefined
                                 )
                             ),
