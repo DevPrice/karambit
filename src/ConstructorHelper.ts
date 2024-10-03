@@ -13,7 +13,7 @@ export class ConstructorHelper {
         private readonly nodeDetector: InjectNodeDetector,
     ) { }
 
-    getConstructorParamsForDeclaration(declaration: ts.ClassLikeDeclaration): ConstructorParameter[] | undefined {
+    getConstructorParamsForDeclaration(declaration: ts.ClassLikeDeclaration): ConstructorParameter[] {
         const constructor = declaration.getChildren().flatMap(it => it.getChildren())
             .find(it => ts.isConstructorDeclaration(it) && it.body !== undefined)
         if (!constructor) return []
@@ -21,12 +21,13 @@ export class ConstructorHelper {
             .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
             .filter(ts.isParameter)
             .map(it => it as ts.ParameterDeclaration)
-            .map(param => {
+            .map((param, index) => {
                 return {
                     type: createQualifiedType({
                         type: this.typeChecker.getTypeAtLocation(param.type ?? param),
                         qualifier: this.nodeDetector.getQualifier(param)
                     }),
+                    index,
                     name: param.name.getText(),
                     declaration: param,
                     decorators: Array.from(ts.getDecorators(param) ?? []),

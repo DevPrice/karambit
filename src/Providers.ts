@@ -54,6 +54,7 @@ export interface ProvidesMethodParameter {
 
 export interface FactoryParameter {
     readonly name: string
+    readonly constructorParamIndex: number
     readonly type: QualifiedType
 }
 
@@ -71,6 +72,7 @@ export function isInjectableConstructor(provider: InstanceProvider): provider is
 
 export interface ConstructorParameter {
     readonly type: QualifiedType
+    readonly index: number
     readonly name: string
     readonly declaration: ts.ParameterDeclaration
     readonly decorators: ts.Decorator[]
