@@ -51,7 +51,7 @@
     "husky": "^8.0.1",
     "jest": "^28.1.1",
     "karambit-inject": "^3.0.0-alpha.23",
-    "lint-staged": "^13.0.3",
+    "lint-staged": "^15.2.10",
     "ts-jest": "^28.0.4",
     "typescript": "^5.6.2"
   },
