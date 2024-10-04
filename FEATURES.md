@@ -173,6 +173,9 @@ In some cases, you may need to differentiate between two bindings of the same ty
 Karambit has a built-in `Named` type available:
 
 ```typescript
+// make sure to import *type* if you have a dev dependency on karambit-inject
+import type {Named} from "karambit-inject"
+
 @Module
 abstract class MyModule {
     @Provides
@@ -189,6 +192,9 @@ abstract class MyModule {
 You can create a truly *unique* Qualifier by using Karambit's `Qualified` helper type and using it in a similar way:
 
 ```typescript
+// make sure to import *type* if you have a dev dependency on karambit-inject
+import type {Qualified} from "karambit-inject"
+
 // in this example, we simply *declare* the symbols since they are not used at runtime.
 // if you access your symbol(s) at runtime, make sure to actually instantiate them!
 declare const usernameQualifier: unique symbol
@@ -208,9 +214,6 @@ abstract class MyModule {
     static provideUser(username: string & UsernameQualifier, aboutMe: string & AboutMeQualifier): User { /* ... */ }
 }
 ```
-
-> **Note**
-> Decorator-based Qualifiers from previous releases are still supported, but are deprecated and may be removed in a future major version release.
 
 ## Scope
 
@@ -250,6 +253,9 @@ Sometimes a class doesn't need a dependency immediately during construction, it 
 You can inject `Provider<T>` anywhere that you can inject `T`. The difference is that a `Provider<T>` is a function that will return an instance of `T` by calling its provider method in the dependency graph.
 
 ```typescript
+// make sure to import *type* if you have a dev dependency on karambit-inject
+import type {Provider} from "karambit-inject"
+
 @Inject
 class OrigamiMaker {
     constructor(private readonly paperProvider: Provider<Paper>) { }
