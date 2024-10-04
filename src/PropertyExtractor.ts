@@ -39,7 +39,7 @@ export class PropertyExtractor {
             .filter(it => ts.isPropertyDeclaration(it) || ts.isPropertySignature(it))
             .map(it => it as PropertyLike)
 
-        const implementedProperties = properties.filter(it => it.initializer !== undefined)
+        const implementedProperties = properties.filter(it => ts.isPropertyDeclaration(it) && it.initializer !== undefined)
             .map(it => it.name.getText())
         const baseTypes = type.getBaseTypes() ?? []
         const baseProperties = baseTypes.flatMap(it => this.getUnimplementedAbstractProperties(it))

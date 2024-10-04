@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2021",
+    "target": "es2022",
     "outDir": "build",
     "module": "CommonJS",
     "declaration": true,
@@ -9,6 +9,7 @@
     "strictNullChecks": true,
     "sourceMap": true,
     "experimentalDecorators": true,
+    "skipLibCheck": true,
     "incremental": true
   },
   "include": [
