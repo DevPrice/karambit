@@ -32,13 +32,14 @@ export interface SubcomponentFactory<T extends ConstructorType<T>> {
 export interface KarambitTransformOptions {
     stripImports: boolean
     printTransformDuration: boolean
+    sourceRoot: string
     outDir: string
 }
 
 export default function(program: ts.Program, options?: Partial<KarambitTransformOptions>) {
     const transformOptions = {...defaultOptions, ...options}
     // TODO: fix injection and remove this hack
-    Importer.outDir = transformOptions.outDir
+    Importer.transformOptions = transformOptions
     Importer.typeChecker = program.getTypeChecker()
     const programComponent = new KarambitProgramComponent(program, transformOptions)
     return (ctx: ts.TransformationContext) => {
@@ -55,13 +56,22 @@ export default function(program: ts.Program, options?: Partial<KarambitTransform
             const outputFilename = Path.basename(sourceFile.fileName)
             if (transformOptions.printTransformDuration) {
                 const durationString = durationMs < 1 ? "<1" : durationMs.toString()
-                const relativePath = Path.relative(".", Path.join(Path.dirname(sourceFile.fileName), `Karambit${outputFilename}`))
+                const relativePath = Path.relative(transformOptions.sourceRoot, Path.join(Path.dirname(sourceFile.fileName), `Karambit${outputFilename}`))
                 console.info(`Transformed ${relativePath} in ${durationString}ms.`)
             }
 
             const resultText = programComponent.printer.printFile(result)
             if (resultText) {
-                const p = `${transformOptions.outDir}/${Path.relative(".", Path.join(Path.dirname(sourceFile.fileName), outputFilename))}`
+                const p = Path.join(
+                    transformOptions.outDir,
+                    Path.relative(
+                        transformOptions.sourceRoot,
+                        Path.join(
+                            Path.dirname(sourceFile.fileName),
+                            outputFilename,
+                        )
+                    )
+                )
                 if (!fs.existsSync(Path.dirname(p))) fs.mkdirSync(Path.dirname(p), {recursive: true})
                 fs.writeFileSync(p, resultText)
             }
@@ -80,5 +90,6 @@ function runTransformers<T extends ts.Node>(
 const defaultOptions: KarambitTransformOptions = {
     stripImports: true,
     printTransformDuration: false,
+    sourceRoot: ".",
     outDir: "karambit-generated",
 }

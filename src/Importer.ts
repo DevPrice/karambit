@@ -2,6 +2,7 @@ import * as ts from "typescript"
 import * as Path from "path"
 import {Inject} from "karambit-decorators"
 import {SourceFileScope} from "./Scopes"
+import {KarambitTransformOptions} from "./karambit"
 
 @Inject
 @SourceFileScope
@@ -24,9 +25,8 @@ export class Importer {
         const declarations = symbol.getDeclarations()
         if (!declarations || declarations.length === 0) return undefined
 
-        const sourcePath = `${Importer.outDir}/${Path.relative(".", this.sourceFile.fileName)}`.replace(/[^/]+$/, "")
         const importSourceFile = declarations[0].getSourceFile()
-        const importSpecifier = this.getImportSpecifier(sourcePath, importSourceFile)
+        const importSpecifier = this.getImportSpecifier(importSourceFile)
 
         const identifier = this.getImportIdentifier(importSpecifier)
         this.symbolMap.set(symbol, identifier)
@@ -96,13 +96,22 @@ export class Importer {
         )
     }
 
-    private getImportSpecifier(sourcePath: string, importFile: ts.SourceFile): string {
+    private getImportSpecifier(fileToImport: ts.SourceFile): string {
         const nodeModuleRegex = /(?:^|\/)node_modules\/((?:@[^/]+\/)?[^/]+)/
-        const match = nodeModuleRegex.exec(importFile.fileName)
+        const match = nodeModuleRegex.exec(fileToImport.fileName)
         if (match) return match[1]
-        return Path.relative(sourcePath, importFile.fileName).replace(/\.ts$/, "")
+        const generatedFilePath = Path.join(
+            Importer.transformOptions.outDir,
+            Path.dirname(
+                Path.relative(
+                    Importer.transformOptions.sourceRoot,
+                    this.sourceFile.fileName,
+                )
+            )
+        )
+        return Path.relative(generatedFilePath, fileToImport.fileName).replace(/\.ts$/, "")
     }
 
-    static outDir: string = "karambit-generated"
+    static transformOptions: KarambitTransformOptions
     static typeChecker: ts.TypeChecker
 }
