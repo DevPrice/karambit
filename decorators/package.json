@@ -25,14 +25,12 @@
     "url": "git+https://github.com/DevPrice/karambit.git"
   },
   "bugs": "https://github.com/DevPrice/karambit/issues",
-  "dependencies": {
-    "@types/node": "^22.7.4"
-  },
   "devDependencies": {
     "@devprice/eslint-config": "^1.0.1",
     "@devprice/version-from-git": "^1.1.2",
+    "@types/node": "^20.16.10",
     "eslint": "^8.18.0",
-    "lint-staged": "^13.0.3",
+    "lint-staged": "^15.2.10",
     "typescript": "^5.6.2"
   },
   "lint-staged": {
