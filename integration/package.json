@@ -4,7 +4,6 @@
   "description": "Integration tests",
   "scripts": {
     "karambit": "karambit -o src/karambit-generated",
-    "prebuild": "npm run karambit",
     "build": "tsc",
     "test": "jest"
   },

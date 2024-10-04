@@ -24,7 +24,7 @@
     "karambit": "karambit -o src/karambit-generated",
     "prebuild": "npm run karambit",
     "build": "tsc",
-    "test": "jest && npm run --prefix integration build && npm run --prefix integration test",
+    "test": "karambit integration -o integration/src/karambit-generated && npm run --prefix integration test",
     "lint": "eslint 'src/**/*.ts'",
     "fix": "eslint 'src/**/*.ts' --fix",
     "check": "npm run lint && npm run test",
