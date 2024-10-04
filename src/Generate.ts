@@ -5,6 +5,7 @@ import {hideBin} from "yargs/helpers"
 import * as yargs from "yargs"
 
 interface GenerateCommandOptions {
+    tsconfig: string
     output: string
     duration: boolean
     verbose: boolean
@@ -64,7 +65,11 @@ yargs(hideBin(process.argv))
 
 function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
     const program = ts.createProgram(fileNames, {...compilerOptions, incremental: false})
-    const factory = karambit(program, {outDir: cliOptions.output, printTransformDuration: cliOptions.duration})
+    const factory = karambit(program, {
+        sourceRoot: Path.dirname(cliOptions.tsconfig),
+        outDir: cliOptions.output,
+        printTransformDuration: cliOptions.duration,
+    })
     const emitResult = program.emit(undefined, undefined, undefined, undefined, {before: [factory]})
 
     if (cliOptions.verbose) {
