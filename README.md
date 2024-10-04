@@ -7,11 +7,12 @@
 A compile-time and type-safe dependency injector for Typescript.
 
 Karambit is different from other Typescript dependency injection libraries in several key ways:
-* It is a fully **compile-time** framework. Code is generated during the compile process, and there is **no additional runtime dependency**.
+* It is a fully **compile-time**, code generation framework. Karambit generates plain old Typescript code, and there's no additional runtime logic for injection.
 * There is no need to mark or annotate most parameters, including interfaces, with "tokens". Karambit supports binding interfaces to concrete types directly.
 * Karambit is **fully type-safe**. It is not possible to register a provider with the wrong type.[^1]
 * The dependency graph is **fully validated during compilation**, so if your project builds then you can be certain the graph is valid. This includes detecting missing bindings, dependency cycles, and other common error sources.
 * Creating a graph is fully **declarative**; you never need to imperatively register a dependency to a container. Instead, providers are declared idiomatically as constructors and static methods.
+* Karambit is fully **transparent to your application code**. Because of this, it plays nicely with other libraries and frameworks. If you wanted to stop using Karambit later, you could simply commit the generated code to your repository and remove Karambit entirely. 
 
 Karambit is heavily inspired by [Dagger](https://github.com/google/dagger/), and if you're familiar with that then you'll be right at home using Karambit.
 
@@ -23,48 +24,39 @@ This project is available as a package in [NPM](https://www.npmjs.com/package/ka
 
 ```
 $ npm install --save-dev karambit-inject
+$ npm install karambit-decorators
 ```
 
-Karambit is a decorator-based framework; you'll currently need to enable the [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) flag in your Typescript compiler options to use the Karambit API. However, please note that these decorators are stripped away during compilation and will not exist in the transpiled JavaScript source code. By extension, run-time reflection metadata is not needed, and you **do not** need to enable the `emitDecoratorMetadata` flag to use Karambit. 
+Karambit is a decorator-based framework; and you'll currently need to enable the [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) flag in your Typescript compiler options to use the Karambit API.
 
-Because Karambit needs to run during the compilation process, you will also have to configure it to run as a transformer.
-
-There are many ways to set this up, but [ttypescript](https://github.com/cevek/ttypescript) or [ts-patch](https://github.com/nonara/ts-patch) are among the simplest.
+Karambit works using a simple CLI-based tool for generating code. Once the code is generated, you import it just like any other Typescript code.
 
 For a minimal example project, check out the [Hello World sample](samples/hello_world).
 
-> **Note**
-> This guide assumes you're using the official Typescript compiler (`tsc`) to build your code. If you're using another method of transpilation to JavaScript, your configuration will differ.
+### Using the CLI
 
-> **Warning**
-> Because Karambit decorated source files do not output deterministically based on their own content (i.e., other files can affect the output), these files do not play nicely with the incremental compiler. A clean build may be required when modifying code marked with a Karambit decorator.
-
-### ttypescript
+The CLI has a simple command to run code generation.
 
 ```
-$ npm install --save-dev ttypescript
+$ karambit path/to/your/tsconfig.json -o output-dir
 ```
 
-Update your build scripts to use `ttsc` instead of `tsc`. For example, in your `package.json`:
+A simple build script would look like:
 
 ```json
 {
   "scripts": {
-    "build": "ttsc"
+    "prebuild": "karambit",
+    "build": "tsc"
   }
 }
 ```
 
-Finally, add the Karambit transformer as a plugin inside your `.tsconfig`:
+Lastly, make sure to enable `experimentalDecorators` in your `.tsconfig`:
 
 ```json
 {
-  "experimentalDecorators": true,
-  "compilerOptions": {
-    "plugins": [
-      { "transform": "karambit-inject" }
-    ]
-  }
+  "experimentalDecorators": true
 }
 ```
 
@@ -124,7 +116,7 @@ abstract class HelloWorldModule {
 }
 ```
 
-You can think of Modules as the private implementation of a Component, which itself is sort of a public interface.
+You can think of Modules as the private implementation of a Component, which itself is sort of a public interface. The component defines *what* Karambit should construct, and the modules define *how* to construct them.
 
 Modules are installed in Components via the `modules` parameter of the `@Component` decorator.
 
@@ -136,20 +128,25 @@ Modules are installed in Components via the `modules` parameter of the `@Compone
 
 By providing the `string` type into our graph, all the required types are now satisfied with providers and Karambit can generate our Component implementation.
 
-You can instantiate a Component by calling `createComponent`, and access its properties just like any other class instance:
+You can instantiate a Component by instantiating the generated class:
 
 ```typescript
-const component: HelloWorldComponent = createComponent<typeof HelloWorldComponent>()
+import {KarambitHelloWorldComponent} from "./karambit-generated/component"
+const component = KarambitHelloWorldComponent()
 console.log(component.greeter.greet()) // "Hello, World!"
 ```
 
 Under the hood, Karambit has generated this implementation in the output JavaScript source:
 
 ```javascript
-class KarambitHelloWorldComponent extends HelloWorldComponent {
-    get greeter() { return this.getGreeter_1(); }
-    getGreeter_1() { return new Greeter(this.getString_1()); }
-    getString_1() { return HelloWorldModule.provideGreeting(); }
+import * as component_1 from "../component";
+export class KarambitHelloWorldComponent extends component_1.HelloWorldComponent {
+    constructor() {
+        super();
+    }
+    get greeter(): component_1.HelloWorldComponent["greeter"] { return this.getGreeter_1(); }
+    private getGreeter_1() { return new component_1.Greeter(this.getString_1()); }
+    private getString_1() { return component_1.HelloWorldModule.provideGreeting(); }
 }
 ```
 
@@ -160,7 +157,7 @@ This is only scratching the surface of what Karambit is capable of, so check out
 ## License
 
 ```text
-Copyright 2022-2023 Devin Price
+Copyright 2022-2024 Devin Price
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
