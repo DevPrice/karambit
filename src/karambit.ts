@@ -10,8 +10,15 @@ type ConstructorType<T extends abstract new (...args: ConstructorParameters<T>) 
 export type Qualified<T extends keyof any & symbol> = {
     readonly [key in T]?: unknown
 }
-export type Named<T extends (string extends T ? never : string)> = {
-    readonly [key in `_karambitNamed${T}`]?: unknown
+
+type IsStringLiteral<T> = T extends string
+    ? string extends T
+        ? false
+        : true
+    : false
+
+export type Named<T extends string> = IsStringLiteral<T> extends false ? never : {
+    readonly [key in `__karambitNamed_${T}`]?: unknown;
 }
 
 export interface Provider<T> {
