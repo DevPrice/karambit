@@ -44,12 +44,19 @@ yargs(hideBin(process.argv))
 
             const configFile = ts.readConfigFile(tsconfigFile, ts.sys.readFile)
             if (configFile.error) {
+                console.error("Failed to read config file!")
                 console.error(ts.flattenDiagnosticMessageText(configFile.error.messageText, "\n"))
                 process.exit(1)
             }
 
             const basePath = Path.dirname(args.tsconfig)
             const parsedCommandLine = ts.parseJsonConfigFileContent(configFile.config, ts.sys, basePath)
+            if (parsedCommandLine.errors.length > 0) {
+                for (const error of parsedCommandLine.errors) {
+                    console.error(ts.flattenDiagnosticMessageText(error.messageText, "\n"))
+                }
+                process.exit(1)
+            }
             generateComponents(parsedCommandLine.fileNames, parsedCommandLine.options, args)
         },
     )
