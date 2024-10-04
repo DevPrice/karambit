@@ -132,11 +132,11 @@ You can instantiate a Component by instantiating the generated class:
 
 ```typescript
 import {KarambitHelloWorldComponent} from "./karambit-generated/component"
-const component = KarambitHelloWorldComponent()
+const component = new KarambitHelloWorldComponent()
 console.log(component.greeter.greet()) // "Hello, World!"
 ```
 
-Under the hood, Karambit has generated this implementation in the output JavaScript source:
+When running Karambit, it will generate this implementation:
 
 ```javascript
 import * as component_1 from "../component";
