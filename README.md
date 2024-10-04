@@ -27,7 +27,7 @@ $ npm install --save-dev karambit-inject
 $ npm install karambit-decorators
 ```
 
-Karambit is a decorator-based framework; and you'll currently need to enable the [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) flag in your Typescript compiler options to use the Karambit API.
+Karambit is a decorator-based framework; and you'll currently need to enable the [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) flag in your Typescript compiler options to use the Karambit API. The decorators exist just to annotate code, they have no effect at runtime.
 
 Karambit works using a simple CLI-based tool for generating code. Once the code is generated, you import it just like any other Typescript code.
 
