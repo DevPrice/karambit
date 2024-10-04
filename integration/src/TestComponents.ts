@@ -16,7 +16,7 @@ import {
     Scope,
     Subcomponent,
 } from "karambit-decorators"
-import {Named, Provider, Qualified, SubcomponentFactory} from "karambit-inject"
+import type {Named, Provider, Qualified, SubcomponentFactory} from "karambit-inject"
 import * as k from "karambit-decorators"
 
 const TestScope = Scope()
