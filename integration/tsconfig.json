@@ -1,15 +1,17 @@
 {
   "compilerOptions": {
-    "target": "es2021",
+    "target": "es2023",
     "outDir": "build",
     "module": "CommonJS",
     "removeComments": true,
     "strict": true,
     "sourceMap": true,
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "skipLibCheck": true,
+    "incremental": true
   },
   "include": [
-    "test/**/*.ts"
+    "src/**/*.ts"
   ],
   "exclude": [
     "node_modules"
