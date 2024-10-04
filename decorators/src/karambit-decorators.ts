@@ -55,7 +55,7 @@ export function AssistedInject(target?: unknown) {
 }
 
 export function Assisted(): ParameterDecorator
-export function Assisted(target: Object, propertyKey: string | symbol, parameterIndex: number): void
+export function Assisted(target: Object, propertyKey: string | symbol | undefined, parameterIndex: number): void
 export function Assisted() {
     return function () { }
 }
@@ -77,7 +77,7 @@ export function Binds(target?: any, propertyKey?: string | symbol): MethodDecora
 }
 
 export function BindsInstance(): ParameterDecorator
-export function BindsInstance(target: Object, propertyKey: string | symbol, parameterIndex: number): void
+export function BindsInstance(target: Object, propertyKey: string | symbol | undefined, parameterIndex: number): void
 export function BindsInstance() {
     return function () { }
 }
