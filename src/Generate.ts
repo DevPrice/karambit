@@ -1,13 +1,17 @@
 import * as ts from "typescript"
 import * as Path from "node:path"
-import karambit, {KarambitTransformOptions} from "./karambit"
+import karambit from "./karambit"
 import {hideBin} from "yargs/helpers"
 import * as yargs from "yargs"
 
-const packageJson: {version: any} = require("../package.json")
+interface GenerateCommandOptions {
+    output: string
+    duration: boolean
+    verbose: boolean
+}
 
 yargs(hideBin(process.argv))
-    .version(packageJson.version ?? false)
+    .version()
     .help()
     .command(
         ["$0 [tsconfig]"], "Generate components",
@@ -28,6 +32,12 @@ yargs(hideBin(process.argv))
                 alias: "d",
                 description: "Print the duration for each component",
                 default: false,
+            })
+            .option("verbose", {
+                type: "boolean",
+                alias: "v",
+                description: "Print the duration for each component",
+                default: false,
             }),
         args => {
             const tsconfigFile = Path.basename(args.tsconfig) === "tsconfig.json" ? args.tsconfig : Path.join(args.tsconfig, "tsconfig.json")
@@ -40,21 +50,21 @@ yargs(hideBin(process.argv))
 
             const basePath = Path.dirname(args.tsconfig)
             const parsedCommandLine = ts.parseJsonConfigFileContent(configFile.config, ts.sys, basePath)
-            generateComponents(parsedCommandLine.fileNames, parsedCommandLine.options, {outDir: args.output, printTransformDuration: args.duration})
+            generateComponents(parsedCommandLine.fileNames, parsedCommandLine.options, args)
         },
     )
     .parseSync()
 
-function generateComponents(fileNames: string[], options: ts.CompilerOptions, karambitOptions?: Partial<KarambitTransformOptions>): void {
-    const program = ts.createProgram(fileNames, {...options, incremental: false})
-    const factory = karambit(program, karambitOptions)
+function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
+    const program = ts.createProgram(fileNames, {...compilerOptions, incremental: false})
+    const factory = karambit(program, {outDir: cliOptions.output, printTransformDuration: cliOptions.duration})
     const emitResult = program.emit(undefined, undefined, undefined, undefined, {before: [factory]})
 
-    const allDiagnostics = ts
-        .getPreEmitDiagnostics(program)
-        .concat(emitResult.diagnostics)
+    if (cliOptions.verbose) {
+        const allDiagnostics = ts
+            .getPreEmitDiagnostics(program)
+            .concat(emitResult.diagnostics)
 
-    if (emitResult.emitSkipped) {
         allDiagnostics.forEach(diagnostic => {
             if (diagnostic.file) {
                 const {line, character} = ts.getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start!)
