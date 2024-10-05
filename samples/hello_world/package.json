@@ -9,7 +9,6 @@
   },
   "author": "DevPrice",
   "devDependencies": {
-    "@types/node": "^20.16.10",
     "karambit-inject": "file:../..",
     "typescript": "^5.6.2"
   },
