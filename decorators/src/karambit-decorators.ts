@@ -1,3 +1,47 @@
+type AnnotationParams = Array<unknown>
+
+function ClassAnnotation<T extends AnnotationParams>(...info: T): ClassDecorator
+function ClassAnnotation<T extends AnnotationParams>(target: Function): void
+function ClassAnnotation(target?: Function) {
+    if (typeof target === "function") return target
+    return ClassAnnotation
+}
+
+function MemberAnnotation<T extends AnnotationParams>(...info: T): PropertyDecorator
+function MemberAnnotation<T extends AnnotationParams>(target: unknown, propertyKey: string | symbol): void
+function MemberAnnotation(target?: any, propertyKey?: string | symbol): MethodDecorator | void {
+    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
+        return function () { }
+    }
+}
+
+function ParameterAnnotation<T extends AnnotationParams>(...info: T): ParameterDecorator
+function ParameterAnnotation<T extends AnnotationParams>(target: Object, propertyKey: string | symbol | undefined, parameterIndex: number): void
+function ParameterAnnotation() {
+    return function () { }
+}
+
+type MemberDecorator = PropertyDecorator & MethodDecorator
+
+interface KarambitAnnotation {
+    __karambitAnnotation?: unknown
+}
+
+interface ClassAnnotation<T extends AnnotationParams = []> extends KarambitAnnotation {
+    (...info: T): ClassDecorator
+    (target?: [] extends T ? unknown : never): void
+}
+
+interface MemberAnnotation<T extends AnnotationParams = []> extends KarambitAnnotation {
+    (...info: T): MemberDecorator
+    <U>(target: Object, propertyKey: string | symbol, descriptor?: TypedPropertyDescriptor<U>): void
+}
+
+interface ParameterAnnotation<T extends AnnotationParams = []> extends KarambitAnnotation {
+    (...info: T): ParameterDecorator
+    (target: Object, propertyKey: string | symbol | undefined, parameterIndex: number): void
+}
+
 export interface ComponentLikeInfo {
     readonly modules?: unknown[]
     readonly subcomponents?: unknown[]
@@ -7,21 +51,7 @@ export interface ComponentInfo extends ComponentLikeInfo {
     generatedClassName?: string
 }
 
-export function Component(info: ComponentInfo): ClassDecorator
-export function Component(target: unknown): void
-export function Component(): ClassDecorator
-export function Component(target?: unknown) {
-    return classAnnotation(target)
-}
-
 export interface SubcomponentInfo extends ComponentLikeInfo { }
-
-export function Subcomponent(info: SubcomponentInfo): ClassDecorator
-export function Subcomponent(target: unknown): void
-export function Subcomponent(): ClassDecorator
-export function Subcomponent(target?: unknown) {
-    return classAnnotation(target)
-}
 
 export interface ModuleInfo {
     includes: unknown[]
@@ -35,104 +65,40 @@ export interface MultibindingOptions {
     optional: boolean
 }
 
-export function Module(info: ModuleInfo): ClassDecorator
-export function Module(target: unknown): void
-export function Module(): ClassDecorator
-export function Module(target?: unknown) {
-    return classAnnotation(target)
-}
+export const Component: ClassAnnotation<[] | [ComponentInfo]> = ClassAnnotation
+export const Subcomponent: ClassAnnotation<[] | [SubcomponentInfo]> = ClassAnnotation
+export const Module: ClassAnnotation<[] | [ModuleInfo]> = ClassAnnotation
+export const Inject: ClassAnnotation = ClassAnnotation
+export const AssistedInject: ClassAnnotation = ClassAnnotation
+export const Assisted: ParameterAnnotation = ParameterAnnotation
+export const Provides: MemberAnnotation = MemberAnnotation
+export const Binds: MemberAnnotation = MemberAnnotation
+export const BindsInstance: ParameterAnnotation = ParameterAnnotation
+export const IntoSet: MemberAnnotation<[] | [MultibindingOptions]> = MemberAnnotation
+export const IntoMap: MemberAnnotation<[] | [MultibindingOptions]> = MemberAnnotation
+export const ElementsIntoSet: MemberAnnotation = MemberAnnotation
+export const ElementsIntoMap: MemberAnnotation = MemberAnnotation
 
-export function Inject(): ClassDecorator
-export function Inject(target: unknown): void
-export function Inject(target?: unknown) {
-    return classAnnotation(target)
-}
-
-export function AssistedInject(): ClassDecorator
-export function AssistedInject(target: unknown): void
-export function AssistedInject(target?: unknown) {
-    return classAnnotation(target)
-}
-
-export function Assisted(): ParameterDecorator
-export function Assisted(target: Object, propertyKey: string | symbol | undefined, parameterIndex: number): void
-export function Assisted() {
+export function MapKey<T>(key: T): MemberDecorator {
     return function () { }
 }
 
-export function Provides(): MethodDecorator
-export function Provides(target?: unknown, propertyKey?: string | symbol): void
-export function Provides(target?: any, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor): MethodDecorator | void {
-    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
-        return function () { }
-    }
+export interface ScopeAnnotation extends ClassAnnotation, MemberAnnotation {
+    (): ClassDecorator & MemberDecorator
+    __karambitScopeAnnotation?: unknown
 }
 
-export function Binds(): PropertyDecorator
-export function Binds(target: unknown, propertyKey: string | symbol): void
-export function Binds(target?: any, propertyKey?: string | symbol): MethodDecorator | void {
-    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
-        return function () { }
-    }
+export interface ReusableScopeAnnotation extends ScopeAnnotation {
+    __karambitReusableScopeAnnotation?: unknown
 }
 
-export function BindsInstance(): ParameterDecorator
-export function BindsInstance(target: Object, propertyKey: string | symbol | undefined, parameterIndex: number): void
-export function BindsInstance() {
-    return function () { }
-}
-
-export function IntoSet(options: Partial<MultibindingOptions>): MethodDecorator & PropertyDecorator
-export function IntoSet(target: unknown, propertyKey: string | symbol): void
-export function IntoSet(): PropertyDecorator
-export function IntoSet(target?: any, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor): MethodDecorator | void {
-    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
-        return function () { }
-    }
-}
-
-export function IntoMap(options: Partial<MultibindingOptions>): MethodDecorator & PropertyDecorator
-export function IntoMap(target: unknown, propertyKey: string | symbol): void
-export function IntoMap(): PropertyDecorator
-export function IntoMap(target?: any, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor): MethodDecorator | void {
-    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
-        return function () { }
-    }
-}
-
-export function ElementsIntoSet(): MethodDecorator & PropertyDecorator
-export function ElementsIntoSet(target: unknown, propertyKey: string | symbol): void
-export function ElementsIntoSet(target?: any, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor): MethodDecorator | void {
-    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
-        return function () { }
-    }
-}
-
-export function ElementsIntoMap(): MethodDecorator & PropertyDecorator
-export function ElementsIntoMap(target: unknown, propertyKey: string | symbol): void
-export function ElementsIntoMap(target?: any, propertyKey?: string | symbol, _descriptor?: PropertyDescriptor): MethodDecorator | void {
-    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
-        return function () { }
-    }
-}
-
-export function MapKey<T>(key: T): MethodDecorator & PropertyDecorator {
-    return function () { }
-}
-
-export interface ScopeDecorator {
-    <T>(target: any, propertyKey?: string | symbol, descriptor?: TypedPropertyDescriptor<T>): any | void
-}
-
-export interface ReusableScopeDecorator extends ScopeDecorator { }
-
-export function Scope(): ScopeDecorator {
-    return classAnnotation
-}
-
-export const Reusable: ReusableScopeDecorator = classAnnotation
-
-function classAnnotation(target?: unknown) {
+function ScopeAnnotation(target?: any): ScopeAnnotation {
     if (typeof target === "function") return target
-    return classAnnotation
+    return ScopeAnnotation
 }
+
+export function Scope(): ScopeAnnotation {
+    return ScopeAnnotation
+}
+
+export const Reusable: ReusableScopeAnnotation = ScopeAnnotation

@@ -4,9 +4,6 @@ import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType
 import {ErrorReporter} from "./ErrorReporter"
 import type {KarambitTransformOptions} from "./karambit"
 
-const injectSourceFileName = require("../package.json").main
-const injectSourceFileNameWithoutExtension = injectSourceFileName.replace(/\..*$/, "")
-
 interface Decorated {
     name?: { getText: () => string }
     modifiers?: ts.NodeArray<ts.ModifierLike>
@@ -78,7 +75,8 @@ export class InjectNodeDetector {
 
     private isScope(type: ts.Type): boolean {
         const symbol = type.getSymbol() ?? type.aliasSymbol
-        return (symbol?.getName() === "ScopeDecorator" || symbol?.getName() === "ReusableScopeDecorator") && this.isInjectSymbol(symbol)
+        // TODO: Use type brand
+        return (symbol?.getName() === "ScopeDecorator" || symbol?.getName() === "ReusableScopeDecorator" || symbol?.getName() === "ScopeAnnotation" || symbol?.getName() === "ReusableScopeAnnotation") && this.isInjectSymbol(symbol)
     }
 
     isQualifierDecorator(decorator: ts.Node): decorator is ts.Decorator {
@@ -305,7 +303,8 @@ export class InjectNodeDetector {
         const declaration = symbol.declarations && symbol.declarations[0]
         const type = declaration && this.typeChecker.getTypeAtLocation(declaration)
         const typeSymbol = type?.symbol
-        return typeSymbol?.name == "ReusableScopeDecorator" && this.isInjectSymbol(typeSymbol)
+        // TODO: Use type brand
+        return (typeSymbol?.name == "ReusableScopeDecorator" || typeSymbol?.name == "ReusableScopeAnnotation") && this.isInjectSymbol(typeSymbol)
     }
 
     private isInjectSymbol(symbol: ts.Symbol): boolean {

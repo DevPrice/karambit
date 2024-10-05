@@ -7,6 +7,7 @@
       <excludeFolder url="file://$MODULE_DIR$/samples/hello_world/build/**.js" />
       <excludeFolder url="file://$MODULE_DIR$/build/**.js" />
       <excludeFolder url="file://$MODULE_DIR$/build" />
+      <excludeFolder url="file://$MODULE_DIR$/decorators/lib" />
       <excludeFolder url="file://$MODULE_DIR$/integration/build" />
       <excludeFolder url="file://$MODULE_DIR$/samples/hello_world/build" />
     </content>
