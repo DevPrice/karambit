@@ -101,7 +101,7 @@ jobs:
         name: Require cache
         run: exit 1
       - run: npm config set registry 'https://npm.pkg.github.com'
-      - run: npx version-from-git --no-git-tag-version --no-commit-hooks
+      - run: npx @compulim/version-from-git@1 --no-git-tag-version --no-commit-hooks
       - run: npm init -y --scope ${{ github.repository_owner }}
       - run: echo '//npm.pkg.github.com/:_authToken=${{ github.token  }}' > ${{ github.workspace }}/.npmrc
       - run: npm publish --tag development
