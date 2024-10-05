@@ -28,7 +28,8 @@
     "lint": "eslint 'src/**/*.ts'",
     "fix": "eslint 'src/**/*.ts' --fix",
     "check": "npm run lint && npm run test",
-    "release": "npm run build && npm run check"
+    "release": "npm run build && npm run check",
+    "prerelease-version": "version-from-git --no-git-tag-version --no-commit-hooks"
   },
   "author": "DevPrice",
   "repository": {
