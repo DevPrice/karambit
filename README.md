@@ -70,12 +70,12 @@ The Component is what ultimately hosts a dependency graph, and how you expose th
 
 ```typescript
 @Component({modules: [HelloWorldModule]})
-abstract class HelloWorldComponent {
+export abstract class HelloWorldComponent {
     abstract readonly greeter: Greeter
 }
 ```
 
-This Component exposes a single type, the `Greeter`, which during compile will be implemented by Karambit.
+This Component exposes a single type, the `Greeter`, which during compile will be implemented by Karambit. Classes marked with `@Component` must be exported.
 
 ### Providers
 
@@ -83,13 +83,13 @@ This Component exposes a single type, the `Greeter`, which during compile will b
 
 The next step is to satisfy the dependency graph of the Component. Karambit isn't magic; you need to specify how to get an instance of each type in the graph.
 
-There are several ways to do this, but the simplest is to mark a class with `@Inject`. This makes the constructor of that class available to Karambit, and Karambit will call the constructor to provide an instance of that type.
+There are several ways to do this, but the simplest is to mark a class with `@Inject`. This makes the constructor of that class available to Karambit, and Karambit will call the constructor to provide an instance of that type. Classes marked with `@Inject` must be exported.
 
 In this sample, the `Greeter` class is marked `@Inject`, and this type is available in the graph.
 
 ```typescript
 @Inject
-class Greeter {
+export class Greeter {
     constructor(private readonly greeting: string) { }
     greet(): string {
         return `${this.greeting}, World!`
@@ -101,13 +101,13 @@ class Greeter {
 
 The constructor of `Greeter` depends on one other type: `string`. However, this type doesn't have a constructor and, even if it did, we don't control the source code to mark it with `@Inject`.  This is where Modules come in to play.
 
-A module is a collection of static methods marked with `@Provides` and each Component can install many Modules. These provider methods work just like `@Inject` constructors; they can have arguments and will be used by Karambit to provide an instance of their return type.
+A module is a collection of static methods marked with `@Provides` and each Component can install many Modules. These provider methods work just like `@Inject` constructors; they can have arguments and will be used by Karambit to provide an instance of their return type. Classes marked with `@Module` must be exported.
 
 In our example, the `string` type is provided in the `HelloWorldModule`:
 
 ```typescript
 @Module
-abstract class HelloWorldModule {
+export abstract class HelloWorldModule {
 
     @Provides
     static provideGreeting(): string {

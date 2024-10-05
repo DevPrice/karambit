@@ -13,7 +13,7 @@ A component with no properties has no use. A component ultimately exists to expo
 From the Hello World sample:
 ```typescript
 @Component(/* ... */)
-abstract class HelloWorldComponent {
+export abstract class HelloWorldComponent {
     abstract readonly greeter: Greeter
 }
 ```
@@ -35,7 +35,7 @@ interface MyComponentDependency {
 }
 
 @Component
-abstract class MyComponent {
+export abstract class MyComponent {
     constructor(dep: MyComponentDependency) { }
 }
 ```
@@ -54,7 +54,7 @@ Sometimes, you want to bind a single type into your graph rather than all of its
 
 ```typescript
 @Component
-abstract class MyComponent {
+export abstract class MyComponent {
     constructor(@BindsInstance value: number, @BindsInstance text: string) { }
 }
 ```
@@ -88,7 +88,7 @@ The `@Inject` decorator is the simplest way to provide a type. A class marked wi
 
 ```typescript
 @Inject
-class MyClass {
+export class MyClass {
     constructor(someDependency: InterfaceType) { } // this constructor will be called automatically with its required arguments
 }
 ```
@@ -111,7 +111,7 @@ When Karambit needs an instance of a type, it will look for an installed Module 
 In the Hello World sample, the `string` type is provided via a `@Provides` method:
 ```typescript
 @Module
-abstract class HelloWorldModule {
+export abstract class HelloWorldModule {
     @Provides
     static provideGreeting(): string {
         return "Hello"
@@ -148,7 +148,7 @@ abstract bindAnimal: (dog: Dog) => Animal
 A Module may also include other modules via the `modules` property of its configuration. For example:
 ```typescript
 @Module({includes: [MyOtherModule, OneMoreModule]})
-abstract class MyModule { }
+export abstract class MyModule { }
 ```
 
 Installing `MyModule` to a Component or including it within another module will also install or include `MyOtherModule` and `OneMoreModule` transitively.
@@ -159,7 +159,7 @@ If the parameter to a provider (`@Inject` constructor or `@Provides` method) is 
 
 ```typescript
 @Inject
-class Car {
+export class Car {
     // if there is no Engine provided in the component where this class is bound, then compilation will fail
     // however, Color and SeatWarmer are bound optionally, and compilation will succeed even if they are not provided
     constructor(engine: Engine, color: Color = Color.RED, warmer?: SeatWarmer) { }
@@ -177,7 +177,7 @@ Karambit has a built-in `Named` type available:
 import type {Named} from "karambit-inject"
 
 @Module
-abstract class MyModule {
+export abstract class MyModule {
     @Provides
     static provideUserName(): string & Named<"username"> { /* ... */ }
 
@@ -203,7 +203,7 @@ declare const aboutMeQualifier: unique symbol
 type AboutMeQualifier = Qualified<typeof aboutMeQualifier>
 
 @Module
-abstract class MyModule {
+export abstract class MyModule {
     @Provides
     static provideUserName(): string & UsernameQualifier { /* ... */ }
 
@@ -228,7 +228,7 @@ To create a scope, call the `Scope()` method. This method returns a decorator yo
 const ApplicationScope = Scope()
 
 @Module
-abstract class MyModule {
+export abstract class MyModule {
     @Provides
     @ApplicationScope // this will only be created once in ApplicationComponent; the instance will be shared across all types that depend on MyService
     static provideGlobalService(): MyService { /* ... */ }
@@ -236,7 +236,7 @@ abstract class MyModule {
 
 @Component({modules: [MyModule]})
 @ApplicationScope
-class ApplicationComponent { /* ... */ }
+export class ApplicationComponent { /* ... */ }
 ```
 
 ### Reusable scope
@@ -257,7 +257,7 @@ You can inject `Provider<T>` anywhere that you can inject `T`. The difference is
 import type {Provider} from "karambit-inject"
 
 @Inject
-class OrigamiMaker {
+export class OrigamiMaker {
     constructor(private readonly paperProvider: Provider<Paper>) { }
 
     makeCrane(): OrigamiCrane {
@@ -285,13 +285,13 @@ A Subcomponent can itself have its own Subcomponents, as well as its own [compon
 
 ```typescript
 @Subcomponent({modules: [/* ... */]})
-abstract class MySubcomponent { /* ... */ }
+export abstract class MySubcomponent { /* ... */ }
 ```
 
 However, a subcomponent must be installed in a parent to be used. To install it, simply add it to the array of Subcomponents in another Component or Subcomponent:
 ```typescript
 @Component({subcomponents: [MySubcomponent]})
-class ParentComponent {
+export class ParentComponent {
     readonly subcomponentFactory: SubcomponentFactory<typeof MySubcomponent> // equivalent to () => MySubcomponent
 }
 ```
@@ -312,7 +312,7 @@ To contribute an object into a `ReadonlySet`, use the `@IntoSet` decorator on th
 
 ```typescript
 @Module
-abstract class FoodModule {
+export abstract class FoodModule {
     @Provides
     @IntoSet
     static provideApple(): string {
@@ -331,7 +331,7 @@ This will contribute a binding into the graph for `ReadonlySet<string>`. The abo
 
 ```typescript
 @Module
-abstract class FoodModule {
+export abstract class FoodModule {
     @Provides
     static provideFood(): ReadonlySet<string> {
         return new Set(["Apple", "Burger"])
@@ -345,7 +345,7 @@ Map multibindings are similar to set multibindings, only you must also specify t
 
 ```typescript
 @Module
-abstract class NumberModule {
+export abstract class NumberModule {
     @Provides
     @MapKey("one")
     @IntoMap
@@ -366,7 +366,7 @@ Alternatively, you can bind an entry tuple directly into the map, and skip the `
 
 ```typescript
 @Module
-abstract class NumberModule {
+export abstract class NumberModule {
     @Provides
     @IntoMap
     static provideOne(): [string, number] {
@@ -385,7 +385,7 @@ The above examples would bind the `ReadonlyMap<string, number>` type into the gr
 
 ```typescript
 @Module
-abstract class NumberModule {
+export abstract class NumberModule {
     @Provides
     static provideNumbers(): ReadonlyMap<string, number> {
         return new Map([["one", 1], ["two", 2]])
@@ -403,7 +403,7 @@ You can also bind several elements in a single provider with `@ElementsIntoSet` 
 
 ```typescript
 @Module
-abstract class MoreNumbersModule {
+export abstract class MoreNumbersModule {
     @Provides
     @ElementsIntoSet
     static provideVegetables(): string[] {
@@ -435,7 +435,7 @@ Karambit provides a utility for this pattern via assisted injection, where some 
 
 ```typescript
 @AssistedInject
-class MyTextToSpeech {
+export class MyTextToSpeech {
     constructor(
         private readonly textToSpeechApi: TextToSpeechApi,
         @Assisted private readonly voiceConfig: VoiceConfiguration,
