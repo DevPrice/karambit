@@ -42,6 +42,10 @@ interface ParameterAnnotation<T extends AnnotationParams = []> extends KarambitA
     (target: Object, propertyKey: string | symbol | undefined, parameterIndex: number): void
 }
 
+interface GenericMemberAnnotation extends KarambitAnnotation {
+    <T>(key: T): MemberDecorator
+}
+
 export interface ComponentLikeInfo {
     readonly modules?: unknown[]
     readonly subcomponents?: unknown[]
@@ -78,10 +82,7 @@ export const IntoSet: MemberAnnotation<[] | [MultibindingOptions]> = MemberAnnot
 export const IntoMap: MemberAnnotation<[] | [MultibindingOptions]> = MemberAnnotation
 export const ElementsIntoSet: MemberAnnotation = MemberAnnotation
 export const ElementsIntoMap: MemberAnnotation = MemberAnnotation
-
-export function MapKey<T>(key: T): MemberDecorator {
-    return function () { }
-}
+export const MapKey: GenericMemberAnnotation = MemberAnnotation
 
 export interface ScopeAnnotation extends ClassAnnotation, MemberAnnotation {
     (): ClassDecorator & MemberDecorator
