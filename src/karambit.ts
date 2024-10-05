@@ -23,10 +23,12 @@ export type Named<T extends string> = IsStringLiteral<T> extends false ? never :
 
 export interface Provider<T> {
     (): T
+    __karambitProvider?: unknown
 }
 
 export interface SubcomponentFactory<T extends ConstructorType<T>> {
     (...args: ConstructorParameters<T>): InstanceType<T>
+    __karambitSubcomponentFactory?: unknown
 }
 
 export interface KarambitTransformOptions {

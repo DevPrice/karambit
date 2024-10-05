@@ -3,6 +3,8 @@ import {Inject, Reusable} from "karambit-decorators"
 import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType"
 import {ErrorReporter} from "./ErrorReporter"
 import type {KarambitTransformOptions} from "./karambit"
+import {PropertyExtractor} from "./PropertyExtractor"
+import {filterNotNull} from "./Util"
 
 interface Decorated {
     name?: { getText: () => string }
@@ -17,12 +19,10 @@ export class InjectNodeDetector {
         private readonly typeChecker: ts.TypeChecker,
         private readonly karambitOptions: KarambitTransformOptions,
         private readonly errorReporter: ErrorReporter,
+        private readonly propertyExtractor: PropertyExtractor,
     ) {
-        this.isCreateComponentCall = this.isCreateComponentCall.bind(this)
         this.isScopeDecorator = this.isScopeDecorator.bind(this)
         this.isScope = this.isScope.bind(this)
-        this.isQualifier = this.isQualifier.bind(this)
-        this.isQualifierDecorator = this.isQualifierDecorator.bind(this)
         this.isComponentDecorator = this.isComponentDecorator.bind(this)
         this.isSubcomponentDecorator = this.isSubcomponentDecorator.bind(this)
         this.isAssistedDecorator = this.isAssistedDecorator.bind(this)
@@ -38,21 +38,6 @@ export class InjectNodeDetector {
         this.isElementsIntoMapDecorator = this.isElementsIntoMapDecorator.bind(this)
         this.isMapKeyDecorator = this.isMapKeyDecorator.bind(this)
         this.isCompileTimeConstant = this.isCompileTimeConstant.bind(this)
-    }
-
-    isCreateComponentCall(expression: ts.CallExpression): ts.Type | undefined {
-        if (this.getKarambitNodeName(expression) === "createComponent") {
-            return this.typeChecker.getTypeAtLocation(expression)
-        }
-    }
-
-    isGetConstructorCall(expression: ts.CallExpression): ts.Type | undefined {
-        if (this.getKarambitNodeName(expression) === "getConstructor") {
-            const symbol = this.typeChecker.getSymbolAtLocation(expression.arguments[0])
-            const type = symbol?.valueDeclaration && this.typeChecker.getTypeAtLocation(symbol.valueDeclaration)
-            if (type) return type
-            this.errorReporter.reportParseFailed("Unable to parse getComponent call!", expression)
-        }
     }
 
     isScopeDecorator(decorator: ts.Node): decorator is ts.Decorator {
@@ -76,48 +61,10 @@ export class InjectNodeDetector {
     private isScope(type: ts.Type): boolean {
         const symbol = type.getSymbol() ?? type.aliasSymbol
         // TODO: Use type brand
-        return (symbol?.getName() === "ScopeDecorator" || symbol?.getName() === "ReusableScopeDecorator" || symbol?.getName() === "ScopeAnnotation" || symbol?.getName() === "ReusableScopeAnnotation") && this.isInjectSymbol(symbol)
+        return !!symbol && (symbol.getName() === "ScopeDecorator" || symbol.getName() === "ReusableScopeDecorator" || symbol.getName() === "ScopeAnnotation" || symbol.getName() === "ReusableScopeAnnotation" || this.getPropertyNames(symbol).has("__karambitScopeAnnotation"))
     }
 
-    isQualifierDecorator(decorator: ts.Node): decorator is ts.Decorator {
-        if (!ts.isDecorator(decorator)) return false
-        const type = this.typeChecker.getTypeAtLocation(decorator.expression)
-        return this.isQualifier(type) || this.isNamedQualifier(type)
-    }
-
-    getQualifier(item: Decorated): TypeQualifier | undefined {
-        const qualifierDecorators = item.modifiers?.filter(this.isQualifierDecorator) ?? []
-        if (qualifierDecorators.length > 1) ErrorReporter.reportParseFailed(`Qualified element may only have one qualifier! ${item.name?.getText()} has ${qualifierDecorators.length}.`)
-        if (qualifierDecorators.length === 0) return undefined
-        const qualifier = qualifierDecorators[0]
-        const type = this.typeChecker.getTypeAtLocation(qualifier.expression)
-        if (this.isNamedQualifier(type)) {
-            return this.getQualifierName(qualifier)
-        }
-
-        const qualifierSymbol = this.typeChecker.getSymbolAtLocation(qualifier.expression)
-        return qualifierSymbol && this.getAliasedSymbol(qualifierSymbol)
-    }
-
-    private isQualifier(type: ts.Type): boolean {
-        const symbol = type.getSymbol() ?? type.aliasSymbol
-        return symbol?.getName() === "QualifierDecorator" && this.isInjectSymbol(symbol)
-    }
-
-    private isNamedQualifier(type: ts.Type): boolean {
-        const symbol = type.getSymbol() ?? type.aliasSymbol
-        return symbol?.getName() === "NamedQualifierDecorator" && this.isInjectSymbol(symbol)
-    }
-
-    private getQualifierName(decorator: ts.Decorator): string | undefined {
-        if (ts.isCallExpression(decorator.expression)) {
-            const literal = decorator.expression.getChildren()
-                .flatMap(it => it.kind === ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
-                .find(ts.isStringLiteral)
-            if (literal) {
-                return this.resolveStringLiteral(literal)
-            }
-        }
+    getQualifier(_: Decorated): TypeQualifier | undefined {
         return undefined
     }
 
@@ -219,6 +166,7 @@ export class InjectNodeDetector {
     }
 
     private isKarambitDecorator(decorator: ts.Node, name: string): decorator is ts.Decorator {
+        // TODO: Handle with type brands
         return ts.isDecorator(decorator) && this.getKarambitNodeName(decorator) === name
     }
 
@@ -232,16 +180,16 @@ export class InjectNodeDetector {
     }
 
     isProvider(type: ts.Type): ts.Type | undefined {
-        return this.isKarambitGenericType(type, "Provider")
+        return this.isKarambitGenericType(type, "Provider", "__karambitProvider")
     }
 
     isSubcomponentFactory(type: ts.Type): ts.Type | undefined {
-        return this.isKarambitGenericType(type, "SubcomponentFactory")
+        return this.isKarambitGenericType(type, "SubcomponentFactory", "__karambitSubcomponentFactory")
     }
 
-    private isKarambitGenericType(type: ts.Type, typeName: string): ts.Type | undefined {
+    private isKarambitGenericType(type: ts.Type, typeName: string, typeBrand: string): ts.Type | undefined {
         const symbol = type.getSymbol()
-        if (symbol?.getName() === typeName && this.isInjectSymbol(symbol)) {
+        if (symbol && (symbol.getName() === typeName || this.getPropertyNames(symbol).has(typeBrand))) {
             const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
             if (typeArguments.length != 1) ErrorReporter.reportParseFailed(`Invalid ${typeName} type!`)
             return typeArguments[0]
@@ -300,37 +248,45 @@ export class InjectNodeDetector {
     }
 
     isReusableScope(symbol: ts.Symbol): boolean {
-        const declaration = symbol.declarations && symbol.declarations[0]
-        const type = declaration && this.typeChecker.getTypeAtLocation(declaration)
-        const typeSymbol = type?.symbol
-        // TODO: Use type brand
-        return (typeSymbol?.name == "ReusableScopeDecorator" || typeSymbol?.name == "ReusableScopeAnnotation") && this.isInjectSymbol(typeSymbol)
+        return this.getPropertyNames(symbol).has("__karambitReusableScopeAnnotation")
     }
 
-    private isInjectSymbol(symbol: ts.Symbol): boolean {
-        const aliasedSymbol = this.getAliasedSymbol(symbol)
-        const declarations = aliasedSymbol.getDeclarations() ?? []
-        for (const declaration of declarations) {
-            const sourceWithoutExtension = declaration.getSourceFile().fileName.replace(/\..*$/, "")
-            // if (sourceWithoutExtension.endsWith(injectSourceFileNameWithoutExtension)) return true
-            // TODO: Verify module
-            return true
-        }
-        return false
+    private isKarambitSymbol(symbol: ts.Symbol): boolean {
+        return this.isKarambitAnnotation(symbol)
+    }
+
+    private isKarambitAnnotation(symbol: ts.Symbol): boolean {
+        const type = this.typeChecker.getTypeOfSymbol(symbol)
+        if (!type) return false
+        return this.getPropertyNames(symbol).has("__karambitAnnotation")
+    }
+
+    private propertyNameToString(propertyName: ts.PropertyName): string | undefined {
+        if (ts.isIdentifier(propertyName)) return propertyName.text
+        if (ts.isStringLiteral(propertyName)) return this.resolveStringLiteral(propertyName)
+        return undefined
+    }
+
+    private getPropertyNames(symbol: ts.Symbol): ReadonlySet<string> {
+        const type = this.typeChecker.getTypeOfSymbol(symbol)
+        if (!type) return new Set()
+        const properties = this.propertyExtractor.getDeclaredPropertiesForType(type)
+        return new Set(filterNotNull(properties.map(it => this.propertyNameToString(it.name))))
     }
 
     private getKarambitNodeName(node: ts.Node): string | undefined {
+        // TODO: Verify the node is from Karambit via type brands
         const identifiers = this.getIdentifiers(node)
         if (identifiers.length === 1) {
             const [identifier] = identifiers
             const symbol = this.typeChecker.getSymbolAtLocation(identifier)
             const aliasedSymbol = symbol && this.getAliasedSymbol(symbol)
-            return (aliasedSymbol && this.isInjectSymbol(aliasedSymbol)) ? aliasedSymbol?.getName() : undefined
+            return aliasedSymbol ? aliasedSymbol?.getName() : undefined
         } else if (identifiers.length === 2) {
             const [namespace, identifier] = identifiers
             const symbol = this.typeChecker.getSymbolAtLocation(namespace)
             const aliasedSymbol = symbol && this.getAliasedSymbol(symbol)
-            return (aliasedSymbol && this.isInjectSymbol(aliasedSymbol)) ? this.typeChecker.getSymbolAtLocation(identifier)?.getName() : undefined
+            return aliasedSymbol ? this.typeChecker.getSymbolAtLocation(identifier)?.getName() : undefined
         }
         return undefined
     }

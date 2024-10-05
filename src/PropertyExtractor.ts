@@ -1,6 +1,5 @@
 import * as ts from "typescript"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
-import {InjectNodeDetector} from "./InjectNodeDetector"
 import {Inject, Reusable} from "karambit-decorators"
 
 export type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
@@ -13,7 +12,6 @@ export class PropertyExtractor {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
-        private readonly nodeDetector: InjectNodeDetector,
     ) { }
 
     getDeclaredPropertiesForType(type: ts.Type): PropertyLike[] {
@@ -74,7 +72,6 @@ export class PropertyExtractor {
     typeFromPropertyDeclaration(property: PropertyLike): QualifiedType {
         return createQualifiedType({
             type: this.typeChecker.getTypeAtLocation(property.type ?? property)!,
-            qualifier: this.nodeDetector.getQualifier(property)
         })
     }
 }
