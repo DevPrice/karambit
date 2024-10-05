@@ -9,7 +9,6 @@
     "strictNullChecks": true,
     "sourceMap": true,
     "experimentalDecorators": true,
-    "skipLibCheck": true,
     "incremental": true
   },
   "include": [

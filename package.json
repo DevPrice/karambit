@@ -44,7 +44,6 @@
   },
   "devDependencies": {
     "@devprice/eslint-config": "^1.0.1",
-    "@types/glob": "^8.1.0",
     "@types/jest": "^28.1.3",
     "@types/node": "^20.16.10",
     "eslint": "^8.18.0",
