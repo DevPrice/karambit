@@ -39,6 +39,8 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -60,7 +62,7 @@ jobs:
       - if: ${{ steps.build-cache.outputs.cache-hit != 'true' }}
         name: Require cache
         run: exit 1
-      - run: npm publish
+      - run: npm publish --provenance
         env:
           NODE_AUTH_TOKEN: ${{secrets.npm_token}}
 
