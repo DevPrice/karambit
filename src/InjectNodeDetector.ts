@@ -2,9 +2,6 @@ import * as ts from "typescript"
 import {Inject, Reusable} from "karambit-decorators"
 import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType"
 import {ErrorReporter} from "./ErrorReporter"
-import type {KarambitTransformOptions} from "./karambit"
-import {PropertyExtractor} from "./PropertyExtractor"
-import {filterNotNull} from "./Util"
 
 interface Decorated {
     name?: { getText: () => string }
@@ -17,9 +14,7 @@ export class InjectNodeDetector {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
-        private readonly karambitOptions: KarambitTransformOptions,
         private readonly errorReporter: ErrorReporter,
-        private readonly propertyExtractor: PropertyExtractor,
     ) {
         this.isScopeDecorator = this.isScopeDecorator.bind(this)
         this.isScope = this.isScope.bind(this)
@@ -54,14 +49,14 @@ export class InjectNodeDetector {
     getScope(item: Decorated): ts.Symbol | undefined {
         const scopeDecorators = item.modifiers?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)).filterNotNull() ?? []
         if (scopeDecorators.length > 1) ErrorReporter.reportParseFailed(`Scoped element may only have one scope! ${item.name?.getText()} has ${scopeDecorators.length}.`)
-        const [symbol] = scopeDecorators
-        return this.getAliasedSymbol(symbol)
+        if (scopeDecorators.length === 1) {
+            const [symbol] = scopeDecorators
+            return this.getAliasedSymbol(symbol)
+        }
     }
 
     private isScope(type: ts.Type): boolean {
-        const symbol = type.getSymbol() ?? type.aliasSymbol
-        // TODO: Use type brand
-        return !!symbol && (symbol.getName() === "ScopeDecorator" || symbol.getName() === "ReusableScopeDecorator" || symbol.getName() === "ScopeAnnotation" || symbol.getName() === "ReusableScopeAnnotation" || this.getPropertyNames(symbol).has("__karambitScopeAnnotation"))
+        return this.getPropertyNames(type).has("__karambitScopeAnnotation")
     }
 
     getQualifier(_: Decorated): TypeQualifier | undefined {
@@ -166,8 +161,7 @@ export class InjectNodeDetector {
     }
 
     private isKarambitDecorator(decorator: ts.Node, name: string): decorator is ts.Decorator {
-        // TODO: Handle with type brands
-        return ts.isDecorator(decorator) && this.getKarambitNodeName(decorator) === name
+        return ts.isDecorator(decorator) && this.getKarambitAnnotationName(decorator) === name
     }
 
     private isCompileTimeConstant(expression: ts.Expression): boolean {
@@ -189,7 +183,7 @@ export class InjectNodeDetector {
 
     private isKarambitGenericType(type: ts.Type, typeName: string, typeBrand: string): ts.Type | undefined {
         const symbol = type.getSymbol()
-        if (symbol && (symbol.getName() === typeName || this.getPropertyNames(symbol).has(typeBrand))) {
+        if (symbol && (symbol.getName() === typeName || this.getPropertyNames(type).has(typeBrand))) {
             const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
             if (typeArguments.length != 1) ErrorReporter.reportParseFailed(`Invalid ${typeName} type!`)
             return typeArguments[0]
@@ -248,54 +242,43 @@ export class InjectNodeDetector {
     }
 
     isReusableScope(symbol: ts.Symbol): boolean {
-        return this.getPropertyNames(symbol).has("__karambitReusableScopeAnnotation")
+        return this.getPropertyNamesForSymbol(symbol).has("__karambitReusableScopeAnnotation")
     }
 
-    private isKarambitSymbol(symbol: ts.Symbol): boolean {
-        return this.isKarambitAnnotation(symbol)
-    }
-
-    private isKarambitAnnotation(symbol: ts.Symbol): boolean {
-        const type = this.typeChecker.getTypeOfSymbol(symbol)
-        if (!type) return false
-        return this.getPropertyNames(symbol).has("__karambitAnnotation")
-    }
-
-    private propertyNameToString(propertyName: ts.PropertyName): string | undefined {
-        if (ts.isIdentifier(propertyName)) return propertyName.text
-        if (ts.isStringLiteral(propertyName)) return this.resolveStringLiteral(propertyName)
-        return undefined
-    }
-
-    private getPropertyNames(symbol: ts.Symbol): ReadonlySet<string> {
+    private getPropertyNamesForSymbol(symbol: ts.Symbol): ReadonlySet<string> {
         const type = this.typeChecker.getTypeOfSymbol(symbol)
         if (!type) return new Set()
-        const properties = this.propertyExtractor.getDeclaredPropertiesForType(type)
-        return new Set(filterNotNull(properties.map(it => this.propertyNameToString(it.name))))
+        return this.getPropertyNames(type)
     }
 
-    private getKarambitNodeName(node: ts.Node): string | undefined {
-        // TODO: Verify the node is from Karambit via type brands
+    private getPropertyNames(type: ts.Type): ReadonlySet<string> {
+        return new Set(type.getProperties().map(it => it.name))
+    }
+
+    private getKarambitAnnotationName(node: ts.Node): string | undefined {
         const identifiers = this.getIdentifiers(node)
         if (identifiers.length === 1) {
             const [identifier] = identifiers
             const symbol = this.typeChecker.getSymbolAtLocation(identifier)
             const aliasedSymbol = symbol && this.getAliasedSymbol(symbol)
-            return aliasedSymbol ? aliasedSymbol?.getName() : undefined
+            if (aliasedSymbol && this.getPropertyNamesForSymbol(aliasedSymbol).has("__karambitAnnotation")) {
+                return aliasedSymbol.getName()
+            }
         } else if (identifiers.length === 2) {
-            const [namespace, identifier] = identifiers
-            const symbol = this.typeChecker.getSymbolAtLocation(namespace)
+            const [_, identifier] = identifiers
+            const symbol = this.typeChecker.getSymbolAtLocation(identifier)
             const aliasedSymbol = symbol && this.getAliasedSymbol(symbol)
-            return aliasedSymbol ? this.typeChecker.getSymbolAtLocation(identifier)?.getName() : undefined
+            if (aliasedSymbol && this.getPropertyNamesForSymbol(aliasedSymbol).has("__karambitAnnotation")) {
+                return aliasedSymbol.getName()
+            }
         }
         return undefined
     }
 
     private getAliasedSymbol(symbol: ts.Symbol): ts.Symbol {
-        // this throws for unknown reasons?
-        try {
+        if (symbol.flags & ts.SymbolFlags.Alias) {
             return this.typeChecker.getAliasedSymbol(symbol)
-        } catch {
+        } else {
             return symbol
         }
     }
