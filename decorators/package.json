@@ -1,6 +1,6 @@
 {
   "name": "karambit-decorators",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Runtime dependencies of Karambit.",
   "keywords": [
     "dependency injection",

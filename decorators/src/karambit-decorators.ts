@@ -121,24 +121,3 @@ export function Scope(): ScopeAnnotation {
 }
 
 export const Reusable: ReusableScopeAnnotation = ScopeAnnotation
-
-const MyScope = Scope()
-@MyScope()
-@MyScope
-@Component
-@Component()
-class X {
-
-    @Binds @Binds() field: number = 1337
-
-    @MyScope
-    @MyScope()
-    @Provides
-    @Provides()
-    test() {
-        return "Hello, world!"
-    }
-}
-
-const x = new X()
-console.log(x.test(), x.field)
