@@ -61,6 +61,9 @@ export abstract class MyComponent {
 
 This is functionally equivalent to the previous example.
 
+> **Note**
+> Parameter decorators are currently only supported if [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) are enabled.
+
 ### Instantiating a graph
 
 Karambit generates a new class that extends the class decorated with `@Component`. You can specify the name of the generated class via the `generateClassName` property of the Component options.
@@ -442,6 +445,8 @@ export class MyTextToSpeech {
     ) { }
 }
 ```
+> **Note**
+> Parameter decorators are currently only supported if [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) are enabled.
 
 This will bind a factory type into the graph that will automatically inject the non-assisted parameters. Specifically, in this case, you can now bind the following factory type anywhere in your graph:
 
