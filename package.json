@@ -1,6 +1,6 @@
 {
   "name": "karambit-inject",
-  "version": "3.0.0-alpha.27",
+  "version": "3.0.0-alpha.28",
   "description": "A compile-time and type-safe dependency injector for Typescript.",
   "keywords": [
     "dependency injection",
@@ -39,7 +39,7 @@
   "bugs": "https://github.com/DevPrice/karambit/issues",
   "dependencies": {
     "chalk": "^4.1.2",
-    "karambit-decorators": "^0.2.0",
+    "karambit-decorators": "^0.5.0",
     "yargs": "^17.7.2"
   },
   "devDependencies": {

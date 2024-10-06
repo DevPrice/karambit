@@ -161,7 +161,14 @@ export class InjectNodeDetector {
     }
 
     private isKarambitDecorator(decorator: ts.Node, name: string): decorator is ts.Decorator {
-        return ts.isDecorator(decorator) && this.getKarambitAnnotationName(decorator) === name
+        if (!ts.isDecorator(decorator)) return false
+        const type = ts.isCallExpression(decorator.expression)
+            ? this.typeChecker.getTypeAtLocation(decorator.expression.expression)
+            : this.typeChecker.getTypeAtLocation(decorator.expression)
+        if (this.getKarambitAnnotationName(decorator) === name) {
+            return true
+        }
+        return type.getProperties().some(property => property.name === `__karambit${name}Annotation`)
     }
 
     private isCompileTimeConstant(expression: ts.Expression): boolean {
@@ -255,6 +262,7 @@ export class InjectNodeDetector {
         return new Set(type.getProperties().map(it => it.name))
     }
 
+    // TODO: Remove after upgrading Karambit dependency
     private getKarambitAnnotationName(node: ts.Node): string | undefined {
         const identifiers = this.getIdentifiers(node)
         if (identifiers.length === 1) {
