@@ -1,8 +1,9 @@
+type TC39MemberDecorator = <This, Args extends unknown[], Return>(
+    target: ((this: This, ...args: Args) => Return) | undefined,
+    context: ClassMemberDecoratorContext,
+) => void
+type MemberDecorator = PropertyDecorator & MethodDecorator & TC39MemberDecorator
 type AnnotationParams = Array<unknown>
-
-function identity<T>(x: T): T {
-    return x
-}
 
 function ClassAnnotation<T extends AnnotationParams>(...info: T): ClassDecorator
 function ClassAnnotation<T extends AnnotationParams>(target: Function): void
@@ -11,16 +12,22 @@ function ClassAnnotation(target?: Function) {
     return ClassAnnotation
 }
 
-function MemberAnnotation<T extends AnnotationParams>(...info: T): PropertyDecorator
+function MemberAnnotation<T extends AnnotationParams>(...info: T): MemberDecorator
 function MemberAnnotation<T extends AnnotationParams>(target: unknown, propertyKey: string | symbol): void
 function MemberAnnotation<This, Args extends unknown[], Return>(
     target: ((this: This, ...args: Args) => Return) | undefined,
     context: ClassMemberDecoratorContext,
 ): void
-function MemberAnnotation(_?: unknown, propertyKey?: string | symbol | ClassMemberDecoratorContext): MethodDecorator | void {
-    if (propertyKey && typeof propertyKey === "object" && propertyKey.kind === "field") {
-        return identity
+function MemberAnnotation(target?: any, propertyKey?: string | symbol | ClassMemberDecoratorContext): MemberDecorator | void {
+    if (propertyKey && typeof propertyKey === "object") {
+        // Called as a TC39 decorator
+        return
     }
+    if (target && typeof target === "object" && propertyKey && (typeof propertyKey === "string" || typeof propertyKey === "symbol") && typeof target[propertyKey] !== "function") {
+        // Called as a legacy decorator
+        return
+    }
+    return MemberAnnotation
 }
 
 function ParameterAnnotation<T extends AnnotationParams>(...info: T): ParameterDecorator
@@ -28,8 +35,6 @@ function ParameterAnnotation<T extends AnnotationParams>(target: Object, propert
 function ParameterAnnotation() {
     return ParameterAnnotation
 }
-
-type MemberDecorator = PropertyDecorator & MethodDecorator
 
 interface KarambitAnnotation {
     __karambitAnnotation?: unknown
@@ -116,3 +121,24 @@ export function Scope(): ScopeAnnotation {
 }
 
 export const Reusable: ReusableScopeAnnotation = ScopeAnnotation
+
+const MyScope = Scope()
+@MyScope()
+@MyScope
+@Component
+@Component()
+class X {
+
+    @Binds @Binds() field: number = 1337
+
+    @MyScope
+    @MyScope()
+    @Provides
+    @Provides()
+    test() {
+        return "Hello, world!"
+    }
+}
+
+const x = new X()
+console.log(x.test(), x.field)

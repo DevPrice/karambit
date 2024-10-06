@@ -187,16 +187,16 @@ export abstract class ScopedSubcomponent {
 
 export interface ParentInterface { }
 
-@Module
+@Module()
 export abstract class ParentModule {
 
-    @Binds
+    @Binds()
     abstract bindParentClassInterface: (concrete: ParentClass) => ParentClassInterface
 
-    @Binds
+    @Binds()
     abstract bindChildSubcomponentFactory: (factory: (values: number[]) => ChildSubcomponent) => ChildSubcomponentFactory
 
-    @Provides
+    @Provides()
     static provideParentInterface(): ParentInterface {
         return {}
     }
