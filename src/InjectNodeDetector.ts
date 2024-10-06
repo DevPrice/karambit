@@ -165,9 +165,6 @@ export class InjectNodeDetector {
         const type = ts.isCallExpression(decorator.expression)
             ? this.typeChecker.getTypeAtLocation(decorator.expression.expression)
             : this.typeChecker.getTypeAtLocation(decorator.expression)
-        if (this.getKarambitAnnotationName(decorator) === name) {
-            return true
-        }
         return type.getProperties().some(property => property.name === `__karambit${name}Annotation`)
     }
 
@@ -260,27 +257,6 @@ export class InjectNodeDetector {
 
     private getPropertyNames(type: ts.Type): ReadonlySet<string> {
         return new Set(type.getProperties().map(it => it.name))
-    }
-
-    // TODO: Remove after upgrading Karambit dependency
-    private getKarambitAnnotationName(node: ts.Node): string | undefined {
-        const identifiers = this.getIdentifiers(node)
-        if (identifiers.length === 1) {
-            const [identifier] = identifiers
-            const symbol = this.typeChecker.getSymbolAtLocation(identifier)
-            const aliasedSymbol = symbol && this.getAliasedSymbol(symbol)
-            if (aliasedSymbol && this.getPropertyNamesForSymbol(aliasedSymbol).has("__karambitAnnotation")) {
-                return aliasedSymbol.getName()
-            }
-        } else if (identifiers.length === 2) {
-            const [_, identifier] = identifiers
-            const symbol = this.typeChecker.getSymbolAtLocation(identifier)
-            const aliasedSymbol = symbol && this.getAliasedSymbol(symbol)
-            if (aliasedSymbol && this.getPropertyNamesForSymbol(aliasedSymbol).has("__karambitAnnotation")) {
-                return aliasedSymbol.getName()
-            }
-        }
-        return undefined
     }
 
     private getAliasedSymbol(symbol: ts.Symbol): ts.Symbol {
