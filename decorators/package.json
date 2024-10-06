@@ -1,6 +1,6 @@
 {
   "name": "karambit-decorators",
-  "version": "0.5.0",
+  "version": "1.0.0",
   "description": "Runtime dependencies of Karambit.",
   "keywords": [
     "dependency injection",
@@ -27,7 +27,6 @@
   "bugs": "https://github.com/DevPrice/karambit/issues",
   "devDependencies": {
     "@devprice/eslint-config": "^1.0.1",
-    "@types/node": "^20.16.10",
     "eslint": "^8.18.0",
     "lint-staged": "^15.2.10",
     "typescript": "^5.6.2"
