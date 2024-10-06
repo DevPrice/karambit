@@ -225,26 +225,6 @@ export class InjectNodeDetector {
         }
     }
 
-    private getIdentifiers(node: ts.Node): [ts.Identifier] | [ts.Identifier, ts.Identifier] | [] {
-        try {
-            for (const child of node.getChildren()) {
-                if (ts.isPropertyAccessExpression(child)) {
-                    return child.getChildren().filter(ts.isIdentifier) as any
-                }
-                if (ts.isIdentifier(child)) return [child]
-                if (ts.isCallExpression(child)) {
-                    if (ts.isPropertyAccessExpression(child.expression)) {
-                        return child.expression.getChildren().filter(ts.isIdentifier) as any
-                    }
-                    return [child.getChildren().find(ts.isIdentifier)].filterNotNull() as any
-                }
-            }
-        } catch (e) {
-            // getChildren may throw for synthetic nodes (which we can safely ignore)
-        }
-        return []
-    }
-
     isReusableScope(symbol: ts.Symbol): boolean {
         return this.getPropertyNamesForSymbol(symbol).has("__karambitReusableScopeAnnotation")
     }
