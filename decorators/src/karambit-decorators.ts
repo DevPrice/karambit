@@ -1,5 +1,9 @@
 type AnnotationParams = Array<unknown>
 
+function identity<T>(x: T): T {
+    return x
+}
+
 function ClassAnnotation<T extends AnnotationParams>(...info: T): ClassDecorator
 function ClassAnnotation<T extends AnnotationParams>(target: Function): void
 function ClassAnnotation(target?: Function) {
@@ -9,16 +13,20 @@ function ClassAnnotation(target?: Function) {
 
 function MemberAnnotation<T extends AnnotationParams>(...info: T): PropertyDecorator
 function MemberAnnotation<T extends AnnotationParams>(target: unknown, propertyKey: string | symbol): void
-function MemberAnnotation(target?: any, propertyKey?: string | symbol): MethodDecorator | void {
-    if (!target || typeof target !== "object" || !propertyKey || typeof target[propertyKey] !== "function") {
-        return function () { }
+function MemberAnnotation<This, Args extends unknown[], Return>(
+    target: ((this: This, ...args: Args) => Return) | undefined,
+    context: ClassMemberDecoratorContext,
+): void
+function MemberAnnotation(_?: unknown, propertyKey?: string | symbol | ClassMemberDecoratorContext): MethodDecorator | void {
+    if (propertyKey && typeof propertyKey === "object" && propertyKey.kind === "field") {
+        return identity
     }
 }
 
 function ParameterAnnotation<T extends AnnotationParams>(...info: T): ParameterDecorator
 function ParameterAnnotation<T extends AnnotationParams>(target: Object, propertyKey: string | symbol | undefined, parameterIndex: number): void
 function ParameterAnnotation() {
-    return function () { }
+    return ParameterAnnotation
 }
 
 type MemberDecorator = PropertyDecorator & MethodDecorator
@@ -35,6 +43,10 @@ interface ClassAnnotation<T extends AnnotationParams = []> extends KarambitAnnot
 interface MemberAnnotation<T extends AnnotationParams = []> extends KarambitAnnotation {
     (...info: T): MemberDecorator
     <U>(target: Object, propertyKey: string | symbol, descriptor?: TypedPropertyDescriptor<U>): void
+    <This, Args extends unknown[], Return>(
+        target: ((this: This, ...args: Args) => Return) | undefined,
+        context: ClassMemberDecoratorContext,
+    ): void
 }
 
 interface ParameterAnnotation<T extends AnnotationParams = []> extends KarambitAnnotation {
