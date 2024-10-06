@@ -2,7 +2,7 @@ import * as ts from "typescript"
 import {createQualifiedType, internalQualifier} from "./QualifiedType"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ConstructorHelper} from "./ConstructorHelper"
-import {AssistedFactory, ConstructorParameter, ProviderType} from "./Providers"
+import {AssistedFactory, ProviderType} from "./Providers"
 import {Inject, Reusable} from "karambit-decorators"
 import {ErrorReporter} from "./ErrorReporter"
 
@@ -67,9 +67,12 @@ export class AssistedFactoryLocator {
             resultType: createQualifiedType({type: returnType, qualifier: internalQualifier}),
             type: createQualifiedType({type}),
             factoryParams: signatureDeclaration.parameters.map(param => {
-                // TODO: Make sure to find an index matching an *assisted* parameter
-                const constructorParamIndex = constructorParams.findIndex(it => it.type.type === this.typeChecker.getTypeAtLocation(param.type ?? param))
-                if (constructorParamIndex < 0) throw Error("Error parsing assisted factory!")
+                const constructorParamIndex = constructorParams.findIndex(it =>
+                    it.decorators.some(this.nodeDetector.isAssistedDecorator) && it.type.type === this.typeChecker.getTypeAtLocation(param.type ?? param)
+                )
+                if (constructorParamIndex < 0) {
+                    ErrorReporter.reportParseFailed(`Error parsing assisted factory: ${declaration.name?.getText()}`)
+                }
                 return {
                     name: param.name.getText(),
                     constructorParamIndex,
