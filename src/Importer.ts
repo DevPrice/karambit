@@ -3,24 +3,20 @@ import * as Path from "path"
 import {Inject} from "karambit-decorators"
 import {SourceFileScope} from "./Scopes"
 import {KarambitTransformOptions} from "./karambit"
-import {bound} from "./Util"
+import {bound, memoized} from "./Util"
 
 @Inject
 @SourceFileScope
 export class Importer {
 
     private newImports = new Map<string, ts.ImportDeclaration>()
-    private symbolMap = new Map<ts.Symbol, ts.Identifier>()
-    private importNames = new Map<string, ts.Identifier>()
 
     constructor(
         private readonly sourceFile: ts.SourceFile,
     ) { }
 
+    @memoized
     private getImportForSymbol(symbol: ts.Symbol): ts.Identifier | undefined {
-        const cached = this.symbolMap.get(symbol)
-        if (cached) return cached
-
         const declarations = symbol.getDeclarations()
         if (!declarations || declarations.length === 0) return undefined
 
@@ -28,15 +24,12 @@ export class Importer {
         const importSpecifier = this.getImportSpecifier(importSourceFile)
 
         const identifier = this.getImportIdentifier(importSpecifier)
-        this.symbolMap.set(symbol, identifier)
 
         if (this.newImports.has(importSpecifier)) return identifier
-        if (Path.basename(importSourceFile.fileName) !== "typescript.d.ts" && importSpecifier === "typescript") {
-            return identifier
+        if (importSpecifier !== "typescript" || Path.basename(importSourceFile.fileName) === "typescript.d.ts") {
+            this.addImport(importSpecifier)
         }
 
-        const newImport = this.createImport(importSpecifier)
-        this.newImports.set(importSpecifier, newImport)
         return identifier
     }
 
@@ -73,18 +66,14 @@ export class Importer {
         return type.aliasSymbol ?? type.symbol
     }
 
+    @memoized
     private getImportIdentifier(specifier: string): ts.Identifier {
-        const existingName = this.importNames.get(specifier)
-        if (existingName) return existingName
-
         const identifierText = Path.basename(specifier).replaceAll(/[^a-z\d]+/ig, "$")
-        const newName = ts.factory.createUniqueName(identifierText)
-        this.importNames.set(specifier, newName)
-        return newName
+        return ts.factory.createUniqueName(identifierText)
     }
 
-    private createImport(importSpecifier: string): ts.ImportDeclaration {
-        return ts.factory.createImportDeclaration(
+    private addImport(importSpecifier: string): ts.ImportDeclaration {
+        const newImport = ts.factory.createImportDeclaration(
             undefined,
             ts.factory.createImportClause(
                 false,
@@ -94,6 +83,8 @@ export class Importer {
             ts.factory.createStringLiteral(importSpecifier),
             undefined
         )
+        this.newImports.set(importSpecifier, newImport)
+        return newImport
     }
 
     private getImportSpecifier(fileToImport: ts.SourceFile): string {
