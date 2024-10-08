@@ -2,6 +2,7 @@ import * as ts from "typescript"
 import {Inject, Reusable} from "karambit-decorators"
 import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType"
 import {ErrorReporter} from "./ErrorReporter"
+import {bound} from "./Util"
 
 interface Decorated {
     name?: { getText: () => string }
@@ -15,37 +16,22 @@ export class InjectNodeDetector {
     constructor(
         private readonly typeChecker: ts.TypeChecker,
         private readonly errorReporter: ErrorReporter,
-    ) {
-        this.isScopeDecorator = this.isScopeDecorator.bind(this)
-        this.isScope = this.isScope.bind(this)
-        this.isComponentDecorator = this.isComponentDecorator.bind(this)
-        this.isSubcomponentDecorator = this.isSubcomponentDecorator.bind(this)
-        this.isAssistedDecorator = this.isAssistedDecorator.bind(this)
-        this.isAssistedInjectDecorator = this.isAssistedInjectDecorator.bind(this)
-        this.isProvidesDecorator = this.isProvidesDecorator.bind(this)
-        this.isBindsDecorator = this.isBindsDecorator.bind(this)
-        this.isBindsInstanceDecorator = this.isBindsInstanceDecorator.bind(this)
-        this.isInjectDecorator = this.isInjectDecorator.bind(this)
-        this.isModuleDecorator = this.isModuleDecorator.bind(this)
-        this.isIntoSetDecorator = this.isIntoSetDecorator.bind(this)
-        this.isIntoMapDecorator = this.isIntoMapDecorator.bind(this)
-        this.isElementsIntoSetDecorator = this.isElementsIntoSetDecorator.bind(this)
-        this.isElementsIntoMapDecorator = this.isElementsIntoMapDecorator.bind(this)
-        this.isMapKeyDecorator = this.isMapKeyDecorator.bind(this)
-        this.isCompileTimeConstant = this.isCompileTimeConstant.bind(this)
-    }
+    ) { }
 
+    @bound
     isScopeDecorator(decorator: ts.Node): decorator is ts.Decorator {
         if (!ts.isDecorator(decorator)) return false
         const type = this.typeChecker.getTypeAtLocation(decorator.expression)
         return this.isScope(type)
     }
 
+    @bound
     isIterableProvider(item: ts.MethodDeclaration): boolean {
         const modifiers = item.modifiers ?? []
         return modifiers.some(it => this.isElementsIntoMapDecorator(it) || this.isElementsIntoSetDecorator(it))
     }
 
+    @bound
     getScope(item: Decorated): ts.Symbol | undefined {
         const scopeDecorators = item.modifiers?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)).filterNotNull() ?? []
         if (scopeDecorators.length > 1) ErrorReporter.reportParseFailed(`Scoped element may only have one scope! ${item.name?.getText()} has ${scopeDecorators.length}.`)
@@ -59,66 +45,82 @@ export class InjectNodeDetector {
         return this.getPropertyNames(type).has("__karambitScopeAnnotation")
     }
 
+    @bound
     getQualifier(_: Decorated): TypeQualifier | undefined {
         return undefined
     }
 
+    @bound
     isComponentDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Component")
     }
 
+    @bound
     isSubcomponentDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Subcomponent")
     }
 
+    @bound
     isAssistedDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Assisted")
     }
 
+    @bound
     isAssistedInjectDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "AssistedInject")
     }
 
+    @bound
     isProvidesDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Provides")
     }
 
+    @bound
     isBindsDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Binds")
     }
 
+    @bound
     isBindsInstanceDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "BindsInstance")
     }
 
+    @bound
     isInjectDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Inject")
     }
 
+    @bound
     isModuleDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Module")
     }
 
+    @bound
     isIntoSetDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "IntoSet")
     }
 
+    @bound
     isIntoMapDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "IntoMap")
     }
 
+    @bound
     isElementsIntoSetDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "ElementsIntoSet")
     }
 
+    @bound
     isElementsIntoMapDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "ElementsIntoMap")
     }
 
+    @bound
     isMapKeyDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "MapKey")
     }
 
+    @bound
     getMapBindingInfo(returnType: QualifiedType, declaration: ts.MethodDeclaration | ts.PropertyDeclaration): {keyType: ts.Type, valueType: QualifiedType, expression?: ts.Expression} | undefined {
         const keyInfo = this.getMapKey(declaration)
         if (keyInfo) return {...keyInfo, valueType: returnType}
@@ -126,6 +128,7 @@ export class InjectNodeDetector {
         return this.getMapTupleBindingInfo(returnType)
     }
 
+    @bound
     getMapTupleBindingInfo(returnType: QualifiedType): {keyType: ts.Type, valueType: QualifiedType} | undefined {
         const type = returnType.type as any
         if (type.target && type.target.fixedLength === 2) {
@@ -177,10 +180,12 @@ export class InjectNodeDetector {
             || (ts.isArrayLiteralExpression(expression) && expression.elements.every(this.isCompileTimeConstant))
     }
 
+    @bound
     isProvider(type: ts.Type): ts.Type | undefined {
         return this.isKarambitGenericType(type, "Provider", "__karambitProvider")
     }
 
+    @bound
     isSubcomponentFactory(type: ts.Type): ts.Type | undefined {
         return this.isKarambitGenericType(type, "SubcomponentFactory", "__karambitSubcomponentFactory")
     }
@@ -194,6 +199,7 @@ export class InjectNodeDetector {
         }
     }
 
+    @bound
     isReadonlySet(type: ts.Type): ts.Type | undefined {
         const symbol = type.getSymbol()
         if (symbol?.getName() === "ReadonlySet") {
@@ -203,6 +209,7 @@ export class InjectNodeDetector {
         }
     }
 
+    @bound
     isReadonlyMap(type: ts.Type): [ts.Type, ts.Type] | undefined {
         const symbol = type.getSymbol()
         if (symbol?.getName() === "ReadonlyMap") {
@@ -212,6 +219,7 @@ export class InjectNodeDetector {
         }
     }
 
+    @bound
     isIterable(type: ts.Type): ts.Type | undefined {
         const iterator = type.getProperties().find(it => it.name.startsWith("__@iterator@"))
         const iterableType = iterator?.valueDeclaration && this.typeChecker.getTypeOfSymbolAtLocation(iterator, iterator?.valueDeclaration)
@@ -225,6 +233,7 @@ export class InjectNodeDetector {
         }
     }
 
+    @bound
     isReusableScope(symbol: ts.Symbol): boolean {
         return this.getPropertyNamesForSymbol(symbol).has("__karambitReusableScopeAnnotation")
     }

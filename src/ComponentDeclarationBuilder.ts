@@ -18,6 +18,7 @@ import {
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {Assisted, AssistedInject} from "karambit-decorators"
+import {bound} from "./Util"
 
 export type ComponentDeclarationBuilderFactory = (typeResolver: TypeResolver, instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>) => ComponentDeclarationBuilder
 
@@ -32,9 +33,7 @@ export class ComponentDeclarationBuilder {
         private readonly errorReporter: ErrorReporter,
         @Assisted private readonly typeResolver: TypeResolver,
         @Assisted private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
-    ) {
-        this.getParamExpression = this.getParamExpression.bind(this)
-    }
+    ) { }
 
     declareComponent(options: {declaration: ts.ClassDeclaration, constructorParams: ConstructorParameter[], members: ts.ClassElement[], identifier: ts.Identifier}): ts.ClassDeclaration {
         const parentName = options.declaration.name
@@ -178,6 +177,7 @@ export class ComponentDeclarationBuilder {
         )
     }
 
+    @bound
     private getParamExpression(paramType: QualifiedType): ts.Expression {
         const instanceProvider = this.instanceProviders.get(paramType)
         const providedType = this.nodeDetector.isProvider(paramType.type)

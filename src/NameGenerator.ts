@@ -2,6 +2,7 @@ import * as ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
 import {Inject} from "karambit-decorators"
 import {SourceFileScope} from "./Scopes"
+import {memoized} from "./Util"
 
 @Inject
 @SourceFileScope
@@ -12,8 +13,6 @@ export class NameGenerator {
         private readonly componentIdentifiers: Map<ts.Type, ts.Identifier>,
     ) { }
 
-    private propertyNames = new Map<QualifiedType, ts.Identifier>()
-    private paramPropertyNames = new Map<ts.ParameterDeclaration, ts.Identifier>()
     private getterNames = new Map<QualifiedType, ts.Identifier | ts.PrivateIdentifier>()
 
     readonly parentName: ts.Identifier = ts.factory.createUniqueName("parent")
@@ -29,25 +28,17 @@ export class NameGenerator {
         return newName
     }
 
+    @memoized
     getPropertyIdentifier(type: QualifiedType): ts.Identifier {
-        const existingName = this.propertyNames.get(type)
-        if (existingName) return existingName
-
         const identifierText = this.getValidIdentifier(type.type)
-        const newName = ts.factory.createUniqueName(uncapitalize(identifierText))
-        this.propertyNames.set(type, newName)
-        return newName
+        return ts.factory.createUniqueName(uncapitalize(identifierText))
     }
 
+    @memoized
     getPropertyIdentifierForParameter(param: ts.ParameterDeclaration): ts.Identifier {
-        const existingName = this.paramPropertyNames.get(param)
-        if (existingName) return existingName
-
         const type = this.typeChecker.getTypeAtLocation(param.type ?? param)
         const identifierText = this.getValidIdentifier(type)
-        const newName = ts.factory.createUniqueName(uncapitalize(identifierText))
-        this.paramPropertyNames.set(param, newName)
-        return newName
+        return ts.factory.createUniqueName(uncapitalize(identifierText))
     }
 
     getGetterMethodIdentifier(type: QualifiedType): ts.Identifier | ts.PrivateIdentifier {

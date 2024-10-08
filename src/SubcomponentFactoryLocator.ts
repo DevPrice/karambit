@@ -2,7 +2,7 @@ import * as ts from "typescript"
 import {createQualifiedType, internalQualifier} from "./QualifiedType"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ConstructorHelper} from "./ConstructorHelper"
-import {Container} from "./Util"
+import {bound, Container, memoized} from "./Util"
 import {ProviderType, SubcomponentFactory} from "./Providers"
 import {Assisted, AssistedInject} from "karambit-decorators"
 
@@ -11,23 +11,17 @@ export type SubcomponentFactoryLocatorFactory = (installedSubcomponents: Contain
 @AssistedInject
 export class SubcomponentFactoryLocator {
 
-    #cache = new Map<ts.Type, SubcomponentFactory | undefined>()
-
     constructor(
         private readonly typeChecker: ts.TypeChecker,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly constructorHelper: ConstructorHelper,
         @Assisted private readonly installedSubcomponents: Container<ts.Symbol>,
-    ) {
-        this.asSubcomponentFactory = this.asSubcomponentFactory.bind(this)
-    }
+    ) { }
 
+    @bound
+    @memoized
     asSubcomponentFactory(type: ts.Type): SubcomponentFactory | undefined {
-        const cached = this.#cache.get(type)
-        if (cached) return cached
-        const located = this.locateAliasedSubcomponentFactory(type) ?? this.locateSubcomponentFactory(type)
-        this.#cache.set(type, located)
-        return located
+        return this.locateAliasedSubcomponentFactory(type) ?? this.locateSubcomponentFactory(type)
     }
 
     private locateSubcomponentFactory(type: ts.Type): SubcomponentFactory | undefined {

@@ -3,6 +3,7 @@ import * as Path from "path"
 import {Inject} from "karambit-decorators"
 import {SourceFileScope} from "./Scopes"
 import {KarambitTransformOptions} from "./karambit"
+import {bound} from "./Util"
 
 @Inject
 @SourceFileScope
@@ -14,9 +15,7 @@ export class Importer {
 
     constructor(
         private readonly sourceFile: ts.SourceFile,
-    ) {
-        this.addImportsToSourceFile = this.addImportsToSourceFile.bind(this)
-    }
+    ) { }
 
     private getImportForSymbol(symbol: ts.Symbol): ts.Identifier | undefined {
         const cached = this.symbolMap.get(symbol)
@@ -47,6 +46,7 @@ export class Importer {
         return left ? ts.factory.createQualifiedName(left, right) : right
     }
 
+    @bound
     addImportsToSourceFile(sourceFile: ts.SourceFile): ts.SourceFile {
         return ts.factory.updateSourceFile(
             sourceFile,

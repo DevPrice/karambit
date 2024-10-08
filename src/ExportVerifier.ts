@@ -2,6 +2,7 @@ import * as ts from "typescript"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {Inject, Reusable} from "karambit-decorators"
 import {ErrorReporter} from "./ErrorReporter"
+import {bound} from "./Util"
 
 @Inject
 @Reusable
@@ -11,11 +12,10 @@ export class ExportVerifier {
         private readonly context: ts.TransformationContext,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly errorReporter: ErrorReporter,
-    ) {
-        this.verifyExports = this.verifyExports.bind(this)
-    }
+    ) { }
 
     verifyExports(sourceFile: ts.SourceFile): ts.SourceFile
+    @bound
     verifyExports(node: ts.Node): ts.Node {
         if (ts.isClassDeclaration(node) && node.modifiers && !node.modifiers.some(it => it.kind === ts.SyntaxKind.ExportKeyword)) {
             if (node.modifiers.some(this.nodeDetector.isComponentDecorator)) {

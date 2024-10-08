@@ -12,6 +12,46 @@ Array.prototype.filterNotNull = function <T> (this: Array<T>) { return filterNot
 Array.prototype.distinct = function <T> (this: Array<T>) { return distinctBy(this, it => it) }
 Array.prototype.distinctBy = function <T> (this: Array<T>, predicate: (item: T) => unknown) { return distinctBy(this, predicate) }
 
+export function memoize<This, Args extends Array<unknown>, T>(f: (this: This, ...args: Args) => T): (this: This, ...args: Args) => T {
+    const cache: TupleMap<unknown[], {value: T}> = new TupleMap()
+    return function (this: This, ...args: Args) {
+        const key = args.slice(0, f.length)
+        const cachedResult = cache.get(key)
+        if (cachedResult !== undefined) return cachedResult.value
+        const newResult = f.apply(this, args)
+        cache.set(key, {value: newResult})
+        return newResult
+    }
+}
+
+export const memoized: MethodDecorator = (target: Object, propertyKey: string | symbol, descriptor: PropertyDescriptor): PropertyDescriptor => {
+    return {
+        get: function() {
+            const original = descriptor.value ?? descriptor.get?.()
+            const memo = memoize(original)
+            Object.defineProperty(this, propertyKey, {
+                configurable: true,
+                value: memo,
+            })
+            return memo
+        }
+    }
+}
+
+export const bound: MethodDecorator = (target: Object, propertyKey: string | symbol, descriptor: PropertyDescriptor): PropertyDescriptor => {
+    return {
+        get: function () {
+            const original = descriptor.value ?? descriptor.get?.()
+            const bound = original.bind(this)
+            Object.defineProperty(this, propertyKey, {
+                configurable: true,
+                value: bound,
+            })
+            return bound
+        }
+    }
+}
+
 export function filterNotNull<T>(items: T[]): NonNullable<T>[] {
     return items.filter(it => it !== undefined && it !== null) as NonNullable<T>[]
 }
@@ -144,10 +184,14 @@ export function time<T>(fun: () => T): { durationMs: number, result: T } {
     return {durationMs: Date.now() - startTime, result}
 }
 
-export class TupleMap<K extends Array<unknown>, V> implements Map<K, V> {
+type NestedMap<K, V> = Map<K, { next?: NestedMap<K, V>, value?: V }>
 
-    private backingMap: Map<any, any> = new Map()
-    readonly size: number
+export class TupleMap<K extends ReadonlyArray<unknown>, V> implements Map<K, V> {
+
+    private backingMap: NestedMap<unknown, V> = new Map()
+    get size(): number {
+        return this.backingMap.size
+    }
 
     clear(): void {
         this.backingMap.clear()
@@ -158,10 +202,10 @@ export class TupleMap<K extends Array<unknown>, V> implements Map<K, V> {
         for (let i = 0; i < key.length - 1; i++) {
             const k = key[i]
             const next = current.get(k)
-            if (next === undefined) {
+            if (next === undefined || next.next === undefined) {
                 return false
             } else {
-                current = next
+                current = next.next
             }
         }
         return current.delete(key[key.length - 1])
@@ -176,13 +220,13 @@ export class TupleMap<K extends Array<unknown>, V> implements Map<K, V> {
         for (let i = 0; i < key.length - 1; i++) {
             const k = key[i]
             const next = current.get(k)
-            if (next === undefined) {
+            if (next === undefined || next.next === undefined) {
                 return undefined
             } else {
-                current = next
+                current = next.next
             }
         }
-        return current.get(key[key.length - 1])
+        return current.get(key[key.length - 1])?.value
     }
 
     has(key: K): boolean {
@@ -190,10 +234,10 @@ export class TupleMap<K extends Array<unknown>, V> implements Map<K, V> {
         for (let i = 0; i < key.length - 1; i++) {
             const k = key[i]
             const next = current.get(k)
-            if (next === undefined) {
-                return false
+            if (next === undefined || next.next === undefined) {
+                return next?.value !== undefined
             } else {
-                current = next
+                current = next.next
             }
         }
         return current.has(key[key.length - 1])
@@ -206,13 +250,17 @@ export class TupleMap<K extends Array<unknown>, V> implements Map<K, V> {
             const next = current.get(k)
             if (next === undefined) {
                 const newMap = new Map()
-                current.set(k, newMap)
+                current.set(k, {next: newMap})
+                current = newMap
+            } else if (next.next === undefined) {
+                const newMap = new Map()
+                next.next = newMap
                 current = newMap
             } else {
-                current = next
+                current = next.next
             }
         }
-        current.set(key[key.length - 1], value)
+        current.set(key[key.length - 1], {value})
         return this
     }
 

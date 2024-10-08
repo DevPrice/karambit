@@ -4,6 +4,7 @@ import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ComponentGeneratorDependenciesFactory} from "./ComponentGenerator"
 import {ErrorReporter} from "./ErrorReporter"
 import {NameGenerator} from "./NameGenerator"
+import {bound} from "./Util"
 
 @Inject
 @Reusable
@@ -15,11 +16,10 @@ export class ComponentVisitor {
         private readonly errorReporter: ErrorReporter,
         private readonly nameGenerator: NameGenerator,
         private readonly componentGeneratorDependenciesFactory: ComponentGeneratorDependenciesFactory,
-    ) {
-        this.visitComponents = this.visitComponents.bind(this)
-    }
+    ) { }
 
     visitComponents(sourceFile: ts.SourceFile): ts.SourceFile
+    @bound
     visitComponents(node: ts.Node): ts.Node | ts.Node[] {
         if (ts.isClassDeclaration(node) && node.modifiers?.some(this.nodeDetector.isComponentDecorator)) {
             if (!node.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {

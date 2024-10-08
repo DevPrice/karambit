@@ -5,30 +5,21 @@ import {ConstructorHelper} from "./ConstructorHelper"
 import {AssistedFactory, ProviderType} from "./Providers"
 import {Inject, Reusable} from "karambit-decorators"
 import {ErrorReporter} from "./ErrorReporter"
+import {bound, memoized} from "./Util"
 
 @Inject
 @Reusable
 export class AssistedFactoryLocator {
 
-    #cache = new Map<ts.Type, AssistedFactory | undefined>()
-
     constructor(
         private readonly typeChecker: ts.TypeChecker,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly constructorHelper: ConstructorHelper,
-    ) {
-        this.asAssistedFactory = this.asAssistedFactory.bind(this)
-    }
+    ) { }
 
+    @bound
+    @memoized
     asAssistedFactory(type: ts.Type): AssistedFactory | undefined {
-        const cached = this.#cache.get(type)
-        if (cached) return cached
-        const located = this.locateAssistedFactory(type)
-        this.#cache.set(type, located)
-        return located
-    }
-
-    private locateAssistedFactory(type: ts.Type): AssistedFactory | undefined {
         const signatures = this.typeChecker.getSignaturesOfType(type, ts.SignatureKind.Call)
         if (signatures.length === 0) return undefined
         const signature = signatures[0]

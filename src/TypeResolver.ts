@@ -1,4 +1,4 @@
-import {findCycles} from "./Util"
+import {bound, findCycles} from "./Util"
 import {ErrorReporter} from "./ErrorReporter"
 import {QualifiedType} from "./QualifiedType"
 import {Binding} from "./ModuleLocator"
@@ -15,7 +15,6 @@ export class TypeResolver {
         private readonly errorReporter: ErrorReporter,
         @Assisted private readonly bindings: Iterable<Binding>,
     ) {
-        this.resolveBoundType = this.resolveBoundType.bind(this)
         const bindingMap = new Map<QualifiedType, Binding>()
         for (const binding of bindings) {
             const duplicate = bindingMap.get(binding.returnType)
@@ -31,6 +30,7 @@ export class TypeResolver {
         }
     }
 
+    @bound
     resolveBoundType(type: QualifiedType): QualifiedType {
         const binding = this.#bindingMap.get(type)
         if (!binding) return type
