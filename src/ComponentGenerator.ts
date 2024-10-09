@@ -24,6 +24,7 @@ import {ErrorReporter} from "./ErrorReporter"
 import {Inject, Reusable} from "karambit-decorators"
 import {TupleMap} from "./Util"
 import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"
+import {isTypeNullable} from "./TypescriptUtil"
 
 interface GeneratedSubcomponent {
     readonly name: string
@@ -31,10 +32,12 @@ interface GeneratedSubcomponent {
     readonly graph: DependencyGraph
     readonly type: QualifiedType
     readonly rootDependencies: Iterable<Dependency>
+    readonly requiresUnsetSymbolDeclaration: boolean
 }
 
 export interface GeneratedComponent {
     readonly classDeclaration: ts.ClassDeclaration
+    readonly requiresUnsetSymbolDeclaration: boolean
 }
 
 export interface ModuleProviders {
@@ -374,7 +377,9 @@ export class ComponentGenerator {
                 ...generatedSubcomponents.map(it => it.classElement)
             ]
         })
-        return {classDeclaration}
+        const requiresUnsetSymbolDeclaration = generatedSubcomponents.some(it => it.requiresUnsetSymbolDeclaration)
+            || Array.from(generatedDeps.entries()).some(([type, provider]) => isTypeNullable(type.type) && provider.scope)
+        return {classDeclaration, requiresUnsetSymbolDeclaration}
     }
 
     private generateSubcomponent(
@@ -457,12 +462,15 @@ export class ComponentGenerator {
             ...Array.from(generatedDeps.values()).flatMap(it => subcomponentBuilder.getProviderDeclaration(it, scope)),
             ...generatedSubcomponents.map(it => it.classElement),
         ]
+        const requiresUnsetSymbolDeclaration = generatedSubcomponents.some(it => it.requiresUnsetSymbolDeclaration)
+            || Array.from(generatedDeps.entries()).some(([type, provider]) => isTypeNullable(type.type) && provider.scope)
         return {
             classElement: subcomponentBuilder.declareSubcomponent(factory, subcomponentIdentifier, parentType, members),
             type: factory.subcomponentType,
             graph: mergedGraph,
             name: subcomponentName,
             rootDependencies,
+            requiresUnsetSymbolDeclaration,
         }
     }
 

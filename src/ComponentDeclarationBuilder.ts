@@ -19,6 +19,7 @@ import {
 import {ErrorReporter} from "./ErrorReporter"
 import {Assisted, AssistedInject} from "karambit-decorators"
 import {bound} from "./Util"
+import {isTypeNullable} from "./TypescriptUtil"
 
 export type ComponentDeclarationBuilderFactory = (typeResolver: TypeResolver, instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>) => ComponentDeclarationBuilder
 
@@ -545,11 +546,6 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    private isTypeNullable(type: ts.Type): boolean {
-        if (type.flags & ts.TypeFlags.Null || type.flags & ts.TypeFlags.Undefined) return true
-        return type.isUnionOrIntersection() && type.types.some(it => this.isTypeNullable(it))
-    }
-
     private getCachedFactoryDeclaration(factory: ProvidesMethod, typeNode: ts.TypeNode): ts.ClassElement[] {
         return [
             this.getCachedPropertyDeclaration(factory.type, typeNode),
@@ -563,7 +559,7 @@ export class ComponentDeclarationBuilder {
 
     private getCachedFactoryCallExpression(providesMethod: ProvidesMethod): ts.Expression {
         const propIdentifier = this.nameGenerator.getPropertyIdentifier(providesMethod.type)
-        const nullable = this.isTypeNullable(providesMethod.type.type)
+        const nullable = isTypeNullable(providesMethod.type.type)
         return nullable ?
             this.createScopedNullableExpression(propIdentifier, this.factoryCallExpression(providesMethod)) :
             this.createScopedExpression(propIdentifier, this.factoryCallExpression(providesMethod))
@@ -571,7 +567,7 @@ export class ComponentDeclarationBuilder {
 
     private getCachedPropertyDeclaration(type: QualifiedType, typeNode: ts.TypeNode): ts.ClassElement {
         const propIdentifier = this.nameGenerator.getPropertyIdentifier(type)
-        const nullable = this.isTypeNullable(type.type)
+        const nullable = isTypeNullable(type.type)
         return ts.factory.createPropertyDeclaration(
             [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
             propIdentifier,

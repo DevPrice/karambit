@@ -27,6 +27,7 @@ export interface PropertyProvider {
     readonly type: QualifiedType
     readonly declaration: ts.ParameterDeclaration
     readonly optional: boolean
+    readonly scope?: undefined
 }
 
 export function isPropertyProvider(provider: InstanceProvider): provider is PropertyProvider {
@@ -86,6 +87,7 @@ export interface SubcomponentFactory {
     readonly type: QualifiedType
     readonly subcomponentType: QualifiedType
     readonly constructorParams: ConstructorParameter[]
+    readonly scope?: undefined
 }
 
 export function isSubcomponentFactory(provider: InstanceProvider): provider is SubcomponentFactory {
@@ -99,6 +101,7 @@ export interface AssistedFactory {
     readonly resultType: QualifiedType
     readonly factoryParams: FactoryParameter[]
     readonly constructorParams: ConstructorParameter[]
+    readonly scope?: undefined
 }
 
 export interface ParentProvider {
@@ -106,12 +109,14 @@ export interface ParentProvider {
     readonly type: QualifiedType
     readonly optional: boolean
     readonly declaration?: undefined
+    readonly scope?: undefined
 }
 
 export interface UndefinedProvider {
     readonly providerType: ProviderType.UNDEFINED
     readonly type: QualifiedType
     readonly declaration?: undefined
+    readonly scope?: undefined
 }
 
 export interface SetMultibinding {
@@ -120,6 +125,7 @@ export interface SetMultibinding {
     readonly elementProviders: MultibindingElementProvider[]
     readonly parentBinding?: boolean
     readonly declaration?: undefined
+    readonly scope?: undefined
 }
 
 export interface MapMultibinding {
@@ -128,6 +134,7 @@ export interface MapMultibinding {
     readonly entryProviders: MapEntryProvider[]
     readonly parentBinding?: boolean
     readonly declaration?: undefined
+    readonly scope?: undefined
 }
 
 export enum ProviderType {

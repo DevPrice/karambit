@@ -4,7 +4,7 @@ import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ComponentGeneratorDependenciesFactory} from "./ComponentGenerator"
 import {ErrorReporter} from "./ErrorReporter"
 import {NameGenerator} from "./NameGenerator"
-import {bound} from "./Util"
+import {bound, filterNotNull} from "./Util"
 import {visitEachChild} from "./Visitor"
 
 @Inject
@@ -28,27 +28,13 @@ export class ComponentVisitor {
             this.componentGeneratorDependenciesFactory(component).generatedComponent
         )
         const classDeclarations = generatedComponents.map(it => it.classDeclaration)
-        // TODO: Only generate this symbol declaration if it's actually used
-        const unsetSymbolDeclaration = ts.factory.createVariableStatement(
-            undefined,
-            ts.factory.createVariableDeclarationList([
-                ts.factory.createVariableDeclaration(
-                    this.nameGenerator.unsetSymbolName,
-                    undefined,
-                    ts.factory.createTypeOperatorNode(
-                        ts.SyntaxKind.UniqueKeyword,
-                        ts.factory.createKeywordTypeNode(ts.SyntaxKind.SymbolKeyword),
-                    ),
-                    ts.factory.createCallExpression(
-                        ts.factory.createIdentifier("Symbol"),
-                        undefined,
-                        [],
-                    ),
-                )
-            ], ts.NodeFlags.Const))
+        const requiresUnsetSymbolDeclaration = generatedComponents.some(it => it.requiresUnsetSymbolDeclaration)
         return ts.factory.updateSourceFile(
             sourceFile,
-            [unsetSymbolDeclaration, ...classDeclarations],
+            filterNotNull([
+                requiresUnsetSymbolDeclaration ? this.unsetSymbolDeclaration() : undefined,
+                ...classDeclarations,
+            ]),
             sourceFile.isDeclarationFile,
             sourceFile.referencedFiles,
             sourceFile.typeReferenceDirectives,
@@ -67,5 +53,26 @@ export class ComponentVisitor {
         } else {
             visitEachChild(node, child => this.findComponents(child, outComponents))
         }
+    }
+
+
+    private unsetSymbolDeclaration() {
+        return ts.factory.createVariableStatement(
+            undefined,
+            ts.factory.createVariableDeclarationList([
+                ts.factory.createVariableDeclaration(
+                    this.nameGenerator.unsetSymbolName,
+                    undefined,
+                    ts.factory.createTypeOperatorNode(
+                        ts.SyntaxKind.UniqueKeyword,
+                        ts.factory.createKeywordTypeNode(ts.SyntaxKind.SymbolKeyword),
+                    ),
+                    ts.factory.createCallExpression(
+                        ts.factory.createIdentifier("Symbol"),
+                        undefined,
+                        [],
+                    ),
+                )
+            ], ts.NodeFlags.Const))
     }
 }
