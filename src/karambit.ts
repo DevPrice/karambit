@@ -1,10 +1,8 @@
-import {filterNotNull, time} from "./Util"
+import {filterNotNull} from "./Util"
 import * as ts from "typescript"
 import * as Path from "path"
-import * as fs from "fs"
 import {Importer} from "./Importer"
 import {KarambitProgramComponent} from "./karambit-generated/src/Component"
-import {SourceFileVisitor} from "./Visitor"
 
 type ConstructorType<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> = abstract new (...args: ConstructorParameters<T>) => InstanceType<T>
 

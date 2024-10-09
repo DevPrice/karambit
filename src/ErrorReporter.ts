@@ -19,7 +19,6 @@ import {Chalk} from "chalk"
 const chalk: Chalk = require("chalk")
 
 export enum KarambitErrorScope {
-    TRANSFORM = "NotTransformed",
     PARSE = "Parse",
     INVALID_SCOPE = "InvalidScope",
     INVALID_BINDING = "InvalidBinding",
