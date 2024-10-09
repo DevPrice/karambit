@@ -47,11 +47,9 @@ export default function(program: ts.Program, options?: Partial<KarambitTransform
     return (ctx: ts.TransformationContext) => {
         const emitHost = (ctx as any).getEmitHost()
         emitHost.writeFile = () => { }
-
-        const transformationContextComponent = programComponent.transformationContextSubcomponentFactory()
         return (sourceFile: ts.SourceFile) => {
             const {result, durationMs} = time(() => {
-                const sourceFileComponent = transformationContextComponent.sourceFileSubcomponentFactory(sourceFile)
+                const sourceFileComponent = programComponent.sourceFileSubcomponentFactory(sourceFile)
                 return runTransformers(sourceFile, ...sourceFileComponent.transformers)
             })
 

@@ -60,14 +60,6 @@ export abstract class SourceFileSubcomponent {
     abstract readonly transformers: ts.Transformer<ts.SourceFile>[]
 }
 
-@Subcomponent({subcomponents: [SourceFileSubcomponent]})
-export abstract class TransformationContextSubcomponent {
-
-    constructor() { }
-
-    abstract readonly sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>
-}
-
 @Module
 export abstract class ProgramModule {
 
@@ -90,12 +82,12 @@ export abstract class ProgramModule {
     }
 }
 
-@Component({modules: [ProgramModule], subcomponents: [TransformationContextSubcomponent]})
+@Component({modules: [ProgramModule], subcomponents: [SourceFileSubcomponent]})
 @ProgramScope
 export abstract class ProgramComponent {
 
     constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitTransformOptions) { }
 
-    abstract readonly transformationContextSubcomponentFactory: SubcomponentFactory<typeof TransformationContextSubcomponent>
+    abstract readonly sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>
     abstract readonly printer: ts.Printer
 }
