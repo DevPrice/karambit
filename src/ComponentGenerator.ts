@@ -18,12 +18,11 @@ import {
     ProvidesMethod,
     SetMultibinding,
     SubcomponentFactory,
-    UndefinedProvider
+    UndefinedProvider,
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {Inject, Reusable} from "karambit-decorators"
 import {TupleMap} from "./Util"
-import {AssistedFactoryLocator} from "./AssistedFactoryLocator"
 import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"
 
 interface GeneratedSubcomponent {
@@ -34,6 +33,10 @@ interface GeneratedSubcomponent {
     readonly rootDependencies: Iterable<Dependency>
 }
 
+export interface GeneratedComponent {
+    readonly classDeclaration: ts.ClassDeclaration
+}
+
 export interface ModuleProviders {
     factories: ReadonlyMap<QualifiedType, ProvidesMethod>
     bindings: Iterable<Binding>
@@ -42,7 +45,7 @@ export interface ModuleProviders {
 }
 
 export interface ComponentGeneratorDependencies {
-    readonly generator: ComponentGenerator
+    readonly generatedComponent: GeneratedComponent
 }
 
 export type ComponentGeneratorDependenciesFactory = (componentDeclaration: ts.ClassDeclaration) => ComponentGeneratorDependencies
@@ -57,7 +60,6 @@ export class ComponentGenerator {
         private readonly typeChecker: ts.TypeChecker,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly nameGenerator: NameGenerator,
-        private readonly assistedFactoryLocator: AssistedFactoryLocator,
         private readonly componentDeclarationBuilderFactory: ComponentDeclarationBuilderFactory,
         private readonly subcomponentFactoryLocatorFactory: SubcomponentFactoryLocatorFactory,
         private readonly typeResolverFactory: TypeResolverFactory,
@@ -278,7 +280,7 @@ export class ComponentGenerator {
         return {factories, bindings, setMultibindings, mapMultibindings}
     }
 
-    updateComponent(): ts.ClassDeclaration {
+    updateComponent(): GeneratedComponent {
         const component = this.component
         const componentDecorator = component.modifiers?.find(this.nodeDetector.isComponentDecorator)!
         const componentScope = this.nodeDetector.getScope(component)
@@ -362,7 +364,7 @@ export class ComponentGenerator {
             Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals)
                 .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
         )
-        return builder.declareComponent({
+        const classDeclaration = builder.declareComponent({
             identifier: componentIdentifier,
             declaration: component,
             constructorParams: this.constructorHelper.getConstructorParamsForDeclaration(component) ?? [],
@@ -372,6 +374,7 @@ export class ComponentGenerator {
                 ...generatedSubcomponents.map(it => it.classElement)
             ]
         })
+        return {classDeclaration}
     }
 
     private generateSubcomponent(

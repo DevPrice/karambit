@@ -52,25 +52,10 @@ export function generateComponentFiles(program: ts.Program, options?: Partial<Ka
         const outputFilename = Path.basename(sourceFile.fileName)
         if (karambitOptions.printTransformDuration) {
             const durationString = durationMs < 1 ? "<1" : durationMs.toString()
-            const relativePath = Path.relative(karambitOptions.sourceRoot, Path.join(Path.dirname(sourceFile.fileName), `Karambit${outputFilename}`))
+            const relativePath = Path.relative(karambitOptions.sourceRoot, Path.join(Path.dirname(sourceFile.fileName), outputFilename))
             console.info(`Transformed ${relativePath} in ${durationString}ms.`)
         }
-
-        const resultText = programComponent.printer.printFile(result)
-        if (resultText) {
-            const p = Path.join(
-                karambitOptions.outDir,
-                Path.relative(
-                    karambitOptions.sourceRoot,
-                    Path.join(
-                        Path.dirname(sourceFile.fileName),
-                        outputFilename,
-                    )
-                )
-            )
-            if (!fs.existsSync(Path.dirname(p))) fs.mkdirSync(Path.dirname(p), {recursive: true})
-            fs.writeFileSync(p, resultText)
-        }
+        programComponent.fileWriter.writeComponentFile(result, outputFilename)
     }
 }
 

@@ -24,10 +24,10 @@ export class ComponentVisitor {
         this.findComponents(sourceFile, components)
         if (components.length === 0) return ts.factory.createSourceFile([], sourceFile.endOfFileToken as any, sourceFile.flags)
 
-        const generatedComponents = components.map(component => {
-            const generatorDeps = this.componentGeneratorDependenciesFactory(component)
-            return generatorDeps.generator.updateComponent()
-        })
+        const generatedComponents = components.map(component =>
+            this.componentGeneratorDependenciesFactory(component).generatedComponent
+        )
+        const classDeclarations = generatedComponents.map(it => it.classDeclaration)
         // TODO: Only generate this symbol declaration if it's actually used
         const unsetSymbolDeclaration = ts.factory.createVariableStatement(
             undefined,
@@ -48,7 +48,7 @@ export class ComponentVisitor {
             ], ts.NodeFlags.Const))
         return ts.factory.updateSourceFile(
             sourceFile,
-            [unsetSymbolDeclaration, ...generatedComponents],
+            [unsetSymbolDeclaration, ...classDeclarations],
             sourceFile.isDeclarationFile,
             sourceFile.referencedFiles,
             sourceFile.typeReferenceDirectives,

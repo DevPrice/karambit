@@ -1,32 +1,36 @@
 import * as ts from "typescript"
-import {
-    Binds,
-    BindsInstance,
-    Component,
-    Module,
-    Provides,
-    Reusable,
-    Subcomponent,
-} from "karambit-decorators"
+import {Binds, BindsInstance, Component, Module, Provides, Reusable, Subcomponent} from "karambit-decorators"
 import {SubcomponentFactory} from "karambit-inject"
 import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
 import type {ComponentVisitor} from "./ComponentVisitor"
 import type {Importer} from "./Importer"
-import type {
+import {
     ComponentGenerator,
     ComponentGeneratorDependencies,
     ComponentGeneratorDependenciesFactory,
+    GeneratedComponent,
 } from "./ComponentGenerator"
 import type {KarambitOptions} from "./karambit"
 import {ExportVerifier} from "./ExportVerifier"
+import {FileWriter} from "./FileWriter"
 
-@Subcomponent
+@Module
+export abstract class ComponentGenerationModule {
+
+    @Provides
+    @Reusable
+    static provideGeneratedComponent(generator: ComponentGenerator): GeneratedComponent {
+        return generator.updateComponent()
+    }
+}
+
+@Subcomponent({modules: [ComponentGenerationModule]})
 @ComponentGenerationScope
 export abstract class ComponentGenerationSubcomponent implements ComponentGeneratorDependencies {
 
     constructor(@BindsInstance componentDeclaration: ts.ClassDeclaration) { }
 
-    abstract readonly generator: ComponentGenerator
+    abstract readonly generatedComponent: GeneratedComponent
 }
 
 @Module
@@ -88,6 +92,6 @@ export abstract class ProgramComponent {
 
     constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitOptions) { }
 
+    abstract readonly fileWriter: FileWriter
     abstract readonly sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>
-    abstract readonly printer: ts.Printer
 }
