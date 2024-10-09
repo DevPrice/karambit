@@ -59,9 +59,18 @@ yargs(hideBin(process.argv))
 
 function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
     const program = ts.createProgram(fileNames, {...compilerOptions, incremental: false})
-    generateComponentFiles(program, {
-        sourceRoot: Path.dirname(cliOptions.tsconfig),
-        outDir: cliOptions.output,
-    })
+    try {
+        generateComponentFiles(program, {
+            sourceRoot: Path.dirname(cliOptions.tsconfig),
+            outDir: cliOptions.output,
+        })
+    } catch (e) {
+        if (e instanceof KarambitError && !cliOptions.verbose) {
+            console.error(e.message)
+        } else {
+            console.error(e)
+        }
+        process.exit(1)
+    }
     process.exit(0)
 }
