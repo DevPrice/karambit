@@ -1,4 +1,5 @@
 import * as ts from "typescript"
+import * as Path from "path"
 import {Inject, Reusable} from "karambit-decorators"
 import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {
@@ -214,9 +215,34 @@ function providerForDisplay(provider: InstanceProvider): string | undefined {
 function nodeForDisplay(node: ts.Node): string {
     const sf = node.getSourceFile()
     const {line, character} = sf.getLineAndCharacterOfPosition(node.pos)
-    const nodeText = chalk.yellow(`${sf.fileName}:${line}:${character}`) + "\n" +
+    const nodeText = chalk.yellow(`at ${getPrettyLocation(node)} (${sf.fileName}:${line}:${character})`) + "\n" +
         normalizeWhitespace(node.getText())
     return nodeText.split(" {\n")[0]
+}
+
+function getPrettyLocation(node: ts.Node): string {
+    const parentNames: string[] = []
+    let n: ts.Node | undefined = node
+    while (n) {
+        const name = getNodeName(n)
+        const readableName = name?.getText()
+        if (readableName) {
+            parentNames.unshift(readableName)
+        }
+        n = n.parent
+    }
+
+    return parentNames.length > 0
+        ? parentNames.join(".")
+        : Path.basename(node.getSourceFile().fileName).replace(/\..*$/, "")
+}
+
+function getNodeName(node: ts.Node): ts.Node | undefined {
+    const maybeNamed = node as { name?: ts.Node }
+    if (maybeNamed.name) {
+        return maybeNamed.name
+    }
+    return undefined
 }
 
 function normalizeWhitespace(text: string): string {
