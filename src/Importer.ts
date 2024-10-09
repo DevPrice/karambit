@@ -92,10 +92,10 @@ export class Importer {
         const match = nodeModuleRegex.exec(fileToImport.fileName)
         if (match) return match[1]
         const generatedFilePath = Path.join(
-            Importer.transformOptions.outDir,
+            Importer.karambitOptions.outDir,
             Path.dirname(
                 Path.relative(
-                    Importer.transformOptions.sourceRoot,
+                    Importer.karambitOptions.sourceRoot,
                     this.sourceFile.fileName,
                 )
             )
@@ -103,6 +103,6 @@ export class Importer {
         return Path.relative(generatedFilePath, fileToImport.fileName).replace(/\.ts$/, "")
     }
 
-    static transformOptions: KarambitOptions
+    static karambitOptions: KarambitOptions
     static typeChecker: ts.TypeChecker
 }

@@ -32,18 +32,17 @@ export interface SubcomponentFactory<T extends ConstructorType<T>> {
 }
 
 export interface KarambitOptions {
-    stripImports: boolean
     printTransformDuration: boolean
     sourceRoot: string
     outDir: string
 }
 
 export function generateComponentFiles(program: ts.Program, options?: Partial<KarambitOptions>) {
-    const transformOptions = {...defaultOptions, ...options}
+    const karambitOptions = {...defaultOptions, ...options}
     // TODO: fix injection and remove this hack
-    Importer.transformOptions = transformOptions
+    Importer.karambitOptions = karambitOptions
     Importer.typeChecker = program.getTypeChecker()
-    const programComponent = new KarambitProgramComponent(program, transformOptions)
+    const programComponent = new KarambitProgramComponent(program, karambitOptions)
     for (const sourceFile of program.getSourceFiles()) {
         const {result, durationMs} = time(() => {
             const sourceFileComponent = programComponent.sourceFileSubcomponentFactory(sourceFile)
@@ -51,18 +50,18 @@ export function generateComponentFiles(program: ts.Program, options?: Partial<Ka
         })
 
         const outputFilename = Path.basename(sourceFile.fileName)
-        if (transformOptions.printTransformDuration) {
+        if (karambitOptions.printTransformDuration) {
             const durationString = durationMs < 1 ? "<1" : durationMs.toString()
-            const relativePath = Path.relative(transformOptions.sourceRoot, Path.join(Path.dirname(sourceFile.fileName), `Karambit${outputFilename}`))
+            const relativePath = Path.relative(karambitOptions.sourceRoot, Path.join(Path.dirname(sourceFile.fileName), `Karambit${outputFilename}`))
             console.info(`Transformed ${relativePath} in ${durationString}ms.`)
         }
 
         const resultText = programComponent.printer.printFile(result)
         if (resultText) {
             const p = Path.join(
-                transformOptions.outDir,
+                karambitOptions.outDir,
                 Path.relative(
-                    transformOptions.sourceRoot,
+                    karambitOptions.sourceRoot,
                     Path.join(
                         Path.dirname(sourceFile.fileName),
                         outputFilename,
@@ -83,7 +82,6 @@ function runTransformers<T extends ts.Node>(
 }
 
 const defaultOptions: KarambitOptions = {
-    stripImports: true,
     printTransformDuration: false,
     sourceRoot: ".",
     outDir: "karambit-generated",
