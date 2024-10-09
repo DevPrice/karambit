@@ -4,6 +4,7 @@ import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-decorators"
 import {ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
+import {visitEachChild} from "./Visitor"
 
 export interface Binding {
     paramType: QualifiedType
@@ -23,7 +24,6 @@ export class ModuleLocator {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
-        private readonly context: ts.TransformationContext,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly errorReporter: ErrorReporter,
     ) { }
@@ -78,21 +78,20 @@ export class ModuleLocator {
                 .forEach((module, symbol) => modules.set(symbol, module))
             return node
         }
-        function visit(node: ts.Node): ts.Node {
+        function visit(node: ts.Node) {
             if (ts.isClassDeclaration(node) && node.modifiers?.some(self.nodeDetector.isModuleDecorator)) {
-                return visitModule(node)
+                visitModule(node)
             } else {
-                return ts.visitEachChild(node, visit, self.context)
+                visitEachChild(node, visit)
             }
         }
-        nodes.forEach(it => ts.visitEachChild(it, visit, this.context))
+        nodes.forEach(it => visitEachChild(it, visit))
         return modules
     }
 
     private getFactoriesAndBindings(module: ts.ClassDeclaration): {factories: ProvidesMethod[], bindings: Binding[]} {
         const typeChecker = this.typeChecker
         const nodeDetector = this.nodeDetector
-        const ctx = this.context
         const bindings: Binding[] = []
         const errorReporter = this.errorReporter
         const factories: ProvidesMethod[] = []
@@ -173,30 +172,26 @@ export class ModuleLocator {
 
             bindings.push({paramType, returnType, declaration: property})
         }
-        function visit(node: ts.Node): ts.Node {
+        function visit(node: ts.Node) {
             if (ts.isMethodDeclaration(node) && node.modifiers?.some(nodeDetector.isProvidesDecorator)) {
                 visitFactory(node)
-                return node
             } else if (ts.isPropertyDeclaration(node) && node.modifiers?.some(nodeDetector.isBindsDecorator)) {
                 visitBindingProperty(node)
-                return node
             } else if (ts.isMethodDeclaration(node) && node.modifiers?.some(nodeDetector.isBindsDecorator)) {
                 visitBinding(node)
-                return node
             } else {
-                return ts.visitEachChild(node, visit, ctx)
+                visitEachChild(node, visit)
             }
         }
-        ts.visitEachChild(module, visit, ctx)
+        visitEachChild(module, visit)
         return {factories, bindings}
     }
 
     private getSymbolList(decorator: ts.Decorator, identifierName: string): ts.Symbol[] {
         let moduleSymbols: ts.Symbol[] = []
-        const ctx = this.context
         const typeChecker = this.typeChecker
         const errorReporter = this.errorReporter
-        function visit(node: ts.Node): ts.Node {
+        function visit(node: ts.Node) {
             if (ts.isPropertyAssignment(node)) {
                 const identifier = node.getChildren()
                     .find(it => ts.isIdentifier(it) && it.getText() === identifierName)
@@ -208,11 +203,11 @@ export class ModuleLocator {
                         .map(it => typeChecker.getTypeAtLocation(it).getSymbol())
                         .filterNotNull()
                 }
-                return node
+            } else {
+                visitEachChild(node, visit)
             }
-            return ts.visitEachChild(node, visit, ctx)
         }
-        ts.visitEachChild(decorator, visit, ctx)
+        visitEachChild(decorator, visit)
         return moduleSymbols
     }
 }

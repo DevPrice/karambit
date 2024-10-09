@@ -63,7 +63,7 @@ export abstract class SourceFileSubcomponent {
 @Subcomponent({subcomponents: [SourceFileSubcomponent]})
 export abstract class TransformationContextSubcomponent {
 
-    constructor(@BindsInstance transformationContext: ts.TransformationContext) { }
+    constructor() { }
 
     abstract readonly sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>
 }

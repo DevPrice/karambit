@@ -5,75 +5,67 @@ import {ComponentGeneratorDependenciesFactory} from "./ComponentGenerator"
 import {ErrorReporter} from "./ErrorReporter"
 import {NameGenerator} from "./NameGenerator"
 import {bound} from "./Util"
+import {visitEachChild} from "./Visitor"
 
 @Inject
 @Reusable
 export class ComponentVisitor {
 
     constructor(
-        private readonly context: ts.TransformationContext,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly errorReporter: ErrorReporter,
         private readonly nameGenerator: NameGenerator,
         private readonly componentGeneratorDependenciesFactory: ComponentGeneratorDependenciesFactory,
     ) { }
 
-    visitComponents(sourceFile: ts.SourceFile): ts.SourceFile
     @bound
-    visitComponents(node: ts.Node): ts.Node | ts.Node[] {
-        if (ts.isClassDeclaration(node) && node.modifiers?.some(this.nodeDetector.isComponentDecorator)) {
-            if (!node.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-                this.errorReporter.reportParseFailed("Component must be abstract!", node)
-            }
-            const generatorDeps = this.componentGeneratorDependenciesFactory(node)
+    visitComponents(sourceFile: ts.SourceFile): ts.SourceFile {
+        const components: ts.ClassDeclaration[] = []
+        this.findComponents(sourceFile, components)
+        if (components.length === 0) return ts.factory.createSourceFile([], sourceFile.endOfFileToken as any, sourceFile.flags)
+
+        const generatedComponents = components.map(component => {
+            const generatorDeps = this.componentGeneratorDependenciesFactory(component)
             return generatorDeps.generator.updateComponent()
-        } else if (ts.isImportDeclaration(node)) {
-            return node
-        } else if (this.hasComponentChild(node)) {
-            // TODO: This is inefficient
-            if (ts.isSourceFile(node)) {
-                const updatedSource = ts.visitEachChild(node, this.visitComponents, this.context)
-                // TODO: Only generate this symbol declaration if it's actually used
-                const unsetSymbolDeclaration = ts.factory.createVariableStatement(
+        })
+        // TODO: Only generate this symbol declaration if it's actually used
+        const unsetSymbolDeclaration = ts.factory.createVariableStatement(
+            undefined,
+            ts.factory.createVariableDeclarationList([
+                ts.factory.createVariableDeclaration(
+                    this.nameGenerator.unsetSymbolName,
                     undefined,
-                    ts.factory.createVariableDeclarationList([
-                        ts.factory.createVariableDeclaration(
-                            this.nameGenerator.unsetSymbolName,
-                            undefined,
-                            ts.factory.createTypeOperatorNode(
-                                ts.SyntaxKind.UniqueKeyword,
-                                ts.factory.createKeywordTypeNode(ts.SyntaxKind.SymbolKeyword),
-                            ),
-                            ts.factory.createCallExpression(
-                                ts.factory.createIdentifier("Symbol"),
-                                undefined,
-                                [],
-                            ),
-                        )
-                    ], ts.NodeFlags.Const))
-                const afterImportIndex = updatedSource.statements.findIndex(it => it.kind !== ts.SyntaxKind.ImportDeclaration && it.kind !== ts.SyntaxKind.ImportEqualsDeclaration)
-                return ts.factory.updateSourceFile(
-                    updatedSource,
-                    [...updatedSource.statements.slice(0, afterImportIndex), unsetSymbolDeclaration, ...updatedSource.statements.slice(afterImportIndex)],
-                    updatedSource.isDeclarationFile,
-                    updatedSource.referencedFiles,
-                    updatedSource.typeReferenceDirectives,
-                    updatedSource.hasNoDefaultLib,
-                    updatedSource.libReferenceDirectives,
+                    ts.factory.createTypeOperatorNode(
+                        ts.SyntaxKind.UniqueKeyword,
+                        ts.factory.createKeywordTypeNode(ts.SyntaxKind.SymbolKeyword),
+                    ),
+                    ts.factory.createCallExpression(
+                        ts.factory.createIdentifier("Symbol"),
+                        undefined,
+                        [],
+                    ),
                 )
-            } else {
-                return ts.visitEachChild(node, this.visitComponents, this.context)
-            }
-        } else if (ts.isSourceFile(node)) {
-            return ts.createSourceFile(node.fileName, "", ts.ScriptTarget.ES2021)
-        }
-        return []
+            ], ts.NodeFlags.Const))
+        return ts.factory.updateSourceFile(
+            sourceFile,
+            [unsetSymbolDeclaration, ...generatedComponents],
+            sourceFile.isDeclarationFile,
+            sourceFile.referencedFiles,
+            sourceFile.typeReferenceDirectives,
+            sourceFile.hasNoDefaultLib,
+            sourceFile.libReferenceDirectives,
+        )
     }
 
-    hasComponentChild(node: ts.Node): boolean {
-        if (ts.isClassDeclaration(node) && node.modifiers?.some(this.nodeDetector.isComponentDecorator)) return true
-        return node.getChildren()
-            .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
-            .some(it => this.hasComponentChild(it))
+    private findComponents(node: ts.Node, outComponents: ts.ClassDeclaration[]): void {
+        if (ts.isClassDeclaration(node) && node.modifiers?.some(this.nodeDetector.isComponentDecorator)) {
+            if (!node.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
+                // TODO: Migrate this validation to a single place
+                this.errorReporter.reportParseFailed("Component must be abstract!", node)
+            }
+            outComponents.push(node)
+        } else {
+            visitEachChild(node, child => this.findComponents(child, outComponents))
+        }
     }
 }

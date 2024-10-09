@@ -3,13 +3,13 @@ import {InjectNodeDetector} from "./InjectNodeDetector"
 import {Inject, Reusable} from "karambit-decorators"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound} from "./Util"
+import {visitEachChild} from "./Visitor"
 
 @Inject
 @Reusable
 export class ExportVerifier {
 
     constructor(
-        private readonly context: ts.TransformationContext,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly errorReporter: ErrorReporter,
     ) { }
@@ -28,6 +28,7 @@ export class ExportVerifier {
                 this.errorReporter.reportParseFailed("Injectable constructors must be exported!", node)
             }
         }
-        return ts.visitEachChild(node, this.verifyExports, this.context)
+        visitEachChild(node, this.verifyExports)
+        return node
     }
 }
