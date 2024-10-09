@@ -17,7 +17,7 @@ import type {
     ComponentGeneratorDependencies,
     ComponentGeneratorDependenciesFactory,
 } from "./ComponentGenerator"
-import type {KarambitTransformOptions} from "./karambit"
+import type {KarambitOptions} from "./karambit"
 import {ExportVerifier} from "./ExportVerifier"
 
 @Subcomponent
@@ -86,7 +86,7 @@ export abstract class ProgramModule {
 @ProgramScope
 export abstract class ProgramComponent {
 
-    constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitTransformOptions) { }
+    constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitOptions) { }
 
     abstract readonly sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>
     abstract readonly printer: ts.Printer

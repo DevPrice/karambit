@@ -2,7 +2,7 @@ import * as ts from "typescript"
 import * as Path from "path"
 import {Inject} from "karambit-decorators"
 import {SourceFileScope} from "./Scopes"
-import {KarambitTransformOptions} from "./karambit"
+import {KarambitOptions} from "./karambit"
 import {bound, memoized} from "./Util"
 
 @Inject
@@ -103,6 +103,6 @@ export class Importer {
         return Path.relative(generatedFilePath, fileToImport.fileName).replace(/\.ts$/, "")
     }
 
-    static transformOptions: KarambitTransformOptions
+    static transformOptions: KarambitOptions
     static typeChecker: ts.TypeChecker
 }

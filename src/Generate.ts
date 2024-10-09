@@ -1,8 +1,8 @@
 import * as ts from "typescript"
 import * as Path from "node:path"
-import karambit from "./karambit"
 import {hideBin} from "yargs/helpers"
 import * as yargs from "yargs"
+import {generateComponentFiles} from "./karambit"
 
 interface GenerateCommandOptions {
     tsconfig: string
@@ -65,29 +65,10 @@ yargs(hideBin(process.argv))
 
 function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
     const program = ts.createProgram(fileNames, {...compilerOptions, incremental: false})
-    const factory = karambit(program, {
+    generateComponentFiles(program, {
         sourceRoot: Path.dirname(cliOptions.tsconfig),
         outDir: cliOptions.output,
         printTransformDuration: cliOptions.duration,
     })
-    const emitResult = program.emit(undefined, undefined, undefined, undefined, {before: [factory]})
-
-    if (cliOptions.verbose) {
-        const allDiagnostics = ts
-            .getPreEmitDiagnostics(program)
-            .concat(emitResult.diagnostics)
-
-        allDiagnostics.forEach(diagnostic => {
-            if (diagnostic.file) {
-                const {line, character} = ts.getLineAndCharacterOfPosition(diagnostic.file, diagnostic.start!)
-                const message = ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")
-                console.error(`${diagnostic.file.fileName} (${line + 1},${character + 1}): ${message}`)
-            } else {
-                console.error(ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n"))
-            }
-        })
-    }
-
-    const exitCode = emitResult.emitSkipped ? 1 : 0
-    process.exit(exitCode)
+    process.exit(0)
 }
