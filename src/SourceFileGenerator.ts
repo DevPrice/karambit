@@ -4,25 +4,25 @@ import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ComponentGeneratorDependenciesFactory} from "./ComponentGenerator"
 import {ErrorReporter} from "./ErrorReporter"
 import {NameGenerator} from "./NameGenerator"
-import {bound, filterNotNull} from "./Util"
+import {filterNotNull} from "./Util"
 import {visitEachChild} from "./Visitor"
+import {Importer} from "./Importer"
 
 @Inject
 @Reusable
-export class ComponentVisitor {
+export class SourceFileGenerator {
 
     constructor(
         private readonly nodeDetector: InjectNodeDetector,
         private readonly errorReporter: ErrorReporter,
         private readonly nameGenerator: NameGenerator,
+        private readonly importer: Importer,
         private readonly componentGeneratorDependenciesFactory: ComponentGeneratorDependenciesFactory,
     ) { }
 
-    @bound
-    visitComponents(sourceFile: ts.SourceFile): ts.SourceFile {
-        const components: ts.ClassDeclaration[] = []
-        this.findComponents(sourceFile, components)
-        if (components.length === 0) return ts.factory.createSourceFile([], sourceFile.endOfFileToken as any, sourceFile.flags)
+    generateSourceFile(originalSource: ts.SourceFile): ts.SourceFile | undefined {
+        const components: ts.ClassDeclaration[] = this.findComponents(originalSource)
+        if (components.length === 0) return undefined
 
         const generatedComponents = components.map(component =>
             this.componentGeneratorDependenciesFactory(component).generatedComponent
@@ -30,20 +30,25 @@ export class ComponentVisitor {
         const classDeclarations = generatedComponents.map(it => it.classDeclaration)
         const requiresUnsetSymbolDeclaration = generatedComponents.some(it => it.requiresUnsetSymbolDeclaration)
         return ts.factory.updateSourceFile(
-            sourceFile,
+            originalSource,
             filterNotNull([
+                ...this.importer.getImports(),
                 requiresUnsetSymbolDeclaration ? this.unsetSymbolDeclaration() : undefined,
                 ...classDeclarations,
             ]),
-            sourceFile.isDeclarationFile,
-            sourceFile.referencedFiles,
-            sourceFile.typeReferenceDirectives,
-            sourceFile.hasNoDefaultLib,
-            sourceFile.libReferenceDirectives,
+            originalSource.isDeclarationFile,
+            originalSource.referencedFiles,
+            originalSource.typeReferenceDirectives,
+            originalSource.hasNoDefaultLib,
+            originalSource.libReferenceDirectives,
         )
     }
 
-    private findComponents(node: ts.Node, outComponents: ts.ClassDeclaration[]): void {
+    private findComponents(node: ts.Node, outComponents?: ts.ClassDeclaration[]): ts.ClassDeclaration[] {
+        if (outComponents === undefined) {
+            const components: ts.ClassDeclaration[] = []
+            return this.findComponents(node, components)
+        }
         if (ts.isClassDeclaration(node) && node.modifiers?.some(this.nodeDetector.isComponentDecorator)) {
             if (!node.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
                 // TODO: Migrate this validation to a single place
@@ -53,6 +58,7 @@ export class ComponentVisitor {
         } else {
             visitEachChild(node, child => this.findComponents(child, outComponents))
         }
+        return outComponents
     }
 
 

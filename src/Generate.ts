@@ -3,11 +3,11 @@ import * as Path from "node:path"
 import {hideBin} from "yargs/helpers"
 import * as yargs from "yargs"
 import {generateComponentFiles} from "./karambit"
+import {KarambitError} from "./ErrorReporter"
 
 interface GenerateCommandOptions {
     tsconfig: string
     output: string
-    duration: boolean
     verbose: boolean
 }
 
@@ -27,12 +27,6 @@ yargs(hideBin(process.argv))
                 alias: "o",
                 description: "Output directory",
                 default: "karambit-generated",
-            })
-            .option("duration", {
-                type: "boolean",
-                alias: "d",
-                description: "Print the duration for each component",
-                default: false,
             })
             .option("verbose", {
                 type: "boolean",
@@ -68,7 +62,6 @@ function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOpt
     generateComponentFiles(program, {
         sourceRoot: Path.dirname(cliOptions.tsconfig),
         outDir: cliOptions.output,
-        printTransformDuration: cliOptions.duration,
     })
     process.exit(0)
 }

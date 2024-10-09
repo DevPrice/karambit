@@ -1,9 +1,10 @@
-import {time} from "./Util"
+import {filterNotNull, time} from "./Util"
 import * as ts from "typescript"
 import * as Path from "path"
 import * as fs from "fs"
 import {Importer} from "./Importer"
 import {KarambitProgramComponent} from "./karambit-generated/src/Component"
+import {SourceFileVisitor} from "./Visitor"
 
 type ConstructorType<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> = abstract new (...args: ConstructorParameters<T>) => InstanceType<T>
 
@@ -32,7 +33,6 @@ export interface SubcomponentFactory<T extends ConstructorType<T>> {
 }
 
 export interface KarambitOptions {
-    printTransformDuration: boolean
     sourceRoot: string
     outDir: string
 }
@@ -43,31 +43,23 @@ export function generateComponentFiles(program: ts.Program, options?: Partial<Ka
     Importer.karambitOptions = karambitOptions
     Importer.typeChecker = program.getTypeChecker()
     const programComponent = new KarambitProgramComponent(program, karambitOptions)
-    for (const sourceFile of program.getSourceFiles()) {
-        const {result, durationMs} = time(() => {
+    const generatedFiles = filterNotNull(
+        program.getSourceFiles().map(sourceFile => {
             const sourceFileComponent = programComponent.sourceFileSubcomponentFactory(sourceFile)
-            return runTransformers(sourceFile, ...sourceFileComponent.transformers)
+            for (const visitor of sourceFileComponent.sourceFileVisitors) {
+                visitor(sourceFile)
+            }
+            return sourceFileComponent.sourceFileGenerator.generateSourceFile(sourceFile)
         })
-
-        const outputFilename = Path.basename(sourceFile.fileName)
-        if (karambitOptions.printTransformDuration) {
-            const durationString = durationMs < 1 ? "<1" : durationMs.toString()
-            const relativePath = Path.relative(karambitOptions.sourceRoot, Path.join(Path.dirname(sourceFile.fileName), outputFilename))
-            console.info(`Transformed ${relativePath} in ${durationString}ms.`)
-        }
-        programComponent.fileWriter.writeComponentFile(result, outputFilename)
+    )
+    for (const file of generatedFiles) {
+        const outputFilename = Path.basename(file.fileName)
+        programComponent.fileWriter.writeComponentFile(file, outputFilename)
     }
 }
 
-function runTransformers<T extends ts.Node>(
-    node: T,
-    ...transformers: ts.Transformer<T>[]
-): T {
-    return transformers.reduce((n, transformer) => transformer(n), node)
-}
 
 const defaultOptions: KarambitOptions = {
-    printTransformDuration: false,
     sourceRoot: ".",
     outDir: "karambit-generated",
 }

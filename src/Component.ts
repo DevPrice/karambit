@@ -1,9 +1,8 @@
 import * as ts from "typescript"
-import {Binds, BindsInstance, Component, Module, Provides, Reusable, Subcomponent} from "karambit-decorators"
+import {Binds, BindsInstance, Component, IntoSet, Module, Provides, Reusable, Subcomponent} from "karambit-decorators"
 import {SubcomponentFactory} from "karambit-inject"
 import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
-import type {ComponentVisitor} from "./ComponentVisitor"
-import type {Importer} from "./Importer"
+import type {SourceFileGenerator} from "./SourceFileGenerator"
 import {
     ComponentGenerator,
     ComponentGeneratorDependencies,
@@ -13,6 +12,7 @@ import {
 import type {KarambitOptions} from "./karambit"
 import {ExportVerifier} from "./ExportVerifier"
 import {FileWriter} from "./FileWriter"
+import {SourceFileVisitor} from "./Visitor"
 
 @Module
 export abstract class ComponentGenerationModule {
@@ -42,16 +42,9 @@ export abstract class SourceFileModule {
     ) => ComponentGeneratorDependenciesFactory
 
     @Provides
-    static provideTransformers(
-        exporterChecker: ExportVerifier,
-        componentVisitor: ComponentVisitor,
-        importer: Importer,
-    ): ts.Transformer<ts.SourceFile>[] {
-        return [
-            exporterChecker.verifyExports,
-            componentVisitor.visitComponents,
-            importer.addImportsToSourceFile,
-        ]
+    @IntoSet
+    static provideExportVerifierVisitor(exportVerifier: ExportVerifier): SourceFileVisitor {
+        return exportVerifier.verifyExports
     }
 }
 
@@ -61,7 +54,8 @@ export abstract class SourceFileSubcomponent {
 
     constructor(@BindsInstance sourceFile: ts.SourceFile) { }
 
-    abstract readonly transformers: ts.Transformer<ts.SourceFile>[]
+    abstract readonly sourceFileVisitors: ReadonlySet<SourceFileVisitor>
+    abstract readonly sourceFileGenerator: SourceFileGenerator
 }
 
 @Module

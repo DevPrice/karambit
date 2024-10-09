@@ -50,6 +50,10 @@ export class Importer {
         )
     }
 
+    getImports(): ts.ImportDeclaration[] {
+        return Array.from(this.newImports.values())
+    }
+
     getExpressionForDeclaration(node: ts.Declaration): ts.Expression {
         const type = Importer.typeChecker.getTypeAtLocation(node)!
         const symbol = this.symbolForType(type)
