@@ -21,6 +21,7 @@
   ],
   "scripts": {
     "prepare": "husky install",
+    "clean": "rm -rf build && rm -rf src/karambit-generated",
     "karambit": "karambit -o src/karambit-generated",
     "prebuild": "npm run karambit",
     "build": "tsc",
@@ -28,6 +29,7 @@
     "lint": "eslint 'src/**/*.ts'",
     "fix": "eslint 'src/**/*.ts' --fix",
     "check": "npm run lint && npm run test",
+    "prerelease": "npm run clean",
     "release": "npm run build && npm run check",
     "prerelease-version": "version-from-git --no-git-tag-version --no-commit-hooks"
   },
