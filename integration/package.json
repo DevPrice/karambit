@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Integration tests",
   "scripts": {
-    "karambit": "karambit -o src/karambit-generated",
+    "karambit": "../bin/index.js -o src/karambit-generated",
     "prebuild": "npm run karambit",
     "build": "tsc",
     "test": "jest"
