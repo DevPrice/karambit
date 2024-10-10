@@ -25,13 +25,7 @@ jobs:
         key: ${{ hashFiles('package-lock.json') }}
     - if: ${{ steps.node-cache.outputs.cache-hit != 'true' }}
       run: npm ci
-    - id: tests-node-cache
-      uses: actions/cache@v4
-      with:
-        path: integration/node_modules
-        key: ${{ hashFiles('integration/package-lock.json') }}
-    - if: ${{ steps.tests-node-cache.outputs.cache-hit != 'true' }}
-      run: npm --prefix integration ci
+    - run: npm --prefix integration ci
     - id: build-cache
       uses: actions/cache@v4
       with:
