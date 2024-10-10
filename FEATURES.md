@@ -8,7 +8,7 @@ A component is an abstract class marked with the `@Component` annotation. It's d
 
 ### Exposing types
 
-A component with no properties has no use. A component ultimately exists to expose some properties, which represent instances of types in the Component's graph. Component properties should be read-only, and not initialized. In the most distilled sense, Karambit's only purpose is to generate an implementation of properties declared in a Component.
+A component with no properties is not useful. A component ultimately exists to expose some properties, which represent instances of types in the Component's graph. Component properties must be abstract and read-only. In the most distilled sense, Karambit's only purpose is to generate an implementation of properties declared in a Component.
 
 From the Hello World sample:
 ```typescript

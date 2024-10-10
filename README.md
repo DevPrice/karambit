@@ -27,7 +27,7 @@ $ npm install --save-dev karambit-inject
 $ npm install karambit-decorators
 ```
 
-Karambit is a decorator-based framework. The decorators exist just to annotate code, they have no effect at runtime. Karambit will work regardless of what value is set for the Typescript [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) compiler flag. 
+Karambit is a decorator-based framework. The decorators exist just to annotate code, they have no effect at runtime. Karambit will work regardless of what value is set for the Typescript [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) compiler flag.
 
 Karambit works using a simple CLI-based tool for generating code. Once the code is generated, you import it just like any other Typescript code.
 
@@ -91,7 +91,7 @@ export class Greeter {
 
 #### @Provides
 
-The constructor of `Greeter` depends on one other type: `string`. However, this type doesn't have a constructor and, even if it did, we don't control the source code to mark it with `@Inject`.  This is where Modules come in to play.
+The constructor of `Greeter` depends on one other type: `string`. However, we can't simply mark `string`'s constructor with `@Inject`.  This is where Modules come in to play.
 
 A module is a collection of static methods marked with `@Provides` and each Component can install many Modules. These provider methods work just like `@Inject` constructors; they can have arguments and will be used by Karambit to provide an instance of their return type. Classes marked with `@Module` must be exported.
 
@@ -100,7 +100,6 @@ In our example, the `string` type is provided in the `HelloWorldModule`:
 ```typescript
 @Module
 export abstract class HelloWorldModule {
-
     @Provides
     static provideGreeting(): string {
         return "Hello"
