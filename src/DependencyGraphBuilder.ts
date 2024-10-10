@@ -4,7 +4,6 @@ import {ConstructorHelper} from "./ConstructorHelper"
 import {Container, findCycles} from "./Util"
 import * as ts from "typescript"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
-import {PropertyExtractor} from "./PropertyExtractor"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {
     InjectableConstructor,
@@ -13,7 +12,7 @@ import {
     PropertyProvider,
     ProviderType,
     ProvidesMethod,
-    SetMultibinding
+    SetMultibinding,
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {AssistedFactoryLocator} from "./AssistedFactoryLocator"
@@ -60,7 +59,6 @@ export class DependencyGraphBuilder {
         @Assisted private readonly mapMultibindings: ReadonlyMap<[QualifiedType, ts.Type], MapMultibinding>,
         @Assisted private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
         private readonly assistedFactoryLocator: AssistedFactoryLocator,
-        private readonly propertyExtractor: PropertyExtractor,
         private readonly constructorHelper: ConstructorHelper,
         private readonly errorReporter: ErrorReporter,
         @Assisted private readonly scopeFilter?: ScopeFilter,
@@ -70,22 +68,23 @@ export class DependencyGraphBuilder {
     }
 
     buildDependencyGraph(
-        dependencies: ReadonlySet<Dependency>
+        dependencies: ReadonlySet<Dependency>,
+        given: ReadonlySet<QualifiedType> = new Set(),
     ): DependencyGraph {
-        const result = new Map<QualifiedType, DependencyProvider>()
         const missing = new Set<Dependency>()
+        const resolved: Map<QualifiedType, DependencyProvider> = new Map()
 
         const todo: Dependency[] = Array.from(dependencies)
 
         let next: Dependency | undefined
         while (next = todo.shift()) { // eslint-disable-line
             const boundType = this.typeResolver.resolveBoundType(next.type)
-            if (result.has(boundType)) continue
+            if (given.has(boundType) || resolved.has(boundType)) continue
 
             const providerResult = this.getProvider(boundType)
             if (providerResult) {
                 const {provider, dependencies} = providerResult
-                if (provider !== undefined) result.set(boundType, provider)
+                if (provider !== undefined) resolved.set(boundType, provider)
                 if (dependencies !== undefined) todo.push(...dependencies)
             } else {
                 missing.add(next)
@@ -93,15 +92,15 @@ export class DependencyGraphBuilder {
         }
 
         for (const dep of dependencies) {
-            this.assertNoCycles(dep.type, result)
+            this.assertNoCycles(dep.type, resolved)
         }
 
         for (const dep of dependencies) {
             if (!dep.optional) {
-                const provider = result.get(dep.type)
+                const provider = resolved.get(dep.type)
                 if (provider) {
                     const missing = Array.from(provider.dependencies)
-                        .map(it => result.get(it))
+                        .map(it => resolved.get(it))
                         .filterNotNull()
                         .filter(it => it.providerType === ProviderType.PROPERTY && it.optional)
                     if (missing.length > 0) {
@@ -112,7 +111,7 @@ export class DependencyGraphBuilder {
         }
 
         return {
-            resolved: result,
+            resolved,
             missing,
         }
     }

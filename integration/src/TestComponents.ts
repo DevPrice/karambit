@@ -97,6 +97,9 @@ export class ParentClass implements ParentClassInterface {
 
 export const childInstance = new ChildClass()
 
+const ChildScope = Scope()
+
+@ChildScope
 export class ChildComponent {
 
     readonly childClass: ChildClass = childInstance
@@ -116,6 +119,12 @@ export class SubcomponentModule {
     static provideSum(values: number[]): number {
         return values.reduce((l, r) => l + r, 0)
     }
+}
+
+@Inject
+@ChildScope
+export class NestedWithParentProvidedArg {
+    constructor(readonly parentClass: ParentClass, readonly dep: number) { }
 }
 
 export interface GrandChildDependency { }
@@ -138,6 +147,7 @@ export abstract class GrandChildSubcomponent {
     constructor(@BindsInstance dep: GrandChildDependency) { }
 
     abstract readonly grandChildClass: GrandChildClass
+    abstract readonly newClass: NestedWithParentProvidedArg
 }
 
 export interface ChildSubcomponentInterface {
@@ -146,6 +156,7 @@ export interface ChildSubcomponentInterface {
     readonly grandChildSubcomponentFactory: (dep: GrandChildDependency) => GrandChildSubcomponent
 }
 
+@ChildScope
 @Subcomponent({modules: [SubcomponentModule], subcomponents: [GrandChildSubcomponent]})
 export abstract class ChildSubcomponent implements ChildSubcomponentInterface {
 

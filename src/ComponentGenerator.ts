@@ -324,8 +324,8 @@ export class ComponentGenerator {
             .map(subcomponentFactoryLocator.asSubcomponentFactory)
             .filterNotNull()
             .distinctBy(it => it.subcomponentType)
-        const canBind = (type: QualifiedType) => {
-            return graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
+        const canBind = (type: QualifiedType, given: ReadonlySet<QualifiedType>) => {
+            return graphBuilder.buildDependencyGraph(new Set([{type, optional: false}]), given).missing.size === 0
         }
         const generatedSubcomponents = subcomponents.map(it =>
             this.generateSubcomponent(it, componentIdentifier, typeResolver, componentScope ? new Map([[componentScope, componentType.symbol.name]]) : new Map(), canBind)
@@ -387,7 +387,7 @@ export class ComponentGenerator {
         parentType: ts.EntityName,
         resolver: TypeResolver,
         ancestorScopes: ReadonlyMap<ts.Symbol, string>,
-        parentCanBind: (type: QualifiedType) => boolean,
+        parentCanBind: (type: QualifiedType, given: ReadonlySet<QualifiedType>) => boolean,
     ): GeneratedSubcomponent {
         const dependencyMap = this.getDependencyMap(factory.declaration)
         const subcomponentScope = this.nodeDetector.getScope(factory.declaration)
@@ -408,7 +408,7 @@ export class ComponentGenerator {
             mapMultibindings,
             subcomponentFactoryLocator,
             {filterOnly: scope},
-            parentCanBind,
+            type => parentCanBind(type, new Set()),
         )
         const graph = graphBuilder.buildDependencyGraph(new Set(rootDependencies))
 
@@ -423,8 +423,8 @@ export class ComponentGenerator {
         if (duplicateScope) {
             this.errorReporter.reportDuplicateScope(subcomponentName, duplicateScope)
         }
-        const graphResolver = (type: QualifiedType) => {
-            return parentCanBind(type) || graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
+        const graphResolver = (type: QualifiedType, given: ReadonlySet<QualifiedType>) => {
+            return parentCanBind(type, new Set([...given, ...graph.resolved.keys()])) || graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
         }
         const generatedSubcomponents = subcomponents.map(it =>
             this.generateSubcomponent(it, subcomponentIdentifier, typeResolver, scope ? new Map([...ancestorScopes.entries(), [scope, subcomponentName]]) : ancestorScopes, graphResolver)
@@ -442,8 +442,9 @@ export class ComponentGenerator {
             mergedGraph.resolved,
         )
 
+        const resolvedTypes = new Set(mergedGraph.resolved.keys())
         const missing = Array.from(mergedGraph.missing.keys())
-        const missingRequired = missing.filter(it => !it.optional && !parentCanBind(it.type))
+        const missingRequired = missing.filter(it => !it.optional && !parentCanBind(it.type, resolvedTypes))
             .map(it => it.type)
 
         if (missingRequired.length > 0) {
@@ -451,7 +452,7 @@ export class ComponentGenerator {
         }
 
         const missingOptionals: [QualifiedType, ParentProvider][] = missing.map(it => {
-            return [it.type, {providerType: ProviderType.PARENT, type: it.type, optional: !parentCanBind(it.type)}]
+            return [it.type, {providerType: ProviderType.PARENT, type: it.type, optional: !parentCanBind(it.type, resolvedTypes)}]
         })
         const generatedDeps = new Map(
             Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals)
