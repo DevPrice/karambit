@@ -75,11 +75,6 @@
     ],
     "extensionsToTreatAsEsm": [
       ".ts"
-    ],
-    "globals": {
-      "ts-jest": {
-        "useEsm": true
-      }
-    }
+    ]
   }
 }
