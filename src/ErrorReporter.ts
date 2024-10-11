@@ -10,7 +10,7 @@ import {
     isProvidesMethod,
     isSubcomponentFactory,
     ProviderType,
-    ProvidesMethod
+    ProvidesMethod,
 } from "./Providers"
 import {filterTree, printTreeMap} from "./Util"
 import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
@@ -31,6 +31,8 @@ export enum KarambitErrorScope {
     BINDING_CYCLE = "BindingCycle",
 }
 
+type ErrorContext = ts.Node | ts.Node[]
+
 @Inject
 @Reusable
 export class ErrorReporter {
@@ -43,24 +45,24 @@ export class ErrorReporter {
     reportCompileTimeConstantRequired(context: ts.Node, identifierName: string): never {
         ErrorReporter.fail(
             KarambitErrorScope.PARSE,
-            `'${identifierName}' must be a compile-time constant (array literal)!\n\n${nodeForDisplay(context)}\n`,
-            this.component
+            addContext(`'${identifierName}' must be a compile-time constant (array literal)!`, context),
+            this.component,
         )
     }
 
-    reportComponentPropertyMustBeReadOnly(property: ts.Node): never {
+    reportComponentPropertyMustBeReadOnly(context: ErrorContext): never {
         ErrorReporter.fail(
             KarambitErrorScope.PARSE,
-            `Abstract component properties must be read-only!\n\n${nodeForDisplay(property)}\n`,
-            this.component
+            addContext("Abstract component properties must be read-only!", context),
+            this.component,
         )
     }
 
-    reportComponentDependencyMayNotBeOptional(property: ts.Node): never {
+    reportComponentDependencyMayNotBeOptional(context: ErrorContext): never {
         ErrorReporter.fail(
             KarambitErrorScope.PARSE,
-            `Non-instance dependencies may not be optional!\n\n${nodeForDisplay(property)}\n`,
-            this.component
+            addContext("Non-instance dependencies may not be optional!", context),
+            this.component,
         )
     }
 
@@ -72,7 +74,7 @@ export class ErrorReporter {
         ErrorReporter.fail(
             KarambitErrorScope.INVALID_SCOPE,
             `Subcomponent may not share a scope with an ancestor! ${subcomponentName} has the same scope as its ancestor ${ancestorName}.\n`,
-            this.component
+            this.component,
         )
     }
 
@@ -80,42 +82,47 @@ export class ErrorReporter {
         const type = isProvidesMethod(provider) ? provider.type : createQualifiedType({type: provider.type})
         ErrorReporter.fail(
             KarambitErrorScope.INVALID_SCOPE,
-            `Invalid scope for type ${qualifiedTypeToString(type)}! ` +
-            `Got: ${provider.scope?.name ?? "no scope"}, expected: ${expected?.name ?? "no scope"}.\n\n${providerForDisplay(provider)}\n`,
+            addContext(
+                `Invalid scope for type ${qualifiedTypeToString(type)}! ` +
+                `Got: ${provider.scope?.name ?? "no scope"}, expected: ${expected?.name ?? "no scope"}.\n`,
+                provider.declaration,
+            ),
             this.component
         )
     }
 
-    reportBindingMustBeAssignable(context: ts.Node, parameterType: ts.Type, returnType: ts.Type): never {
+    reportBindingMustBeAssignable(context: ErrorContext, parameterType: ts.Type, returnType: ts.Type): never {
         ErrorReporter.fail(
             KarambitErrorScope.INVALID_BINDING,
-            "Binding parameter must be assignable to the return type! " +
-            `${this.typeChecker.typeToString(parameterType)} is not assignable to ${this.typeChecker.typeToString(returnType)}\n\n` +
-            nodeForDisplay(context) + "\n",
+            addContext(
+                "Binding parameter must be assignable to the return type! " +
+                `${this.typeChecker.typeToString(parameterType)} is not assignable to ${this.typeChecker.typeToString(returnType)}`,
+                context,
+            ),
             this.component
         )
     }
 
-    reportTypeBoundToSelf(context: ts.Node): never {
+    reportTypeBoundToSelf(context: ErrorContext): never {
         ErrorReporter.fail(
             KarambitErrorScope.INVALID_BINDING,
-            "Cannot bind a type to itself!\n\n" + nodeForDisplay(context) + "\n",
+            addContext("Cannot bind a type to itself!", context),
             this.component
         )
     }
 
-    reportBindingNotAbstract(context: ts.Node): never {
+    reportBindingNotAbstract(context: ErrorContext): never {
         ErrorReporter.fail(
             KarambitErrorScope.INVALID_BINDING,
-            "Binding must be abstract!\n\n" + nodeForDisplay(context) + "\n",
+            addContext("Binding must be abstract!", context),
             this.component
         )
     }
 
-    reportInvalidBindingArguments(context: ts.Node): never {
+    reportInvalidBindingArguments(context: ErrorContext): never {
         ErrorReporter.fail(
             KarambitErrorScope.INVALID_BINDING,
-            "Binding signature must have exactly one argument!\n\n" + nodeForDisplay(context) + "\n",
+            addContext("Binding signature must have exactly one argument!", context),
             this.component
         )
     }
@@ -143,10 +150,8 @@ export class ErrorReporter {
             : parentProvider.type
         ErrorReporter.fail(
             KarambitErrorScope.MISSING_PROVIDER,
-            `Required type(s) of ${qualifiedTypeToString(parentType)} may not be provided by optional binding(s): \n\n` +
-            parentDeclarationContext + "\n\n" +
-            declarations.map(nodeForDisplay).join("\n"),
-            this.component
+            addContext(`Required type(s) of ${qualifiedTypeToString(parentType)} may not be provided by optional binding(s)!\n\n${parentDeclarationContext}`, declarations),
+            this.component,
         )
     }
 
@@ -155,7 +160,7 @@ export class ErrorReporter {
             KarambitErrorScope.DUPLICATE_PROVIDERS,
             `${qualifiedTypeToString(type)} is provided multiple times!\n\n` +
             providers.map(providerForDisplay).filterNotNull().map(it => `provided by:\n${it}\n`).join("\n") + "\n",
-            this.component
+            this.component,
         )
     }
 
@@ -164,7 +169,7 @@ export class ErrorReporter {
             KarambitErrorScope.DUPLICATE_BINDINGS,
             `${qualifiedTypeToString(type)} is bound multiple times!\n\n` +
             bindings.map(it => it.declaration).map(nodeForDisplay).filterNotNull().map(it => it.toString()).join("\n\n") + "\n",
-            this.component
+            this.component,
         )
     }
 
@@ -173,7 +178,7 @@ export class ErrorReporter {
             KarambitErrorScope.DEPENDENCY_CYCLE,
             `${qualifiedTypeToString(type)} causes a dependency cycle (circular dependency)!\n\n` +
             `${chain.map(qualifiedTypeToString).join(" -> ")}\n`,
-            this.component
+            this.component,
         )
     }
 
@@ -182,21 +187,20 @@ export class ErrorReporter {
             KarambitErrorScope.BINDING_CYCLE,
             "Binding cycle detected!\n\n" +
             `${chain.map(qualifiedTypeToString).join(" -> ")}\n`,
-            this.component
+            this.component,
         )
     }
 
     reportInternalFailure(message: string, context?: ts.Node): never {
-        const messageWithContext = context ? `${message}\n\n${nodeForDisplay(context)}` : message
-        ErrorReporter.reportInternalFailure(messageWithContext, this.component)
+        ErrorReporter.reportInternalFailure(addContext(message, context), this.component)
     }
 
     static reportParseFailed(message: string, component?: ts.ClassLikeDeclaration): never {
         ErrorReporter.fail(KarambitErrorScope.PARSE, message, component)
     }
 
-    static reportInternalFailure(message: string, component?: ts.ClassLikeDeclaration): never {
-        ErrorReporter.fail(KarambitErrorScope.INTERNAL, message, component)
+    static reportInternalFailure(message: string, context?: ErrorContext, component?: ts.ClassLikeDeclaration): never {
+        ErrorReporter.fail(KarambitErrorScope.INTERNAL, addContext(message, context), component)
     }
 
     static fail(scope: KarambitErrorScope, message: string, component?: ts.ClassLikeDeclaration): never {
@@ -209,6 +213,18 @@ export class KarambitError extends Error {
     constructor(description: string, readonly scope: KarambitErrorScope, component?: ts.ClassLikeDeclaration) {
         super(`${chalk.red(`[Karambit/${scope}]`)} ${component && component.name ? `${component.name.getText()}: ` : ""}${description}`)
     }
+}
+
+function addContext(message: string, context?: ErrorContext): string {
+    if (Array.isArray(context)) {
+        if (context.length === 1) {
+            return `${message}\n\n${nodeForDisplay(context[0])}\n`
+        }
+        return `${message}\n\n${context.map(nodeForDisplay).join("\n\n")}\n`
+    } else if (context) {
+        return `${message}\n\n${nodeForDisplay(context)}\n`
+    }
+    return message
 }
 
 function providerForDisplay(provider: InstanceProvider): string | undefined {
