@@ -1,7 +1,7 @@
 import * as ts from "typescript"
 import {NameGenerator} from "./NameGenerator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
-import {Binding, ModuleLocator} from "./ModuleLocator"
+import {ModuleLocator} from "./ModuleLocator"
 import {Dependency, DependencyGraph, DependencyGraphBuilderFactory} from "./DependencyGraphBuilder"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {TypeResolver, TypeResolverFactory} from "./TypeResolver"
@@ -11,20 +11,18 @@ import {PropertyExtractor} from "./PropertyExtractor"
 import {
     InstanceProvider,
     isSubcomponentFactory,
-    MapMultibinding,
     ParentProvider,
     PropertyProvider,
     ProviderType,
     ProvidesMethod,
-    SetMultibinding,
     SubcomponentFactory,
     UndefinedProvider,
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {Inject, Reusable} from "karambit-decorators"
-import {TupleMap} from "./Util"
 import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"
 import {isTypeNullable} from "./TypescriptUtil"
+import {ProviderLocator} from "./ProviderLocator"
 
 interface GeneratedSubcomponent {
     readonly name: string
@@ -38,13 +36,6 @@ interface GeneratedSubcomponent {
 export interface GeneratedComponent {
     readonly classDeclaration: ts.ClassDeclaration
     readonly requiresUnsetSymbolDeclaration: boolean
-}
-
-export interface ModuleProviders {
-    factories: ReadonlyMap<QualifiedType, ProvidesMethod>
-    bindings: Iterable<Binding>
-    setMultibindings: ReadonlyMap<QualifiedType, SetMultibinding>
-    mapMultibindings: ReadonlyMap<[QualifiedType, ts.Type], MapMultibinding>
 }
 
 export interface ComponentGeneratorDependencies {
@@ -70,54 +61,10 @@ export class ComponentGenerator {
         private readonly constructorHelper: ConstructorHelper,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly errorReporter: ErrorReporter,
+        private readonly providerLocator: ProviderLocator,
         private readonly component: ts.ClassDeclaration,
         private readonly dependencyGraphBuilderFactory: DependencyGraphBuilderFactory,
     ) { }
-
-    private getDependencyMap(component: ts.ClassLikeDeclaration): ReadonlyMap<QualifiedType, PropertyProvider> {
-        const dependencyParams = this.constructorHelper.getConstructorParamsForDeclaration(component) ?? []
-        const dependencyMap = new Map<QualifiedType, PropertyProvider>()
-        dependencyParams.forEach(param => {
-            const name = this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)
-            const type = param.type
-            const isInstanceBinding = param.decorators.some(this.nodeDetector.isBindsInstanceDecorator)
-            if (isInstanceBinding) {
-                const provider: PropertyProvider = {
-                    providerType: ProviderType.PROPERTY,
-                    declaration: param.declaration,
-                    optional: param.optional,
-                    name,
-                    type,
-                }
-                const existing = dependencyMap.get(type)
-                if (existing) throw this.errorReporter.reportDuplicateProviders(type, [existing, provider])
-                dependencyMap.set(type, provider)
-            } else {
-                // TODO: Handle non-objects here as an error
-                // if (!(type.type.flags & ts.TypeFlags.Object)) throw Error("???")
-
-                // TODO: Maybe treat this as a bag of optional types instead of failing
-                if (param.optional) this.errorReporter.reportComponentDependencyMayNotBeOptional(param.declaration)
-
-                this.propertyExtractor.getDeclaredPropertiesForType(type.type).forEach(property => {
-                    const propertyType = this.propertyExtractor.typeFromPropertyDeclaration(property)
-                    const propertyName = property.name.getText()
-                    const provider: PropertyProvider = {
-                        providerType: ProviderType.PROPERTY,
-                        declaration: param.declaration,
-                        type: propertyType,
-                        optional: property.questionToken !== undefined,
-                        name,
-                        propertyName,
-                    }
-                    const existing = dependencyMap.get(type)
-                    if (existing) throw this.errorReporter.reportDuplicateProviders(type, [existing, provider])
-                    dependencyMap.set(propertyType, provider)
-                })
-            }
-        })
-        return dependencyMap
-    }
 
     private getRootDependencies(componentType: ts.Type): RootDependency[] {
         const unimplementedMethods = this.propertyExtractor.getUnimplementedAbstractMethods(componentType)
@@ -137,158 +84,12 @@ export class ComponentGenerator {
             })
     }
 
-    private getFactoriesAndBindings(
-        componentDecorator: ts.Decorator,
-        componentScope?: ts.Symbol
-    ): ModuleProviders {
-        const installedModules = this.moduleLocator.getInstalledModules(componentDecorator)
-        const factories = new Map<QualifiedType, ProvidesMethod>()
-        const setMultibindings = new Map<QualifiedType, SetMultibinding>()
-        const mapMultibindings = new TupleMap<[QualifiedType, ts.Type], MapMultibinding>()
-        installedModules.flatMap(module => module.factories).forEach(providesMethod => {
-            if (providesMethod.scope && !this.nodeDetector.isReusableScope(providesMethod.scope) && providesMethod.scope != componentScope) {
-                this.errorReporter.reportInvalidScope(providesMethod, componentScope)
-            }
-            const intoSetDecorator = providesMethod.declaration.modifiers?.find(this.nodeDetector.isIntoSetDecorator)
-            const intoMapDecorator = providesMethod.declaration.modifiers?.find(this.nodeDetector.isIntoMapDecorator)
-            if (intoSetDecorator) {
-                const existing: SetMultibinding = setMultibindings.get(providesMethod.type) ?? {
-                    providerType: ProviderType.SET_MULTIBINDING,
-                    type: providesMethod.type,
-                    elementProviders: [],
-                }
-                const optional = this.nodeDetector.getBooleanPropertyNode(intoSetDecorator, "optional") ?? false
-                if (optional) this.errorReporter.reportParseFailed("Optional multibindings not currently supported!", intoSetDecorator)
-                const elementProviderType = createQualifiedType({...providesMethod.type, discriminator: Symbol("element")})
-                existing.elementProviders.push({
-                    type: elementProviderType,
-                    optional,
-                    isIterableProvider: false,
-                })
-                setMultibindings.set(providesMethod.type, existing)
-                const existingFactory = factories.get(elementProviderType)
-                if (existingFactory) throw this.errorReporter.reportDuplicateProviders(elementProviderType, [existingFactory, providesMethod])
-                factories.set(elementProviderType, {...providesMethod, type: elementProviderType})
-            } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isElementsIntoSetDecorator)) {
-                const iterableType = this.nodeDetector.isIterable(providesMethod.type.type)
-                if (!iterableType) this.errorReporter.reportParseFailed("@ElementsIntoSet provider must return an iterable!", providesMethod.declaration)
-                const qualifiedType = createQualifiedType({...providesMethod.type, type: iterableType})
-                const existing: SetMultibinding = setMultibindings.get(qualifiedType) ?? {
-                    providerType: ProviderType.SET_MULTIBINDING,
-                    type: providesMethod.type,
-                    elementProviders: [],
-                }
-                const elementsProviderType = createQualifiedType({...qualifiedType, discriminator: Symbol("element")})
-                existing.elementProviders.push({
-                    type: elementsProviderType,
-                    optional: false,
-                    isIterableProvider: true,
-                })
-                setMultibindings.set(providesMethod.type, existing)
-                const existingFactory = factories.get(elementsProviderType)
-                if (existingFactory) throw this.errorReporter.reportDuplicateProviders(elementsProviderType, [existingFactory, providesMethod])
-                factories.set(elementsProviderType, {...providesMethod, type: elementsProviderType})
-            } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isElementsIntoMapDecorator)) {
-                const iterableType = this.nodeDetector.isIterable(providesMethod.type.type)
-                if (!iterableType) this.errorReporter.reportParseFailed("@ElementsIntoMap provider must return an iterable!", providesMethod.declaration)
-
-                const qualifiedType = createQualifiedType({...providesMethod.type, type: iterableType})
-                const info = this.nodeDetector.getMapTupleBindingInfo(qualifiedType)
-                if (!info) this.errorReporter.reportParseFailed("@ElementsIntoMap provider must return an iterable of a tuple of size 2.", providesMethod.declaration)
-
-                const existing: MapMultibinding = mapMultibindings.get([info.valueType, info.keyType]) ?? {
-                    providerType: ProviderType.MAP_MULTIBINDING,
-                    type: info.valueType,
-                    entryProviders: [],
-                }
-                const entriesProviderType = createQualifiedType({...qualifiedType, discriminator: Symbol("entry")})
-                existing.entryProviders.push({
-                    type: entriesProviderType,
-                    optional: false,
-                    isIterableProvider: true,
-                })
-                mapMultibindings.set([info.valueType, info.keyType], existing)
-                const existingFactory = factories.get(entriesProviderType)
-                if (existingFactory) throw this.errorReporter.reportDuplicateProviders(entriesProviderType, [existingFactory, providesMethod])
-                factories.set(entriesProviderType, {...providesMethod, type: entriesProviderType})
-            } else if (intoMapDecorator) {
-                const info = this.nodeDetector.getMapBindingInfo(providesMethod.type, providesMethod.declaration)
-                if (!info) this.errorReporter.reportParseFailed("@IntoMap provider must have @MapKey or return tuple of size 2.", providesMethod.declaration)
-
-                const existing: MapMultibinding = mapMultibindings.get([info.valueType, info.keyType]) ?? {
-                    providerType: ProviderType.MAP_MULTIBINDING,
-                    type: info.valueType,
-                    entryProviders: [],
-                }
-                const optional = this.nodeDetector.getBooleanPropertyNode(intoMapDecorator, "optional") ?? false
-                if (optional) this.errorReporter.reportParseFailed("Optional multibindings not currently supported!", intoMapDecorator)
-                const entryProviderType = createQualifiedType({...providesMethod.type, discriminator: Symbol("entry")})
-                existing.entryProviders.push({
-                    type: entryProviderType,
-                    key: info.expression,
-                    optional,
-                    isIterableProvider: false,
-                })
-                mapMultibindings.set([info.valueType, info.keyType], existing)
-                const existingFactory = factories.get(entryProviderType)
-                if (existingFactory) throw this.errorReporter.reportDuplicateProviders(entryProviderType, [existingFactory, providesMethod])
-                factories.set(entryProviderType, {...providesMethod, type: entryProviderType})
-            } else {
-                const existing = factories.get(providesMethod.type)
-                if (existing) throw this.errorReporter.reportDuplicateProviders(providesMethod.type, [existing, providesMethod])
-                factories.set(providesMethod.type, providesMethod)
-            }
-        })
-        const bindings: Binding[] = []
-        installedModules.flatMap(it => it.bindings).forEach(binding => {
-            if (binding.declaration.modifiers?.some(this.nodeDetector.isIntoSetDecorator)) {
-                const existing: SetMultibinding = setMultibindings.get(binding.returnType) ?? {
-                    providerType: ProviderType.SET_MULTIBINDING,
-                    type: binding.returnType,
-                    elementProviders: [],
-                }
-                const elementProviderType = createQualifiedType({...binding.returnType, discriminator: Symbol("element")})
-                existing.elementProviders.push({
-                    type: binding.paramType,
-                    optional: false,
-                    isIterableProvider: false,
-                })
-                setMultibindings.set(binding.returnType, existing)
-
-                const entryBinding: Binding = {...binding, returnType: elementProviderType}
-                bindings.push(entryBinding)
-            } else if (binding.declaration.modifiers?.some(this.nodeDetector.isIntoMapDecorator)) {
-                const info = this.nodeDetector.getMapBindingInfo(binding.returnType, binding.declaration)
-                if (!info) this.errorReporter.reportParseFailed("@IntoMap binding must have @MapKey or return tuple of size 2.", binding.declaration)
-                const existing: MapMultibinding = mapMultibindings.get([info.valueType, info.keyType]) ?? {
-                    providerType: ProviderType.MAP_MULTIBINDING,
-                    type: info.valueType,
-                    entryProviders: [],
-                }
-                const entryProviderType = createQualifiedType({...binding.returnType, discriminator: Symbol("entry")})
-                existing.entryProviders.push({
-                    type: binding.paramType,
-                    optional: false,
-                    isIterableProvider: false,
-                    key: info.expression,
-                })
-                mapMultibindings.set([info.valueType, info.keyType], existing)
-
-                const entryBinding: Binding = {...binding, returnType: entryProviderType}
-                bindings.push(entryBinding)
-            } else {
-                bindings.push(binding)
-            }
-        })
-        return {factories, bindings, setMultibindings, mapMultibindings}
-    }
-
-    updateComponent(): GeneratedComponent {
+    generateComponent(): GeneratedComponent {
         const component = this.component
         const componentDecorator = component.modifiers?.find(this.nodeDetector.isComponentDecorator)!
         const componentScope = this.nodeDetector.getScope(component)
-        const {factories, bindings, setMultibindings, mapMultibindings} = this.getFactoriesAndBindings(componentDecorator, componentScope)
-        const dependencyMap = this.getDependencyMap(this.component)
+        const {factories, bindings, setMultibindings, mapMultibindings} = this.providerLocator.findFactoriesAndBindings(componentDecorator, componentScope)
+        const dependencyMap = this.providerLocator.findPropertyProviders(this.component)
 
         const componentType = this.typeChecker.getTypeAtLocation(component)
 
@@ -389,9 +190,9 @@ export class ComponentGenerator {
         ancestorScopes: ReadonlyMap<ts.Symbol, string>,
         parentCanBind: (type: QualifiedType, given: ReadonlySet<QualifiedType>) => boolean,
     ): GeneratedSubcomponent {
-        const dependencyMap = this.getDependencyMap(factory.declaration)
+        const dependencyMap = this.providerLocator.findPropertyProviders(factory.declaration)
         const subcomponentScope = this.nodeDetector.getScope(factory.declaration)
-        const {factories, bindings, setMultibindings, mapMultibindings} = this.getFactoriesAndBindings(factory.decorator, subcomponentScope)
+        const {factories, bindings, setMultibindings, mapMultibindings} = this.providerLocator.findFactoriesAndBindings(factory.decorator, subcomponentScope)
         const typeResolver = TypeResolver.merge(resolver, bindings)
         const rootDependencies = this.getRootDependencies(factory.subcomponentType.type)
         if (rootDependencies.length === 0) this.errorReporter.reportParseFailed("Subcomponent exposes no properties! A Subcomponent must have at least one abstract property for Karambit to implement!", factory.declaration)

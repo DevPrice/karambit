@@ -20,7 +20,7 @@ export abstract class ComponentGenerationModule {
     @Provides
     @Reusable
     static provideGeneratedComponent(generator: ComponentGenerator): GeneratedComponent {
-        return generator.updateComponent()
+        return generator.generateComponent()
     }
 }
 
