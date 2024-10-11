@@ -22,14 +22,14 @@ import {ErrorReporter} from "./ErrorReporter"
 import {Inject, Reusable} from "karambit-decorators"
 import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"
 import {isTypeNullable} from "./TypescriptUtil"
-import {ProviderLocator} from "./ProviderLocator"
+import {ModuleProviders, ProviderLocator} from "./ProviderLocator"
 
 interface GeneratedSubcomponent {
     readonly name: string
     readonly classElement: ts.ClassElement
     readonly graph: DependencyGraph
     readonly type: QualifiedType
-    readonly rootDependencies: Iterable<Dependency>
+    readonly exposedProperties: Iterable<Dependency>
     readonly requiresUnsetSymbolDeclaration: boolean
 }
 
@@ -45,6 +45,16 @@ export interface ComponentGeneratorDependencies {
 export type ComponentGeneratorDependenciesFactory = (componentDeclaration: ts.ClassDeclaration) => ComponentGeneratorDependencies
 
 type RootDependency = Dependency & {name: ts.PropertyName, typeNode?: ts.TypeNode}
+type ComponentScope = ts.Symbol
+
+interface ComponentDefinition extends ModuleProviders {
+    declaration: ts.ClassLikeDeclaration
+    scope?: ComponentScope
+    preferredClassName?: string
+    providedProperties: ReadonlyMap<QualifiedType, PropertyProvider>
+    exposedProperties: RootDependency[]
+    subcomponents: ts.Symbol[]
+}
 
 @Inject
 @Reusable
@@ -54,15 +64,15 @@ export class ComponentGenerator {
         private readonly typeChecker: ts.TypeChecker,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly nameGenerator: NameGenerator,
-        private readonly componentDeclarationBuilderFactory: ComponentDeclarationBuilderFactory,
-        private readonly subcomponentFactoryLocatorFactory: SubcomponentFactoryLocatorFactory,
-        private readonly typeResolverFactory: TypeResolverFactory,
         private readonly moduleLocator: ModuleLocator,
         private readonly constructorHelper: ConstructorHelper,
         private readonly propertyExtractor: PropertyExtractor,
         private readonly errorReporter: ErrorReporter,
         private readonly providerLocator: ProviderLocator,
         private readonly component: ts.ClassDeclaration,
+        private readonly componentDeclarationBuilderFactory: ComponentDeclarationBuilderFactory,
+        private readonly subcomponentFactoryLocatorFactory: SubcomponentFactoryLocatorFactory,
+        private readonly typeResolverFactory: TypeResolverFactory,
         private readonly dependencyGraphBuilderFactory: DependencyGraphBuilderFactory,
     ) { }
 
@@ -86,37 +96,37 @@ export class ComponentGenerator {
 
     generateComponent(): GeneratedComponent {
         const component = this.component
-        const componentDecorator = component.modifiers?.find(this.nodeDetector.isComponentDecorator)!
-        const componentScope = this.nodeDetector.getScope(component)
-        const {factories, bindings, setMultibindings, mapMultibindings} = this.providerLocator.findFactoriesAndBindings(componentDecorator, componentScope)
-        const dependencyMap = this.providerLocator.findPropertyProviders(this.component)
+        const componentDecorator = component.modifiers?.find(this.nodeDetector.isComponentDecorator)
+        if (!componentDecorator) {
+            this.errorReporter.reportInternalFailure("Can't generate implementation of undecorated component!", component)
+        }
+        const definition = this.getComponentDefinition(component, componentDecorator)
+        if (definition.exposedProperties.length === 0) {
+            this.errorReporter.reportParseFailed(
+                "Component exposes no properties! A Component must have at least one abstract property for Karambit to implement!",
+                component,
+            )
+        }
 
         const componentType = this.typeChecker.getTypeAtLocation(component)
+        const componentIdentifier = this.nameGenerator.getComponentIdentifier(componentType, definition.preferredClassName)
+        const subcomponentFactoryLocator = this.subcomponentFactoryLocatorFactory(new Set(definition.subcomponents))
 
-        const preferredClassName = this.moduleLocator.getGeneratedClassName(componentDecorator)
-        const componentIdentifier = this.nameGenerator.getComponentIdentifier(componentType, preferredClassName)
-
-        const rootDependencies = this.getRootDependencies(componentType)
-        if (rootDependencies.length === 0) this.errorReporter.reportParseFailed("Component exposes no properties! A Component must have at least one abstract property for Karambit to implement!", component)
-
-        const typeResolver = this.typeResolverFactory(bindings)
-        const subcomponentFactoryLocator = this.subcomponentFactoryLocatorFactory(
-            new Set(this.moduleLocator.getInstalledSubcomponents(componentDecorator))
-        )
+        const typeResolver = this.typeResolverFactory(definition.bindings)
         const graphBuilder = this.dependencyGraphBuilderFactory(
             typeResolver,
-            dependencyMap,
-            factories,
-            setMultibindings,
-            mapMultibindings,
+            definition.providedProperties,
+            definition.factories,
+            definition.setMultibindings,
+            definition.mapMultibindings,
             subcomponentFactoryLocator,
         )
-        const graph = graphBuilder.buildDependencyGraph(new Set(rootDependencies))
+        const graph = graphBuilder.buildDependencyGraph(new Set(definition.exposedProperties))
         const missingDependencies = Array.from(graph.missing.keys()).filter(it => !it.optional)
         if (missingDependencies.length > 0) {
             this.errorReporter.reportMissingProviders(
                 missingDependencies.map(it => it.type),
-                {type: createQualifiedType({type: componentType, qualifier: internalQualifier}), rootDependencies},
+                {type: createQualifiedType({type: componentType, qualifier: internalQualifier}), exposedProperties: definition.exposedProperties},
                 graph.resolved
             )
         }
@@ -129,18 +139,18 @@ export class ComponentGenerator {
             return graphBuilder.buildDependencyGraph(new Set([{type, optional: false}]), given).missing.size === 0
         }
         const generatedSubcomponents = subcomponents.map(it =>
-            this.generateSubcomponent(it, componentIdentifier, typeResolver, componentScope ? new Map([[componentScope, componentType.symbol.name]]) : new Map(), canBind)
+            this.generateSubcomponent(it, componentIdentifier, typeResolver, definition.scope ? new Map([[definition.scope, componentType.symbol.name]]) : new Map(), canBind)
         )
 
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
-        const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...rootDependencies, ...missingSubcomponentDependencies]))
+        const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...definition.exposedProperties, ...missingSubcomponentDependencies]))
         generatedSubcomponents.forEach(it => {
-            this.verifyNoDuplicates(graph, it.graph, dependencyMap, factories)
+            this.verifyNoDuplicates(graph, it.graph, definition.providedProperties, definition.factories)
             const missingSubcomponentDependencies = Array.from(it.graph.missing.keys()).filter(it => !it.optional && !mergedGraph.resolved.has(it.type))
             if (missingSubcomponentDependencies.length > 0) {
                 this.errorReporter.reportMissingProviders(
                     missingSubcomponentDependencies.map(it => it.type),
-                    {type: it.type, rootDependencies: it.rootDependencies},
+                    {type: it.type, exposedProperties: it.exposedProperties},
                     graph.resolved
                 )
             }
@@ -151,7 +161,7 @@ export class ComponentGenerator {
         if (missingRequired.length > 0) {
             this.errorReporter.reportMissingProviders(
                 missingRequired.map(it => it.type),
-                {type: createQualifiedType({type: componentType, qualifier: internalQualifier}), rootDependencies},
+                {type: createQualifiedType({type: componentType, qualifier: internalQualifier}), exposedProperties: definition.exposedProperties},
                 graph.resolved
             )
         }
@@ -173,8 +183,8 @@ export class ComponentGenerator {
             declaration: component,
             constructorParams: this.constructorHelper.getConstructorParamsForDeclaration(component) ?? [],
             members: [
-                ...rootDependencies.map(it => builder.declareComponentProperty(component, it)),
-                ...Array.from(generatedDeps.values()).flatMap(it => builder.getProviderDeclaration(it, componentScope)),
+                ...definition.exposedProperties.map(it => builder.declareComponentProperty(component, it)),
+                ...Array.from(generatedDeps.values()).flatMap(it => builder.getProviderDeclaration(it, definition.scope)),
                 ...generatedSubcomponents.map(it => it.classElement)
             ]
         })
@@ -190,28 +200,27 @@ export class ComponentGenerator {
         ancestorScopes: ReadonlyMap<ts.Symbol, string>,
         parentCanBind: (type: QualifiedType, given: ReadonlySet<QualifiedType>) => boolean,
     ): GeneratedSubcomponent {
-        const dependencyMap = this.providerLocator.findPropertyProviders(factory.declaration)
-        const subcomponentScope = this.nodeDetector.getScope(factory.declaration)
-        const {factories, bindings, setMultibindings, mapMultibindings} = this.providerLocator.findFactoriesAndBindings(factory.decorator, subcomponentScope)
-        const typeResolver = TypeResolver.merge(resolver, bindings)
-        const rootDependencies = this.getRootDependencies(factory.subcomponentType.type)
-        if (rootDependencies.length === 0) this.errorReporter.reportParseFailed("Subcomponent exposes no properties! A Subcomponent must have at least one abstract property for Karambit to implement!", factory.declaration)
+        const definition = this.getComponentDefinition(factory.declaration, factory.decorator)
+        if (definition.exposedProperties.length === 0) {
+            this.errorReporter.reportParseFailed(
+                "Subcomponent exposes no properties! A Subcomponent must have at least one abstract property for Karambit to implement!",
+                factory.declaration,
+            )
+        }
 
-        const subcomponentFactoryLocator = this.subcomponentFactoryLocatorFactory(
-            new Set(this.moduleLocator.getInstalledSubcomponents(factory.decorator)),
-        )
-        const scope = this.nodeDetector.getScope(factory.declaration)
+        const typeResolver = TypeResolver.merge(resolver, definition.bindings)
+        const subcomponentFactoryLocator = this.subcomponentFactoryLocatorFactory(new Set(definition.subcomponents))
         const graphBuilder = this.dependencyGraphBuilderFactory(
             typeResolver,
-            dependencyMap,
-            factories,
-            setMultibindings,
-            mapMultibindings,
+            definition.providedProperties,
+            definition.factories,
+            definition.setMultibindings,
+            definition.mapMultibindings,
             subcomponentFactoryLocator,
-            {filterOnly: scope},
+            {filterOnly: definition.scope},
             type => parentCanBind(type, new Set()),
         )
-        const graph = graphBuilder.buildDependencyGraph(new Set(rootDependencies))
+        const graph = graphBuilder.buildDependencyGraph(new Set(definition.exposedProperties))
 
         const subcomponentName = factory.subcomponentType.type.symbol.name
         const subcomponentIdentifier = ts.factory.createUniqueName(subcomponentName)
@@ -220,7 +229,7 @@ export class ComponentGenerator {
             .map(subcomponentFactoryLocator.asSubcomponentFactory)
             .filterNotNull()
             .distinctBy(it => it.subcomponentType)
-        const duplicateScope = scope && ancestorScopes.get(scope)
+        const duplicateScope = definition.scope && ancestorScopes.get(definition.scope)
         if (duplicateScope) {
             this.errorReporter.reportDuplicateScope(subcomponentName, duplicateScope)
         }
@@ -228,15 +237,15 @@ export class ComponentGenerator {
             return parentCanBind(type, new Set([...given, ...graph.resolved.keys()])) || graphBuilder.buildDependencyGraph(new Set([{type, optional: false}])).missing.size === 0
         }
         const generatedSubcomponents = subcomponents.map(it =>
-            this.generateSubcomponent(it, subcomponentIdentifier, typeResolver, scope ? new Map([...ancestorScopes.entries(), [scope, subcomponentName]]) : ancestorScopes, graphResolver)
+            this.generateSubcomponent(it, subcomponentIdentifier, typeResolver, definition.scope ? new Map([...ancestorScopes.entries(), [definition.scope, subcomponentName]]) : ancestorScopes, graphResolver)
         )
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
 
         generatedSubcomponents.forEach(it => {
-            this.verifyNoDuplicates(graph, it.graph, dependencyMap, factories)
+            this.verifyNoDuplicates(graph, it.graph, definition.providedProperties, definition.factories)
         })
 
-        const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...rootDependencies, ...missingSubcomponentDependencies]))
+        const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...definition.exposedProperties, ...missingSubcomponentDependencies]))
 
         const subcomponentBuilder = this.componentDeclarationBuilderFactory(
             typeResolver,
@@ -249,7 +258,11 @@ export class ComponentGenerator {
             .map(it => it.type)
 
         if (missingRequired.length > 0) {
-            this.errorReporter.reportMissingProviders(missingRequired, {type: factory.subcomponentType, rootDependencies}, mergedGraph.resolved)
+            this.errorReporter.reportMissingProviders(
+                missingRequired,
+                {type: factory.subcomponentType, exposedProperties: definition.exposedProperties},
+                mergedGraph.resolved,
+            )
         }
 
         const missingOptionals: [QualifiedType, ParentProvider][] = missing.map(it => {
@@ -260,8 +273,8 @@ export class ComponentGenerator {
                 .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
         )
         const members = [
-            ...rootDependencies.map(it => subcomponentBuilder.declareComponentProperty(factory.declaration, it)),
-            ...Array.from(generatedDeps.values()).flatMap(it => subcomponentBuilder.getProviderDeclaration(it, scope)),
+            ...definition.exposedProperties.map(it => subcomponentBuilder.declareComponentProperty(factory.declaration, it)),
+            ...Array.from(generatedDeps.values()).flatMap(it => subcomponentBuilder.getProviderDeclaration(it, definition.scope)),
             ...generatedSubcomponents.map(it => it.classElement),
         ]
         const requiresUnsetSymbolDeclaration = generatedSubcomponents.some(it => it.requiresUnsetSymbolDeclaration)
@@ -271,8 +284,22 @@ export class ComponentGenerator {
             type: factory.subcomponentType,
             graph: mergedGraph,
             name: subcomponentName,
-            rootDependencies,
+            exposedProperties: definition.exposedProperties,
             requiresUnsetSymbolDeclaration,
+        }
+    }
+
+    private getComponentDefinition(declaration: ts.ClassLikeDeclaration, decorator: ts.Decorator): ComponentDefinition {
+        const scope = this.nodeDetector.getScope(declaration)
+        const providers = this.providerLocator.findFactoriesAndBindings(decorator, scope)
+        return {
+            ...providers,
+            declaration,
+            scope,
+            preferredClassName: this.moduleLocator.getGeneratedClassName(decorator),
+            providedProperties: this.providerLocator.findPropertyProviders(declaration),
+            exposedProperties: this.getRootDependencies(this.typeChecker.getTypeAtLocation(declaration)),
+            subcomponents: this.moduleLocator.getInstalledSubcomponents(decorator),
         }
     }
 

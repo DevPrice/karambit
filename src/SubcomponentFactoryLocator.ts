@@ -57,7 +57,7 @@ export class SubcomponentFactoryLocator {
             type: createQualifiedType({type}),
             constructorParams,
             declaration,
-            decorator
+            decorator,
         }
     }
 

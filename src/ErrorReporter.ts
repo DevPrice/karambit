@@ -20,6 +20,7 @@ import {Chalk} from "chalk"
 const chalk: Chalk = require("chalk")
 
 export enum KarambitErrorScope {
+    INTERNAL = "Internal",
     PARSE = "Parse",
     INVALID_SCOPE = "InvalidScope",
     INVALID_BINDING = "InvalidBinding",
@@ -119,9 +120,9 @@ export class ErrorReporter {
         )
     }
 
-    reportMissingProviders(missingTypes: Iterable<QualifiedType>, component: {type: QualifiedType, rootDependencies: Iterable<Dependency>}, graph: ReadonlyMap<QualifiedType, DependencyProvider>): never {
+    reportMissingProviders(missingTypes: Iterable<QualifiedType>, component: {type: QualifiedType, exposedProperties: Iterable<Dependency>}, graph: ReadonlyMap<QualifiedType, DependencyProvider>): never {
         const missingSet = new Set(missingTypes)
-        const getChildren = (item: QualifiedType) => item === component.type ? Array.from(component.rootDependencies).map(it => it.type) : graph.get(item)?.dependencies ?? []
+        const getChildren = (item: QualifiedType) => item === component.type ? Array.from(component.exposedProperties).map(it => it.type) : graph.get(item)?.dependencies ?? []
         const typeToString = (item: QualifiedType) => {
             if (missingSet.has(item)) return chalk.yellow(qualifiedTypeToString(item))
             return qualifiedTypeToString(item)
@@ -162,7 +163,7 @@ export class ErrorReporter {
         ErrorReporter.fail(
             KarambitErrorScope.DUPLICATE_BINDINGS,
             `${qualifiedTypeToString(type)} is bound multiple times!\n\n` +
-            bindings.map(it => it.declaration).map(nodeForDisplay).filterNotNull().map(it => `bound at:\n${it}\n`).join("\n") + "\n",
+            bindings.map(it => it.declaration).map(nodeForDisplay).filterNotNull().map(it => it.toString()).join("\n\n") + "\n",
             this.component
         )
     }
@@ -185,8 +186,17 @@ export class ErrorReporter {
         )
     }
 
+    reportInternalFailure(message: string, context?: ts.Node): never {
+        const messageWithContext = context ? `${message}\n\n${nodeForDisplay(context)}` : message
+        ErrorReporter.reportInternalFailure(messageWithContext, this.component)
+    }
+
     static reportParseFailed(message: string, component?: ts.ClassLikeDeclaration): never {
         ErrorReporter.fail(KarambitErrorScope.PARSE, message, component)
+    }
+
+    static reportInternalFailure(message: string, component?: ts.ClassLikeDeclaration): never {
+        ErrorReporter.fail(KarambitErrorScope.INTERNAL, message, component)
     }
 
     static fail(scope: KarambitErrorScope, message: string, component?: ts.ClassLikeDeclaration): never {
