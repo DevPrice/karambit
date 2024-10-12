@@ -1,7 +1,6 @@
 import {filterNotNull} from "./Util"
-import * as ts from "typescript"
+import type * as ts from "typescript"
 import * as Path from "path"
-import {Importer} from "./Importer"
 import {KarambitProgramComponent} from "./karambit-generated/src/Component"
 
 type ConstructorType<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> = abstract new (...args: ConstructorParameters<T>) => InstanceType<T>
@@ -37,9 +36,6 @@ export interface KarambitOptions {
 
 export function generateComponentFiles(program: ts.Program, options?: Partial<KarambitOptions>) {
     const karambitOptions = {...defaultOptions, ...options}
-    // TODO: fix injection and remove this hack
-    Importer.karambitOptions = karambitOptions
-    Importer.typeChecker = program.getTypeChecker()
     const programComponent = new KarambitProgramComponent(program, karambitOptions)
     const generatedFiles = filterNotNull(
         program.getSourceFiles().map(sourceFile => {
@@ -55,7 +51,6 @@ export function generateComponentFiles(program: ts.Program, options?: Partial<Ka
         programComponent.fileWriter.writeComponentFile(file, outputFilename)
     }
 }
-
 
 const defaultOptions: KarambitOptions = {
     sourceRoot: ".",

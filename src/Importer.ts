@@ -13,6 +13,8 @@ export class Importer {
 
     constructor(
         private readonly sourceFile: ts.SourceFile,
+        private readonly karambitOptions: KarambitOptions,
+        private readonly typeChecker: ts.TypeChecker,
     ) { }
 
     @memoized
@@ -55,7 +57,7 @@ export class Importer {
     }
 
     getExpressionForDeclaration(node: ts.Declaration): ts.Expression {
-        const type = Importer.typeChecker.getTypeAtLocation(node)!
+        const type = this.typeChecker.getTypeAtLocation(node)!
         const symbol = this.symbolForType(type)
         return this.getExpressionForSymbol(symbol)
     }
@@ -96,17 +98,14 @@ export class Importer {
         const match = nodeModuleRegex.exec(fileToImport.fileName)
         if (match) return match[1]
         const generatedFilePath = Path.join(
-            Importer.karambitOptions.outDir,
+            this.karambitOptions.outDir,
             Path.dirname(
                 Path.relative(
-                    Importer.karambitOptions.sourceRoot,
+                    this.karambitOptions.sourceRoot,
                     this.sourceFile.fileName,
                 )
             )
         )
         return Path.relative(generatedFilePath, fileToImport.fileName).replace(/\.ts$/, "")
     }
-
-    static karambitOptions: KarambitOptions
-    static typeChecker: ts.TypeChecker
 }
