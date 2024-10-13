@@ -2,13 +2,15 @@ import chalk = require("chalk")
 
 declare global {
     export interface Array<T> {
-        distinct(): T[]
         distinctBy(predicate: (item: T) => unknown): T[]
     }
 }
 
-Array.prototype.distinct = function <T> (this: Array<T>) { return distinctBy(this, it => it) }
 Array.prototype.distinctBy = function <T> (this: Array<T>, predicate: (item: T) => unknown) { return distinctBy(this, predicate) }
+
+export function identity<T>(value: T): T {
+    return value
+}
 
 export function isNotNull<T>(value: T): value is NonNullable<T> {
     return value !== null && value !== undefined
@@ -52,6 +54,10 @@ export const bound: MethodDecorator = (target: Object, propertyKey: string | sym
             return bound
         }
     }
+}
+
+export function distinct<T>(items: Iterable<T>): T[] {
+    return distinctBy(items, identity)
 }
 
 export function distinctBy<T>(items: Iterable<T>, predicate: (item: T) => unknown): T[] {
@@ -102,7 +108,7 @@ export function filterTree<T>(
         const filteredChildren: [T, ReadonlyMap<T, T[]>][] = children.map(it => [it, filterTree(it, getChildren, predicate, toString)])
         const entries = filteredChildren.flatMap(it => Array.from(it[1].entries()))
         if (entries.length > 0) {
-            return new Map([...entries, [root, filteredChildren.filter(it => it[1].size > 0).map(it => it[0]).distinct()]])
+            return new Map([...entries, [root, distinct(filteredChildren.filter(it => it[1].size > 0).map(it => it[0]))]])
         }
     }
     return result
