@@ -5,7 +5,7 @@ import {ComponentGeneratorDependenciesFactory} from "./ComponentGenerator"
 import {ErrorReporter} from "./ErrorReporter"
 import {NameGenerator} from "./NameGenerator"
 import {filterNotNull} from "./Util"
-import {visitEachChild} from "./Visitor"
+import {findAllChildren} from "./Visitor"
 import {Importer} from "./Importer"
 
 @Inject
@@ -21,12 +21,18 @@ export class SourceFileGenerator {
     ) { }
 
     generateSourceFile(originalSource: ts.SourceFile): ts.SourceFile | undefined {
-        const components: ts.ClassDeclaration[] = this.findComponents(originalSource)
+        const components: ts.ClassDeclaration[] = findAllChildren(originalSource, (n): n is ts.ClassDeclaration => {
+            return ts.isClassDeclaration(n) && !!n.modifiers?.some(this.nodeDetector.isComponentDecorator)
+        })
         if (components.length === 0) return undefined
 
-        const generatedComponents = components.map(component =>
-            this.componentGeneratorDependenciesFactory(component).generatedComponent
-        )
+        const generatedComponents = components.map(component => {
+            if (!component.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
+                // TODO: Migrate validation to a single place
+                this.errorReporter.reportParseFailed("Component must be abstract!", component)
+            }
+            return this.componentGeneratorDependenciesFactory(component).generatedComponent
+        })
         const classDeclarations = generatedComponents.map(it => it.classDeclaration)
         const requiresUnsetSymbolDeclaration = generatedComponents.some(it => it.requiresUnsetSymbolDeclaration)
         return ts.factory.updateSourceFile(
@@ -43,24 +49,6 @@ export class SourceFileGenerator {
             originalSource.libReferenceDirectives,
         )
     }
-
-    private findComponents(node: ts.Node, outComponents?: ts.ClassDeclaration[]): ts.ClassDeclaration[] {
-        if (outComponents === undefined) {
-            const components: ts.ClassDeclaration[] = []
-            return this.findComponents(node, components)
-        }
-        if (ts.isClassDeclaration(node) && node.modifiers?.some(this.nodeDetector.isComponentDecorator)) {
-            if (!node.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-                // TODO: Migrate this validation to a single place
-                this.errorReporter.reportParseFailed("Component must be abstract!", node)
-            }
-            outComponents.push(node)
-        } else {
-            visitEachChild(node, child => this.findComponents(child, outComponents))
-        }
-        return outComponents
-    }
-
 
     private unsetSymbolDeclaration() {
         return ts.factory.createVariableStatement(
