@@ -2,13 +2,6 @@ import * as ts from "typescript"
 
 export type SourceFileVisitor = (sourceFile: ts.SourceFile) => void
 
-export function visitEachChild<T extends ts.Node>(node: T, visitor: (node: ts.Node) => void): void {
-    const children = node.getChildren()
-    for (const child of children) {
-        visitor(child)
-    }
-}
-
 export function findAllChildren<T extends ts.Node>(node: ts.Node | ReadonlyArray<ts.Node>, predicate: (node: ts.Node) => node is T): T[]
 export function findAllChildren(node: ts.Node | ReadonlyArray<ts.Node>, predicate: (node: ts.Node) => boolean): ts.Node[]
 export function findAllChildren<T extends ts.Node>(node: ts.Node | ReadonlyArray<ts.Node>, predicate: (node: ts.Node) => node is T): T[] {

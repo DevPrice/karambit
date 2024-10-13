@@ -10,7 +10,7 @@ import {
     GeneratedComponent,
 } from "./ComponentGenerator"
 import type {KarambitOptions} from "./karambit"
-import {ExportVerifier} from "./ExportVerifier"
+import {AnnotationValidator} from "./AnnotationValidator"
 import {FileWriter} from "./FileWriter"
 import {SourceFileVisitor} from "./Visitor"
 
@@ -43,8 +43,8 @@ export abstract class SourceFileModule {
 
     @Provides
     @IntoSet
-    static provideExportVerifierVisitor(exportVerifier: ExportVerifier): SourceFileVisitor {
-        return exportVerifier.verifyExports
+    static provideExportVerifierVisitor(annotationValidator: AnnotationValidator): SourceFileVisitor {
+        return annotationValidator.validateAnnotations
     }
 }
 

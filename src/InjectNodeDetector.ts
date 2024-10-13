@@ -165,12 +165,13 @@ export class InjectNodeDetector {
         }
     }
 
-    private isKarambitDecorator(decorator: ts.Node, name: string): decorator is ts.Decorator {
+    @bound
+    isKarambitDecorator(decorator: ts.Node, name?: string): decorator is ts.Decorator {
         if (!ts.isDecorator(decorator)) return false
         const type = ts.isCallExpression(decorator.expression)
             ? this.typeChecker.getTypeAtLocation(decorator.expression.expression)
             : this.typeChecker.getTypeAtLocation(decorator.expression)
-        return type.getProperties().some(property => property.name === `__karambit${name}Annotation`)
+        return type.getProperties().some(property => property.name === name ? `__karambit${name}Annotation` : "__karambitAnnotation")
     }
 
     private isCompileTimeConstant(expression: ts.Expression): boolean {
