@@ -323,7 +323,7 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    private getSetMultibindingProviderDeclaration(provider: SetMultibinding, componentScope?: ts.Symbol): ts.ClassElement[] {
+    private getSetMultibindingProviderDeclaration(provider: SetMultibinding): ts.ClassElement[] {
         return [this.getterMethodDeclaration(provider.type, this.createSetMultibindingExpression(provider))]
     }
 
@@ -349,7 +349,7 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    private getMapMultibindingProviderDeclaration(provider: MapMultibinding, componentScope?: ts.Symbol): ts.ClassElement[] {
+    private getMapMultibindingProviderDeclaration(provider: MapMultibinding): ts.ClassElement[] {
         return [this.getterMethodDeclaration(provider.type, this.createMapMultibindingExpression(provider))]
     }
 
