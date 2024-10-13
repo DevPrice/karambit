@@ -9,10 +9,10 @@ export function visitEachChild<T extends ts.Node>(node: T, visitor: (node: ts.No
     }
 }
 
-export function findAllChildren<T extends ts.Node>(node: ts.Node, predicate: (node: ts.Node) => node is T): T[]
-export function findAllChildren(node: ts.Node, predicate: (node: ts.Node) => boolean): ts.Node[]
-export function findAllChildren<T extends ts.Node>(node: ts.Node, predicate: (node: ts.Node) => node is T): T[] {
-    const nodes: ts.Node[] = [node]
+export function findAllChildren<T extends ts.Node>(node: ts.Node | ReadonlyArray<ts.Node>, predicate: (node: ts.Node) => node is T): T[]
+export function findAllChildren(node: ts.Node | ReadonlyArray<ts.Node>, predicate: (node: ts.Node) => boolean): ts.Node[]
+export function findAllChildren<T extends ts.Node>(node: ts.Node | ReadonlyArray<ts.Node>, predicate: (node: ts.Node) => node is T): T[] {
+    const nodes: ts.Node[] = Array.isArray(node) ? Array.from(node) : [node]
     const matchingNodes: T[] = []
     let current: ts.Node | undefined
     while (current = nodes.shift()) { // eslint-disable-line

@@ -53,7 +53,7 @@ export const bound: MethodDecorator = (target: Object, propertyKey: string | sym
 }
 
 export function filterNotNull<T>(items: T[]): NonNullable<T>[] {
-    return items.filter(it => it !== undefined && it !== null) as NonNullable<T>[]
+    return items.filter(it => it !== undefined && it !== null)
 }
 
 export function distinctBy<T>(items: Iterable<T>, predicate: (item: T) => unknown): T[] {

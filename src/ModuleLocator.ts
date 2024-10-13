@@ -4,7 +4,8 @@ import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-decorators"
 import {ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
-import {visitEachChild} from "./Visitor"
+import {findAllChildren, visitEachChild} from "./Visitor"
+import {bound, memoized} from "./Util"
 
 export interface Binding {
     paramType: QualifiedType
@@ -13,9 +14,9 @@ export interface Binding {
 }
 
 export interface Module {
-    includes: ts.Symbol[]
-    factories: ProvidesMethod[]
-    bindings: Binding[]
+    includes: readonly ts.Symbol[]
+    factories: readonly ProvidesMethod[]
+    bindings: readonly Binding[]
 }
 
 @Inject
@@ -29,8 +30,17 @@ export class ModuleLocator {
     ) { }
 
     getInstalledModules(decorator: ts.Decorator): Module[] {
-        const installedModules: ts.Symbol[] = this.getSymbolList(decorator, "modules")
-        return this.withIncludedModules(installedModules)
+        const installedSymbols: ts.Symbol[] = this.getSymbolList(decorator, "modules")
+        const installedModules: Map<ts.Symbol, Module> = new Map()
+        let symbol: ts.Symbol | undefined
+        while (symbol = installedSymbols.shift()) { // eslint-disable-line
+            if (!installedModules.has(symbol)) {
+                const module = this.getModuleForSymbol(symbol)
+                installedModules.set(symbol, module)
+                installedSymbols.push(...module.includes)
+            }
+        }
+        return Array.from(installedModules.values())
     }
 
     getInstalledSubcomponents(decorator: ts.Decorator): ts.Symbol[] {
@@ -41,149 +51,120 @@ export class ModuleLocator {
         return this.nodeDetector.getStringPropertyNode(decorator, "generatedClassName")
     }
 
-    private withIncludedModules(symbols: ts.Symbol[]): Module[] {
-        const directlyReferencedModules = this.getModuleMap(symbols)
-        const errorReporter = this.errorReporter
-        function withIncludedModules(symbol: ts.Symbol): Module[] {
-            const module = directlyReferencedModules.get(symbol)
-            if (!module) throw errorReporter.reportParseFailed(`Module missing for symbol: ${symbol.getName()}`)
-            return [module, ...module.includes.flatMap(it => withIncludedModules(it))]
-        }
-        return symbols.flatMap(it => withIncludedModules(it))
-    }
-
-    private getModuleMap(symbols: ts.Symbol[]): ReadonlyMap<ts.Symbol, Module> {
-        const distinctSourceFiles = new Set(
-            symbols.flatMap(it => it.getDeclarations() ?? [])
-                .flatMap(it => it.getSourceFile())
-        )
-        return this.getModules(distinctSourceFiles)
-    }
-
-    private getModules(nodes: Set<ts.Node>): ReadonlyMap<ts.Symbol, Module> {
-        const modules = new Map<ts.Symbol, Module>()
-        const self = this
-        function visitModule(node: ts.ClassDeclaration): ts.Node {
-            const symbol = self.typeChecker.getTypeAtLocation(node).getSymbol()!
-            const moduleDecorator = node.modifiers!.find(self.nodeDetector.isModuleDecorator)!
-            const includes = self.getSymbolList(moduleDecorator, "includes")
-            const {factories, bindings} = self.getFactoriesAndBindings(node)
-            modules.set(symbol, {includes, factories, bindings})
-            const distinct = new Set(
-                includes.flatMap(it => it.getDeclarations() ?? [])
-                    .map(it => it.getSourceFile())
-                    .filter(it => !nodes.has(it))
-            )
-            self.getModules(distinct)
-                .forEach((module, symbol) => modules.set(symbol, module))
-            return node
-        }
-        function visit(node: ts.Node) {
-            if (ts.isClassDeclaration(node) && node.modifiers?.some(self.nodeDetector.isModuleDecorator)) {
-                visitModule(node)
-            } else {
-                visitEachChild(node, visit)
+    @memoized
+    private getModuleForSymbol(symbol: ts.Symbol): Module {
+        const declarations = symbol.getDeclarations()?.filter(dec => ts.isClassDeclaration(dec)) ?? []
+        const includes = declarations.flatMap(declaration => {
+            const moduleDecorator = declaration.modifiers?.find(this.nodeDetector.isModuleDecorator)
+            if (!moduleDecorator) throw this.errorReporter.reportParseFailed(`Module missing for symbol: ${symbol.getName()}`)
+            return this.getSymbolList(moduleDecorator, "includes")
+        })
+        const {factories, bindings} = declarations.reduce<{factories: ProvidesMethod[], bindings: Binding[]}>((prev, declaration) => {
+            const {factories, bindings} = this.getFactoriesAndBindings(declaration)
+            return {
+                factories: prev.factories.concat(factories),
+                bindings: prev.bindings.concat(bindings),
             }
+        }, {factories: [], bindings: []})
+        return {includes, factories, bindings}
+    }
+
+    @bound
+    private getProvidesMethod(method: ts.MethodDeclaration): Omit<ProvidesMethod, "module"> {
+        if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.StaticKeyword)) {
+            this.errorReporter.reportParseFailed("Provider methods must be static!", method)
         }
-        nodes.forEach(it => visitEachChild(it, visit))
-        return modules
+        const signature = this.typeChecker.getSignatureFromDeclaration(method)!
+        const returnType = createQualifiedType({
+            type: signature.getReturnType(),
+            qualifier: this.nodeDetector.getQualifier(method)
+        })
+        const parameters: ProvidesMethodParameter[] = method.getChildren()
+            .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
+            .filter(ts.isParameter)
+            .map(param => {
+                return {
+                    type: createQualifiedType({
+                        type: this.typeChecker.getTypeAtLocation(param.type ?? param),
+                        qualifier: this.nodeDetector.getQualifier(param)
+                    }),
+                    optional: param.questionToken !== undefined || param.initializer !== undefined
+                }
+            })
+        const scope = this.nodeDetector.getScope(method)
+        const isIterableProvider = this.nodeDetector.isIterableProvider(method)
+
+        return {providerType: ProviderType.PROVIDES_METHOD, declaration: method, type: returnType, parameters, scope, isIterableProvider}
+    }
+
+    @bound
+    private getBinding(method: ts.MethodDeclaration): Binding {
+        if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
+            this.errorReporter.reportBindingNotAbstract(method)
+        }
+        const signature = this.typeChecker.getSignatureFromDeclaration(method)!
+        const returnType = createQualifiedType({
+            type: signature.getReturnType(),
+            qualifier: this.nodeDetector.getQualifier(method)
+        })
+        const parameters = method.getChildren()
+            .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
+            .filter(ts.isParameter)
+        if (parameters.length != 1) this.errorReporter.reportInvalidBindingArguments(method)
+        const paramType = createQualifiedType({
+            type: this.typeChecker.getTypeAtLocation(parameters[0].type ?? parameters[0]),
+            qualifier: this.nodeDetector.getQualifier(parameters[0])
+        })
+        if (paramType === returnType) this.errorReporter.reportTypeBoundToSelf(method)
+        const assignable = this.typeChecker.isTypeAssignableTo(paramType.type, returnType.type)
+        if (!assignable) this.errorReporter.reportBindingMustBeAssignable(method, paramType.type, returnType.type)
+
+        return {paramType, returnType, declaration: method}
+    }
+
+    @bound
+    private getPropertyBinding(property: ts.PropertyDeclaration): Binding {
+        if (!property.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
+            this.errorReporter.reportBindingNotAbstract(property)
+        }
+        const type = this.typeChecker.getTypeAtLocation(property)
+        const signatures = this.typeChecker.getSignaturesOfType(type, ts.SignatureKind.Call)
+        if (signatures.length !== 1) this.errorReporter.reportParseFailed("Couldn't read signature of @Binds property!")
+        const signature = signatures[0]
+        const returnType = createQualifiedType({
+            type: signature.getReturnType(),
+            qualifier: this.nodeDetector.getQualifier(property)
+        })
+        const parameters = signature.parameters
+            .map(it => this.typeChecker.getTypeOfSymbolAtLocation(it, property))
+        if (parameters.length != 1) this.errorReporter.reportInvalidBindingArguments(property)
+        const paramType = createQualifiedType({
+            type: parameters[0]
+        })
+        if (paramType === returnType) this.errorReporter.reportTypeBoundToSelf(property)
+        const assignable = this.typeChecker.isTypeAssignableTo(paramType.type, returnType.type)
+        if (!assignable) this.errorReporter.reportBindingMustBeAssignable(property, paramType.type, returnType.type)
+
+        return {paramType, returnType, declaration: property}
     }
 
     private getFactoriesAndBindings(module: ts.ClassDeclaration): {factories: ProvidesMethod[], bindings: Binding[]} {
-        const typeChecker = this.typeChecker
-        const nodeDetector = this.nodeDetector
-        const bindings: Binding[] = []
-        const errorReporter = this.errorReporter
-        const factories: ProvidesMethod[] = []
-        function visitFactory(method: ts.MethodDeclaration) {
-            if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.StaticKeyword)) {
-                throw errorReporter.reportParseFailed("Provider methods must be static!", method)
-            }
-            const signature = typeChecker.getSignatureFromDeclaration(method)!
-            const returnType = createQualifiedType({
-                type: signature.getReturnType(),
-                qualifier: nodeDetector.getQualifier(method)
-            })
-            const parameters: ProvidesMethodParameter[] = method.getChildren()
-                .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
-                .filter(ts.isParameter)
-                .map(it => it as ts.ParameterDeclaration)
-                .map(param => {
-                    return {
-                        type: createQualifiedType({
-                            type: typeChecker.getTypeAtLocation(param.type ?? param),
-                            qualifier: nodeDetector.getQualifier(param)
-                        }),
-                        optional: param.questionToken !== undefined || param.initializer !== undefined
-                    }
+        const factories = findAllChildren(module, (node): node is ts.MethodDeclaration => {
+            return ts.isMethodDeclaration(node) && !!node.modifiers?.some(this.nodeDetector.isProvidesDecorator)
+        })
+            .flatMap(this.getProvidesMethod)
+            .map(factory => ({...factory, module}))
+
+        const bindings = findAllChildren(module, (node): node is ts.MethodDeclaration => {
+            return ts.isMethodDeclaration(node) && !!node.modifiers?.some(this.nodeDetector.isBindsDecorator)
+        })
+            .map(this.getBinding)
+            .concat(
+                findAllChildren(module, (node): node is ts.PropertyDeclaration => {
+                    return ts.isPropertyDeclaration(node) && !!node.modifiers?.some(this.nodeDetector.isBindsDecorator)
                 })
-            const scope = nodeDetector.getScope(method)
-            const isIterableProvider = nodeDetector.isIterableProvider(method)
-
-            factories.push({providerType: ProviderType.PROVIDES_METHOD, module, declaration: method, type: returnType, parameters, scope, isIterableProvider})
-        }
-        function visitBinding(method: ts.MethodDeclaration) {
-            if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-                errorReporter.reportBindingNotAbstract(method)
-            }
-            const signature = typeChecker.getSignatureFromDeclaration(method)!
-            const returnType = createQualifiedType({
-                type: signature.getReturnType(),
-                qualifier: nodeDetector.getQualifier(method)
-            })
-            const parameters = method.getChildren()
-                .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
-                .filter(ts.isParameter)
-                .map(it => it as ts.ParameterDeclaration)
-            if (parameters.length != 1) throw errorReporter.reportInvalidBindingArguments(method)
-            const paramType = createQualifiedType({
-                type: typeChecker.getTypeAtLocation(parameters[0].type ?? parameters[0]),
-                qualifier: nodeDetector.getQualifier(parameters[0])
-            })
-            if (paramType === returnType) throw errorReporter.reportTypeBoundToSelf(method)
-            // @ts-ignore
-            const assignable: boolean = typeChecker.isTypeAssignableTo(paramType.type, returnType.type)
-            if (!assignable) throw errorReporter.reportBindingMustBeAssignable(method, paramType.type, returnType.type)
-
-            bindings.push({paramType, returnType, declaration: method})
-        }
-        function visitBindingProperty(property: ts.PropertyDeclaration) {
-            if (!property.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-                errorReporter.reportBindingNotAbstract(property)
-            }
-            const type = typeChecker.getTypeAtLocation(property)
-            const signatures = typeChecker.getSignaturesOfType(type, ts.SignatureKind.Call)
-            if (signatures.length !== 1) errorReporter.reportParseFailed("Couldn't read signature of @Binds property!")
-            const signature = signatures[0]
-            const returnType = createQualifiedType({
-                type: signature.getReturnType(),
-                qualifier: nodeDetector.getQualifier(property)
-            })
-            const parameters = signature.parameters
-                .map(it => typeChecker.getTypeOfSymbolAtLocation(it, property))
-            if (parameters.length != 1) throw errorReporter.reportInvalidBindingArguments(property)
-            const paramType = createQualifiedType({
-                type: parameters[0]
-            })
-            if (paramType === returnType) throw errorReporter.reportTypeBoundToSelf(property)
-            // @ts-ignore
-            const assignable: boolean = typeChecker.isTypeAssignableTo(paramType.type, returnType.type)
-            if (!assignable) throw errorReporter.reportBindingMustBeAssignable(property, paramType.type, returnType.type)
-
-            bindings.push({paramType, returnType, declaration: property})
-        }
-        function visit(node: ts.Node) {
-            if (ts.isMethodDeclaration(node) && node.modifiers?.some(nodeDetector.isProvidesDecorator)) {
-                visitFactory(node)
-            } else if (ts.isPropertyDeclaration(node) && node.modifiers?.some(nodeDetector.isBindsDecorator)) {
-                visitBindingProperty(node)
-            } else if (ts.isMethodDeclaration(node) && node.modifiers?.some(nodeDetector.isBindsDecorator)) {
-                visitBinding(node)
-            } else {
-                visitEachChild(node, visit)
-            }
-        }
-        visitEachChild(module, visit)
+                    .map(this.getPropertyBinding)
+            )
         return {factories, bindings}
     }
 

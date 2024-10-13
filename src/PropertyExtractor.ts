@@ -21,10 +21,8 @@ export class PropertyExtractor {
         const declarations = type.getSymbol()?.getDeclarations() ?? []
         return declarations
             .filter(it => ts.isClassDeclaration(it) || ts.isInterfaceDeclaration(it) || ts.isTypeLiteralNode(it))
-            .map(it => it as ts.ClassDeclaration | ts.InterfaceDeclaration | ts.TypeLiteralNode)
             .flatMap(declaration => declaration.members as ts.NodeArray<ElementLike>)
             .filter((it: ElementLike) => ts.isPropertyDeclaration(it) || ts.isPropertySignature(it))
-            .map(it => it as PropertyLike)
             .concat(baseProperties)
     }
 
@@ -32,7 +30,6 @@ export class PropertyExtractor {
         const declarations = type.getSymbol()?.getDeclarations() ?? []
         const properties = declarations
             .filter(it => ts.isClassLike(it))
-            .map(it => it as ts.ClassLikeDeclaration)
             .flatMap(declaration => declaration.members)
             .filter(it => ts.isPropertyDeclaration(it) || ts.isPropertySignature(it))
             .map(it => it as PropertyLike)
@@ -45,7 +42,6 @@ export class PropertyExtractor {
 
         return properties
             .filter(it => it.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.AbstractKeyword))
-            .map(it => it as PropertyLike)
             .concat(baseProperties)
     }
 
@@ -53,7 +49,6 @@ export class PropertyExtractor {
         const declarations = type.getSymbol()?.getDeclarations() ?? []
         const methods = declarations
             .filter(it => ts.isClassLike(it))
-            .map(it => it as ts.ClassLikeDeclaration)
             .flatMap(declaration => declaration.members)
             .filter(it => ts.isMethodDeclaration(it) || ts.isMethodSignature(it))
             .map(it => it as MethodLike)

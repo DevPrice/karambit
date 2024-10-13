@@ -20,7 +20,6 @@ export class ConstructorHelper {
         return constructor.getChildren()
             .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
             .filter(ts.isParameter)
-            .map(it => it as ts.ParameterDeclaration)
             .map((param, index) => {
                 return {
                     type: createQualifiedType({
