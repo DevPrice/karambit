@@ -5,16 +5,16 @@ import {Importer} from "./Importer"
 import {TypeResolver} from "./TypeResolver"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {
+    AssistedFactory,
+    ConstructorParameter,
     InjectableConstructor,
     InstanceProvider,
+    MapMultibinding,
     PropertyProvider,
     ProviderType,
     ProvidesMethod,
     SetMultibinding,
-    MapMultibinding,
     SubcomponentFactory,
-    ConstructorParameter,
-    AssistedFactory,
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {Assisted, AssistedInject} from "karambit-decorators"

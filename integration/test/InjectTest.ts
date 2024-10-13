@@ -8,7 +8,8 @@ import {
     KarambitProviderComponent,
     KarambitScopedComponent,
 } from "../src/karambit-generated/src/TestComponents"
-import {ChildComponent, childInstance, multibindingScopedProvidedCount, nullProvidedCount} from "../src/TestComponents"
+import {ChildComponent, childInstance, nullProvidedCount} from "../src/TestComponents"
+import {multibindingScopedProvidedCount} from "../src/MultibindingModules"
 
 describe("Injection", () => {
     describe("Scope", () => {

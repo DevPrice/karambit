@@ -3,6 +3,7 @@ import {Inject, Reusable} from "karambit-decorators"
 import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound} from "./Util"
+import {Hacks} from "./Hacks"
 
 interface Decorated {
     name?: { getText: () => string }
@@ -15,6 +16,7 @@ export class InjectNodeDetector {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
+        private readonly hacks: Hacks,
         private readonly errorReporter: ErrorReporter,
     ) { }
 
@@ -158,7 +160,7 @@ export class InjectNodeDetector {
             const keyType = keyTypeNode ? this.typeChecker.getTypeAtLocation(keyTypeNode) : undefined
             return {
                 keyType: keyType ?? this.typeChecker.getBaseTypeOfLiteralType(this.typeChecker.getTypeAtLocation(argument)),
-                expression: argument,
+                expression: this.hacks.cloneNode(argument),
             }
         }
     }
