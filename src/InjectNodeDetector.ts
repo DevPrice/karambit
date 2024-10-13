@@ -132,9 +132,9 @@ export class InjectNodeDetector {
 
     @bound
     getMapTupleBindingInfo(returnType: QualifiedType): {keyType: ts.Type, valueType: QualifiedType} | undefined {
-        const type = returnType.type as any
-        if (type.target && type.target.fixedLength === 2) {
-            const typeArgs = type.resolvedTypeArguments as ts.Type[] ?? []
+        const target = this.hacks.getTarget(returnType.type)
+        if (target && this.hacks.isTupleType(target) && target.fixedLength === 2) {
+            const typeArgs = this.hacks.getResolvedTypeArguments(returnType.type) ?? []
             if (typeArgs.length === 2) {
                 return {keyType: typeArgs[0], valueType: createQualifiedType({...returnType, type: typeArgs[1]})}
             }
@@ -195,7 +195,7 @@ export class InjectNodeDetector {
     private isKarambitGenericType(type: ts.Type, typeName: string, typeBrand: string): ts.Type | undefined {
         const symbol = type.getSymbol()
         if (symbol && (symbol.getName() === typeName || this.getPropertyNames(type).has(typeBrand))) {
-            const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
+            const typeArguments = this.hacks.getResolvedTypeArguments(type) ?? type.aliasTypeArguments ?? []
             if (typeArguments.length != 1) ErrorReporter.reportParseFailed(`Invalid ${typeName} type!`)
             return typeArguments[0]
         }
@@ -205,7 +205,7 @@ export class InjectNodeDetector {
     isReadonlySet(type: ts.Type): ts.Type | undefined {
         const symbol = type.getSymbol()
         if (symbol?.getName() === "ReadonlySet") {
-            const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
+            const typeArguments = this.hacks.getResolvedTypeArguments(type) ?? type.aliasTypeArguments ?? []
             if (typeArguments.length != 1) ErrorReporter.reportParseFailed("Invalid ReadonlySet type!")
             return typeArguments[0]
         }
@@ -215,7 +215,7 @@ export class InjectNodeDetector {
     isReadonlyMap(type: ts.Type): [ts.Type, ts.Type] | undefined {
         const symbol = type.getSymbol()
         if (symbol?.getName() === "ReadonlyMap") {
-            const typeArguments = (type as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
+            const typeArguments = this.hacks.getResolvedTypeArguments(type) ?? type.aliasTypeArguments ?? []
             if (typeArguments.length != 2) ErrorReporter.reportParseFailed("Invalid ReadonlyMap type!")
             return typeArguments as [ts.Type, ts.Type]
         }
@@ -229,7 +229,7 @@ export class InjectNodeDetector {
             const iteratorTypes = this.typeChecker.getSignaturesOfType(iterableType, ts.SignatureKind.Call).map(this.typeChecker.getReturnTypeOfSignature)
             if (iteratorTypes.length !== 1) this.errorReporter.reportParseFailed(`Invalid Iterable type: ${this.typeChecker.typeToString(type)}!`)
             const iteratorType = iteratorTypes[0]
-            const typeArguments = (iteratorType as any)?.resolvedTypeArguments as ts.Type[] ?? type.aliasTypeArguments ?? []
+            const typeArguments = this.hacks.getResolvedTypeArguments(iteratorType) ?? type.aliasTypeArguments ?? []
             if (typeArguments.length != 1) this.errorReporter.reportParseFailed(`Invalid Iterable type: ${this.typeChecker.typeToString(type)}!`)
             return typeArguments[0]
         }
