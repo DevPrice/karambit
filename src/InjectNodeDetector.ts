@@ -171,7 +171,7 @@ export class InjectNodeDetector {
         const type = ts.isCallExpression(decorator.expression)
             ? this.typeChecker.getTypeAtLocation(decorator.expression.expression)
             : this.typeChecker.getTypeAtLocation(decorator.expression)
-        return type.getProperties().some(property => property.name === name ? `__karambit${name}Annotation` : "__karambitAnnotation")
+        return type.getProperties().some(property => property.name === (name ? `__karambit${name}Annotation` : "__karambitAnnotation"))
     }
 
     private isCompileTimeConstant(expression: ts.Expression): boolean {
