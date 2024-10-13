@@ -3,6 +3,7 @@ import {InjectNodeDetector} from "./InjectNodeDetector"
 import {createQualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-decorators"
 import {ConstructorParameter} from "./Providers"
+import {findAllChildren} from "./Visitor"
 
 @Inject
 @Reusable
@@ -14,12 +15,9 @@ export class ConstructorHelper {
     ) { }
 
     getConstructorParamsForDeclaration(declaration: ts.ClassLikeDeclaration): ConstructorParameter[] {
-        const constructor = declaration.getChildren().flatMap(it => it.getChildren())
-            .find(it => ts.isConstructorDeclaration(it) && it.body !== undefined)
+        const constructor = findAllChildren(declaration, ts.isConstructorDeclaration)[0]
         if (!constructor) return []
-        return constructor.getChildren()
-            .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
-            .filter(ts.isParameter)
+        return constructor.parameters
             .map((param, index) => {
                 return {
                     type: createQualifiedType({

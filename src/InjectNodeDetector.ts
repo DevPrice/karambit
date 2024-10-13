@@ -263,9 +263,9 @@ export class InjectNodeDetector {
             if (decorator.expression.arguments.length === 1) {
                 const componentInfo = decorator.expression.arguments[0]
                 if (ts.isObjectLiteralExpression(componentInfo)) {
-                    for (const child of componentInfo.getChildren().flatMap(it => it.kind === ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])) {
-                        if (ts.isPropertyAssignment(child) && child.name.getText() === propertyName) {
-                            return child.initializer
+                    for (const property of componentInfo.properties) {
+                        if (ts.isPropertyAssignment(property) && property.name.getText() === propertyName) {
+                            return property.initializer
                         }
                     }
                 }

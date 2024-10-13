@@ -4,7 +4,7 @@ import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-decorators"
 import {ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
-import {findAllChildren, visitEachChild} from "./Visitor"
+import {findAllChildren} from "./Visitor"
 import {bound, isNotNull, memoized} from "./Util"
 
 export interface Binding {
@@ -79,18 +79,15 @@ export class ModuleLocator {
             type: signature.getReturnType(),
             qualifier: this.nodeDetector.getQualifier(method)
         })
-        const parameters: ProvidesMethodParameter[] = method.getChildren()
-            .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
-            .filter(ts.isParameter)
-            .map(param => {
-                return {
-                    type: createQualifiedType({
-                        type: this.typeChecker.getTypeAtLocation(param.type ?? param),
-                        qualifier: this.nodeDetector.getQualifier(param)
-                    }),
-                    optional: param.questionToken !== undefined || param.initializer !== undefined
-                }
-            })
+        const parameters: ProvidesMethodParameter[] = method.parameters.map(param => {
+            return {
+                type: createQualifiedType({
+                    type: this.typeChecker.getTypeAtLocation(param.type ?? param),
+                    qualifier: this.nodeDetector.getQualifier(param)
+                }),
+                optional: param.questionToken !== undefined || param.initializer !== undefined
+            }
+        })
         const scope = this.nodeDetector.getScope(method)
         const isIterableProvider = this.nodeDetector.isIterableProvider(method)
 
@@ -107,9 +104,7 @@ export class ModuleLocator {
             type: signature.getReturnType(),
             qualifier: this.nodeDetector.getQualifier(method)
         })
-        const parameters = method.getChildren()
-            .flatMap(it => it.kind == ts.SyntaxKind.SyntaxList ? it.getChildren() : [it])
-            .filter(ts.isParameter)
+        const parameters = method.parameters
         if (parameters.length != 1) this.errorReporter.reportInvalidBindingArguments(method)
         const paramType = createQualifiedType({
             type: this.typeChecker.getTypeAtLocation(parameters[0].type ?? parameters[0]),
@@ -169,26 +164,16 @@ export class ModuleLocator {
     }
 
     private getSymbolList(decorator: ts.Decorator, identifierName: string): ts.Symbol[] {
-        let moduleSymbols: ts.Symbol[] = []
-        const typeChecker = this.typeChecker
-        const errorReporter = this.errorReporter
-        function visit(node: ts.Node) {
-            if (ts.isPropertyAssignment(node)) {
-                const identifier = node.getChildren()
-                    .find(it => ts.isIdentifier(it) && it.getText() === identifierName)
-                if (identifier) {
-                    const includesArrayLiteral = node.getChildren().find(it => ts.isArrayLiteralExpression(it))
-                    if (!includesArrayLiteral) throw errorReporter.reportCompileTimeConstantRequired(decorator, identifierName)
-                    moduleSymbols = includesArrayLiteral.getChildren()
-                        .flatMap(it => it.getChildren())
-                        .map(it => typeChecker.getTypeAtLocation(it).getSymbol())
-                        .filter(isNotNull)
-                }
-            } else {
-                visitEachChild(node, visit)
-            }
+        const property = findAllChildren(decorator, ts.isPropertyAssignment)
+            .find(it => ts.isIdentifier(it.name) && it.name.text === identifierName)
+        if (!property) return []
+
+        const arrayLiteral = property.initializer
+        if (!ts.isArrayLiteralExpression(arrayLiteral)) {
+            this.errorReporter.reportCompileTimeConstantRequired(decorator, identifierName)
         }
-        visitEachChild(decorator, visit)
-        return moduleSymbols
+        return arrayLiteral.elements
+            .map(it => this.typeChecker.getTypeAtLocation(it).getSymbol())
+            .filter(isNotNull)
     }
 }
