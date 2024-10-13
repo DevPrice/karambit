@@ -23,6 +23,7 @@ import {Inject, Reusable} from "karambit-decorators"
 import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"
 import {isTypeNullable} from "./TypescriptUtil"
 import {ModuleProviders, ProviderLocator} from "./ProviderLocator"
+import {isNotNull} from "./Util"
 
 interface GeneratedSubcomponent {
     readonly name: string
@@ -133,7 +134,7 @@ export class ComponentGenerator {
 
         const subcomponents = Array.from(graph.resolved.keys()).map(it => it.type)
             .map(subcomponentFactoryLocator.asSubcomponentFactory)
-            .filterNotNull()
+            .filter(isNotNull)
             .distinctBy(it => it.subcomponentType)
         const canBind = (type: QualifiedType, given: ReadonlySet<QualifiedType>) => {
             return graphBuilder.buildDependencyGraph(new Set([{type, optional: false}]), given).missing.size === 0
@@ -227,7 +228,7 @@ export class ComponentGenerator {
 
         const subcomponents = Array.from(graph.resolved.keys()).map(it => it.type)
             .map(subcomponentFactoryLocator.asSubcomponentFactory)
-            .filterNotNull()
+            .filter(isNotNull)
             .distinctBy(it => it.subcomponentType)
         const duplicateScope = definition.scope && ancestorScopes.get(definition.scope)
         if (duplicateScope) {

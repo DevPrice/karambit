@@ -2,7 +2,7 @@ import * as ts from "typescript"
 import {Inject, Reusable} from "karambit-decorators"
 import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType"
 import {ErrorReporter} from "./ErrorReporter"
-import {bound} from "./Util"
+import {bound, isNotNull} from "./Util"
 import {Hacks} from "./Hacks"
 
 interface Decorated {
@@ -35,7 +35,7 @@ export class InjectNodeDetector {
 
     @bound
     getScope(item: Decorated): ts.Symbol | undefined {
-        const scopeDecorators = item.modifiers?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)).filterNotNull() ?? []
+        const scopeDecorators = item.modifiers?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)).filter(isNotNull) ?? []
         if (scopeDecorators.length > 1) ErrorReporter.reportParseFailed(`Scoped element may only have one scope! ${item.name?.getText()} has ${scopeDecorators.length}.`)
         if (scopeDecorators.length === 1) {
             const [symbol] = scopeDecorators

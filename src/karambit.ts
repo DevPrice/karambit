@@ -1,4 +1,4 @@
-import {filterNotNull} from "./Util"
+import {isNotNull} from "./Util"
 import type * as ts from "typescript"
 import * as Path from "path"
 import {KarambitProgramComponent} from "./karambit-generated/src/Component"
@@ -37,15 +37,13 @@ export interface KarambitOptions {
 export function generateComponentFiles(program: ts.Program, options?: Partial<KarambitOptions>) {
     const karambitOptions = {...defaultOptions, ...options}
     const programComponent = new KarambitProgramComponent(program, karambitOptions)
-    const generatedFiles = filterNotNull(
-        program.getSourceFiles().map(sourceFile => {
-            const sourceFileComponent = programComponent.sourceFileSubcomponentFactory(sourceFile)
-            for (const visitor of sourceFileComponent.sourceFileVisitors) {
-                visitor(sourceFile)
-            }
-            return sourceFileComponent.sourceFileGenerator.generateSourceFile(sourceFile)
-        })
-    )
+    const generatedFiles = program.getSourceFiles().map(sourceFile => {
+        const sourceFileComponent = programComponent.sourceFileSubcomponentFactory(sourceFile)
+        for (const visitor of sourceFileComponent.sourceFileVisitors) {
+            visitor(sourceFile)
+        }
+        return sourceFileComponent.sourceFileGenerator.generateSourceFile(sourceFile)
+    }).filter(isNotNull)
     for (const file of generatedFiles) {
         const outputFilename = Path.basename(file.fileName)
         programComponent.fileWriter.writeComponentFile(file, outputFilename)

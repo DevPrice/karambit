@@ -14,9 +14,8 @@ export class ExportVerifier {
         private readonly errorReporter: ErrorReporter,
     ) { }
 
-    verifyExports(sourceFile: ts.SourceFile): ts.SourceFile
     @bound
-    verifyExports(node: ts.Node): ts.Node {
+    verifyExports(node: ts.Node): void {
         if (ts.isClassDeclaration(node) && node.modifiers && !node.modifiers.some(it => it.kind === ts.SyntaxKind.ExportKeyword)) {
             if (node.modifiers.some(this.nodeDetector.isComponentDecorator)) {
                 this.errorReporter.reportParseFailed("Components must be exported!", node)
@@ -29,6 +28,5 @@ export class ExportVerifier {
             }
         }
         visitEachChild(node, this.verifyExports)
-        return node
     }
 }

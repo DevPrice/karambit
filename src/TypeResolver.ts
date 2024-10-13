@@ -1,4 +1,4 @@
-import {bound, findCycles} from "./Util"
+import {bound, findCycles, isNotNull} from "./Util"
 import {ErrorReporter} from "./ErrorReporter"
 import {QualifiedType} from "./QualifiedType"
 import {Binding} from "./ModuleLocator"
@@ -23,7 +23,7 @@ export class TypeResolver {
         }
         this.#bindingMap = new Map(Array.from(bindingMap.entries()).map(([type, binding]) => [type, binding.paramType]))
         for (const binding of this.#bindingMap.keys()) {
-            const cycle = findCycles(binding, (b) => [this.#bindingMap.get(b)].filterNotNull())
+            const cycle = findCycles(binding, (b) => [this.#bindingMap.get(b)].filter(isNotNull))
             if (cycle.length > 0) {
                 throw this.errorReporter.reportBindingCycle(cycle[cycle.length - 1], cycle)
             }

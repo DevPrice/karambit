@@ -2,15 +2,17 @@ import chalk = require("chalk")
 
 declare global {
     export interface Array<T> {
-        filterNotNull(): NonNullable<T>[]
         distinct(): T[]
         distinctBy(predicate: (item: T) => unknown): T[]
     }
 }
 
-Array.prototype.filterNotNull = function <T> (this: Array<T>) { return filterNotNull(this) }
 Array.prototype.distinct = function <T> (this: Array<T>) { return distinctBy(this, it => it) }
 Array.prototype.distinctBy = function <T> (this: Array<T>, predicate: (item: T) => unknown) { return distinctBy(this, predicate) }
+
+export function isNotNull<T>(value: T): value is NonNullable<T> {
+    return value !== null && value !== undefined
+}
 
 export function memoize<This, Args extends Array<unknown>, T>(f: (this: This, ...args: Args) => T): (this: This, ...args: Args) => T {
     const cache: TupleMap<unknown[], {value: T}> = new TupleMap()
@@ -50,10 +52,6 @@ export const bound: MethodDecorator = (target: Object, propertyKey: string | sym
             return bound
         }
     }
-}
-
-export function filterNotNull<T>(items: T[]): NonNullable<T>[] {
-    return items.filter(it => it !== undefined && it !== null)
 }
 
 export function distinctBy<T>(items: Iterable<T>, predicate: (item: T) => unknown): T[] {

@@ -1,7 +1,7 @@
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {TypeResolver} from "./TypeResolver"
 import {ConstructorHelper} from "./ConstructorHelper"
-import {Container, findCycles} from "./Util"
+import {Container, findCycles, isNotNull} from "./Util"
 import * as ts from "typescript"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
@@ -101,7 +101,7 @@ export class DependencyGraphBuilder {
                 if (provider) {
                     const missing = Array.from(provider.dependencies)
                         .map(it => resolved.get(it))
-                        .filterNotNull()
+                        .filter(isNotNull)
                         .filter(it => it.providerType === ProviderType.PROPERTY && it.optional)
                     if (missing.length > 0) {
                         this.errorReporter.reportMissingRequiredProviders(provider, missing)

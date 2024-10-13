@@ -12,7 +12,7 @@ import {
     ProviderType,
     ProvidesMethod,
 } from "./Providers"
-import {filterTree, printTreeMap} from "./Util"
+import {filterTree, isNotNull, printTreeMap} from "./Util"
 import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
 import {Binding} from "./ModuleLocator"
 import {Chalk} from "chalk"
@@ -144,7 +144,7 @@ export class ErrorReporter {
 
     reportMissingRequiredProviders(parentProvider: InstanceProvider, missingProvider: Iterable<InstanceProvider>): never {
         const parentDeclarationContext = parentProvider.declaration ? nodeForDisplay(parentProvider.declaration) : ""
-        const declarations = Array.from(missingProvider).map(it => it.declaration).filterNotNull()
+        const declarations = Array.from(missingProvider).map(it => it.declaration).filter(isNotNull)
         const parentType = parentProvider.providerType === ProviderType.INJECTABLE_CONSTRUCTOR
             ? createQualifiedType({type: parentProvider.type})
             : parentProvider.type
@@ -159,7 +159,7 @@ export class ErrorReporter {
         ErrorReporter.fail(
             KarambitErrorScope.DUPLICATE_PROVIDERS,
             `${qualifiedTypeToString(type)} is provided multiple times!\n\n` +
-            providers.map(providerForDisplay).filterNotNull().map(it => `provided by:\n${it}\n`).join("\n") + "\n",
+            providers.map(providerForDisplay).filter(isNotNull).map(it => `provided by:\n${it}\n`).join("\n") + "\n",
             this.component,
         )
     }
@@ -168,7 +168,7 @@ export class ErrorReporter {
         ErrorReporter.fail(
             KarambitErrorScope.DUPLICATE_BINDINGS,
             `${qualifiedTypeToString(type)} is bound multiple times!\n\n` +
-            bindings.map(it => it.declaration).map(nodeForDisplay).filterNotNull().map(it => it.toString()).join("\n\n") + "\n",
+            bindings.map(it => it.declaration).map(nodeForDisplay).filter(isNotNull).map(it => it.toString()).join("\n\n") + "\n",
             this.component,
         )
     }

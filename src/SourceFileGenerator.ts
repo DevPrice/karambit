@@ -4,7 +4,7 @@ import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ComponentGeneratorDependenciesFactory} from "./ComponentGenerator"
 import {ErrorReporter} from "./ErrorReporter"
 import {NameGenerator} from "./NameGenerator"
-import {filterNotNull} from "./Util"
+import {isNotNull} from "./Util"
 import {findAllChildren} from "./Visitor"
 import {Importer} from "./Importer"
 
@@ -37,11 +37,11 @@ export class SourceFileGenerator {
         const requiresUnsetSymbolDeclaration = generatedComponents.some(it => it.requiresUnsetSymbolDeclaration)
         return ts.factory.updateSourceFile(
             originalSource,
-            filterNotNull([
+            [
                 ...this.importer.getImports(),
                 requiresUnsetSymbolDeclaration ? this.unsetSymbolDeclaration() : undefined,
                 ...classDeclarations,
-            ]),
+            ].filter(isNotNull),
             originalSource.isDeclarationFile,
             originalSource.referencedFiles,
             originalSource.typeReferenceDirectives,

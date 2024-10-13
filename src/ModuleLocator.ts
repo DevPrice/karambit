@@ -5,7 +5,7 @@ import {Inject, Reusable} from "karambit-decorators"
 import {ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {findAllChildren, visitEachChild} from "./Visitor"
-import {bound, memoized} from "./Util"
+import {bound, isNotNull, memoized} from "./Util"
 
 export interface Binding {
     paramType: QualifiedType
@@ -182,7 +182,7 @@ export class ModuleLocator {
                     moduleSymbols = includesArrayLiteral.getChildren()
                         .flatMap(it => it.getChildren())
                         .map(it => typeChecker.getTypeAtLocation(it).getSymbol())
-                        .filterNotNull()
+                        .filter(isNotNull)
                 }
             } else {
                 visitEachChild(node, visit)
