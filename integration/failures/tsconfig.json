@@ -4,6 +4,7 @@
     "outDir": "build",
     "module": "CommonJS",
     "removeComments": true,
+    "experimentalDecorators": true,
     "strict": true
   }
 }
