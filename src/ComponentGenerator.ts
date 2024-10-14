@@ -110,7 +110,8 @@ export class ComponentGenerator {
         }
 
         const componentType = this.typeChecker.getTypeAtLocation(component)
-        const componentIdentifier = this.nameGenerator.getComponentIdentifier(componentType, definition.preferredClassName)
+        const generatedName = component.name ? `Karambit${component.name?.text}` : undefined
+        const componentIdentifier = this.nameGenerator.getComponentIdentifier(componentType, definition.preferredClassName ?? generatedName)
         const subcomponentFactoryLocator = this.subcomponentFactoryLocatorFactory(new Set(definition.subcomponents))
 
         const typeResolver = this.typeResolverFactory(definition.bindings)
