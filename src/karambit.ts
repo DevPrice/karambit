@@ -34,6 +34,8 @@ export interface SubcomponentFactory<T extends ConstructorType<T>> {
 export interface KarambitOptions {
     sourceRoot: string
     outDir: string
+    dryRun: boolean
+    verbose: boolean
 }
 
 export function generateComponentFiles(program: ts.Program, options?: Partial<KarambitOptions>) {
@@ -48,11 +50,17 @@ export function generateComponentFiles(program: ts.Program, options?: Partial<Ka
     }).filter(isNotNull)
     for (const file of generatedFiles) {
         const outputFilename = Path.basename(file.fileName)
-        programComponent.fileWriter.writeComponentFile(file, outputFilename)
+        if (!karambitOptions.dryRun) {
+            programComponent.fileWriter.writeComponentFile(file, outputFilename)
+        } else if (karambitOptions.verbose) {
+            console.debug(`Not writing ${outputFilename} (dry-run)`)
+        }
     }
 }
 
 const defaultOptions: KarambitOptions = {
     sourceRoot: ".",
     outDir: "karambit-generated",
+    dryRun: false,
+    verbose: false,
 }

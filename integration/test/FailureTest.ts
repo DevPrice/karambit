@@ -34,7 +34,7 @@ function runKarambitForError(dirName: string, errorScope: string) {
     const program = ts.createProgram(parsedCommandLine.fileNames, parsedCommandLine.options)
 
     expectKarambitError(errorScope, () => {
-        generateComponentFiles(program, {sourceRoot: dirName, outDir: "/dev/null"})
+        generateComponentFiles(program, {sourceRoot: dirName, dryRun: true})
     })
 }
 
@@ -43,7 +43,11 @@ function expectKarambitError(scope: string, block: () => void) {
         block()
         assert.fail(`Expected validation to fail with reason '${scope}'!`)
     } catch (e) {
-        expect(e).toBeInstanceOf(KarambitError)
-        expect(e).toHaveProperty("scope", scope)
+        if (e instanceof KarambitError) {
+            expect(e).toBeInstanceOf(KarambitError)
+            expect(e).toHaveProperty("scope", scope)
+        } else {
+            throw e
+        }
     }
 }

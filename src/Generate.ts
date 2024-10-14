@@ -9,6 +9,7 @@ interface GenerateCommandOptions {
     tsconfig: string
     output: string
     verbose: boolean
+    dryRun: boolean
 }
 
 yargs(hideBin(process.argv))
@@ -28,10 +29,15 @@ yargs(hideBin(process.argv))
                 description: "Output directory",
                 default: "karambit-generated",
             })
+            .option("dry-run", {
+                type: "boolean",
+                description: "Run all validation and logic, but skip writing generated files",
+                default: false,
+            })
             .option("verbose", {
                 type: "boolean",
                 alias: "v",
-                description: "Print the duration for each component",
+                description: "Enable verbose output",
                 default: false,
             }),
         args => {
@@ -63,6 +69,8 @@ function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOpt
         generateComponentFiles(program, {
             sourceRoot: Path.dirname(cliOptions.tsconfig),
             outDir: cliOptions.output,
+            dryRun: cliOptions.dryRun,
+            verbose: cliOptions.verbose,
         })
     } catch (e) {
         if (e instanceof KarambitError && !cliOptions.verbose) {
