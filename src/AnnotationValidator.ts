@@ -23,8 +23,11 @@ export class AnnotationValidator {
 
         componentAnnotations.forEach(this.requireClassExported)
         componentAnnotations.forEach(this.requireAbstractClass)
+
         moduleAnnotations.forEach(this.requireClassExported)
+
         injectAnnotations.forEach(this.requireClassExported)
+        injectAnnotations.forEach(this.requireConcreteClass)
     }
 
     @bound
@@ -41,6 +44,15 @@ export class AnnotationValidator {
         if (ts.isClassDeclaration(decorator.parent)) {
             if (!decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
                 this.errorReporter.reportParseFailed(`${decorator.getText()} annotated class must be abstract!`, decorator.parent)
+            }
+        }
+    }
+
+    @bound
+    private requireConcreteClass(decorator: ts.Decorator): void {
+        if (ts.isClassDeclaration(decorator.parent)) {
+            if (decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
+                this.errorReporter.reportParseFailed(`${decorator.getText()} annotated class must not be abstract!`, decorator.parent)
             }
         }
     }

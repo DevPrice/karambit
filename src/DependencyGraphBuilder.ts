@@ -206,9 +206,6 @@ export class DependencyGraphBuilder {
         const declaration = declarations && declarations.length > 0 ? declarations[0] : undefined
         if (!declaration) return undefined
         if (!declaration.modifiers?.some(this.nodeDetector.isInjectDecorator)) return undefined
-        if (declaration.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-            this.errorReporter.reportParseFailed("@Inject class should not be abstract!", declaration)
-        }
         const parameters = this.constructorHelper.getConstructorParamsForDeclaration(declaration)
         if (!parameters) return undefined
 
