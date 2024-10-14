@@ -34,7 +34,7 @@ export class AnnotationValidator {
     private requireClassExported(decorator: ts.Decorator): void {
         if (ts.isClassDeclaration(decorator.parent)) {
             if (!decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.ExportKeyword)) {
-                this.errorReporter.reportParseFailed(`${decorator.getText()} annotated class must be exported!`, decorator.parent)
+                this.errorReporter.reportParseFailed(`${this.getDecoratorName(decorator)} annotated class must be exported!`, decorator.parent)
             }
         }
     }
@@ -43,7 +43,7 @@ export class AnnotationValidator {
     private requireAbstractClass(decorator: ts.Decorator): void {
         if (ts.isClassDeclaration(decorator.parent)) {
             if (!decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-                this.errorReporter.reportParseFailed(`${decorator.getText()} annotated class must be abstract!`, decorator.parent)
+                this.errorReporter.reportParseFailed(`${this.getDecoratorName(decorator)} annotated class must be abstract!`, decorator.parent)
             }
         }
     }
@@ -52,8 +52,16 @@ export class AnnotationValidator {
     private requireConcreteClass(decorator: ts.Decorator): void {
         if (ts.isClassDeclaration(decorator.parent)) {
             if (decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-                this.errorReporter.reportParseFailed(`${decorator.getText()} annotated class must not be abstract!`, decorator.parent)
+                this.errorReporter.reportParseFailed(`${this.getDecoratorName(decorator)} annotated class must not be abstract!`, decorator.parent)
             }
         }
+    }
+
+    private getDecoratorName(decorator: ts.Decorator): string {
+        const text = decorator.getText()
+        const regex = /^(@[^()]*)(?:\(.*\))?$/
+        const matches = text.match(regex)
+        if (matches) return matches[1]
+        return text
     }
 }
