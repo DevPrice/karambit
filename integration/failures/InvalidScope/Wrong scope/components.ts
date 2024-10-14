@@ -17,5 +17,4 @@ export abstract class WrongScopeProvidersModule {
 @ComponentScope
 export abstract class WrongScopeComponent {
     abstract readonly number: number
-    abstract readonly string: string
 }

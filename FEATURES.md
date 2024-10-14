@@ -144,6 +144,9 @@ abstract bindAnimal: (dog: Dog) => Animal
 `@Binds` properties must be abstract and have a callable type with exactly one argument. The argument type must be assignable to the return type.
 
 > **Note**
+> Abstract property decorators are currently only supported if [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) are enabled.
+
+> **Note**
 > Method-based bindings from previous releases are still supported, but are deprecated and may be removed in a future major version release.
 
 ### Includes
