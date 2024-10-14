@@ -3,6 +3,8 @@ import type * as ts from "typescript"
 import * as Path from "path"
 import {KarambitProgramComponent} from "./karambit-generated/src/Component"
 
+export {KarambitError, KarambitErrorScope} from "./ErrorReporter"
+
 type ConstructorType<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> = abstract new (...args: ConstructorParameters<T>) => InstanceType<T>
 
 export type Qualified<T extends keyof any & symbol> = {
