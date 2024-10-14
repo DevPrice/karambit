@@ -3,6 +3,7 @@ import {QualifiedType} from "./QualifiedType"
 import {Inject} from "karambit-decorators"
 import {SourceFileScope} from "./Scopes"
 import {memoized} from "./Util"
+import {KarambitOptions} from "./karambit"
 
 @Inject
 @SourceFileScope
@@ -10,7 +11,7 @@ export class NameGenerator {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
-        private readonly componentIdentifiers: Map<ts.Type, ts.Identifier>,
+        private readonly karambitOptions: KarambitOptions
     ) { }
 
     private getterNames = new Map<QualifiedType, ts.Identifier | ts.PrivateIdentifier>()
@@ -19,13 +20,8 @@ export class NameGenerator {
     readonly unsetSymbolName: ts.Identifier = ts.factory.createUniqueName("unsetSymbol")
 
     getComponentIdentifier(type: ts.Type, preferredName?: string): ts.Identifier {
-        const existingName = this.componentIdentifiers.get(type)
-        if (existingName) return existingName
-
         // for some reason, createUniqueName doesn't work with the export keyword here...?
-        const newName = ts.factory.createIdentifier(preferredName ?? `Karambit${capitalize(this.getValidIdentifier(type))}`)
-        this.componentIdentifiers.set(type, newName)
-        return newName
+        return ts.factory.createIdentifier(preferredName ?? `Karambit${capitalize(this.getValidIdentifier(type))}`)
     }
 
     @memoized
@@ -72,7 +68,7 @@ export class NameGenerator {
     }
 
     getValidIdentifier(type: ts.Type): string {
-        return this.typeChecker.typeToString(type).replaceAll(/[^a-z\d]+/ig, "$")
+        return this.typeChecker.typeToString(type).replaceAll(/[^a-z\d]+/ig, "$").substring(0, this.karambitOptions.nameMaxLength)
     }
 
     getUnsetSymbolIdentifier(): ts.Identifier {

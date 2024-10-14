@@ -72,12 +72,6 @@ export abstract class ProgramModule {
     static providePrinter(): ts.Printer {
         return ts.createPrinter()
     }
-
-    @Provides
-    @ProgramScope
-    static provideComponentIdentifiers(): Map<ts.Type, ts.Identifier> {
-        return new Map()
-    }
 }
 
 @Component({modules: [ProgramModule], subcomponents: [SourceFileSubcomponent]})

@@ -36,6 +36,7 @@ export interface KarambitOptions {
     outDir: string
     dryRun: boolean
     verbose: boolean
+    nameMaxLength: number
 }
 
 export function generateComponentFiles(program: ts.Program, options?: Partial<KarambitOptions>) {
@@ -63,4 +64,5 @@ const defaultOptions: KarambitOptions = {
     outDir: "karambit-generated",
     dryRun: false,
     verbose: false,
+    nameMaxLength: 30,
 }

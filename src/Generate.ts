@@ -10,6 +10,7 @@ interface GenerateCommandOptions {
     output: string
     verbose: boolean
     dryRun: boolean
+    nameMaxLength: number
 }
 
 yargs(hideBin(process.argv))
@@ -33,6 +34,11 @@ yargs(hideBin(process.argv))
                 type: "boolean",
                 description: "Run all validation and logic, but skip writing generated files",
                 default: false,
+            })
+            .option("name-max-length", {
+                type: "number",
+                description: "Max length of generated identifiers",
+                default: 20,
             })
             .option("verbose", {
                 type: "boolean",
@@ -70,6 +76,7 @@ function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOpt
             sourceRoot: Path.dirname(cliOptions.tsconfig),
             outDir: cliOptions.output,
             dryRun: cliOptions.dryRun,
+            nameMaxLength: cliOptions.nameMaxLength,
             verbose: cliOptions.verbose,
         })
     } catch (e) {
