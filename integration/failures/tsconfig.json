@@ -5,6 +5,7 @@
     "module": "CommonJS",
     "removeComments": true,
     "experimentalDecorators": true,
-    "strict": true
+    "strict": true,
+    "skipLibCheck": true
   }
 }
