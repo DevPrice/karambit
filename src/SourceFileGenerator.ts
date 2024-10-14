@@ -2,7 +2,6 @@ import * as ts from "typescript"
 import {Inject, Reusable} from "karambit-decorators"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ComponentGeneratorDependenciesFactory} from "./ComponentGenerator"
-import {ErrorReporter} from "./ErrorReporter"
 import {NameGenerator} from "./NameGenerator"
 import {isNotNull} from "./Util"
 import {findAllChildren} from "./Visitor"
@@ -14,7 +13,6 @@ export class SourceFileGenerator {
 
     constructor(
         private readonly nodeDetector: InjectNodeDetector,
-        private readonly errorReporter: ErrorReporter,
         private readonly nameGenerator: NameGenerator,
         private readonly importer: Importer,
         private readonly componentGeneratorDependenciesFactory: ComponentGeneratorDependenciesFactory,
@@ -27,10 +25,6 @@ export class SourceFileGenerator {
         if (components.length === 0) return undefined
 
         const generatedComponents = components.map(component => {
-            if (!component.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-                // TODO: Migrate validation to a single place
-                this.errorReporter.reportParseFailed("Component must be abstract!", component)
-            }
             return this.componentGeneratorDependenciesFactory(component).generatedComponent
         })
         const classDeclarations = generatedComponents.map(it => it.classDeclaration)

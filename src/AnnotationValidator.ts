@@ -17,19 +17,30 @@ export class AnnotationValidator {
     @bound
     validateAnnotations(node: ts.Node): void {
         const annotations = findAllChildren(node, this.nodeDetector.isKarambitDecorator)
-        annotations.filter(this.nodeDetector.isComponentDecorator)
-            .forEach(this.requireClassExported)
-        annotations.filter(this.nodeDetector.isModuleDecorator)
-            .forEach(this.requireClassExported)
-        annotations.filter(this.nodeDetector.isInjectDecorator)
-            .forEach(this.requireClassExported)
+        const componentAnnotations = annotations.filter(this.nodeDetector.isComponentDecorator)
+        const moduleAnnotations = annotations.filter(this.nodeDetector.isModuleDecorator)
+        const injectAnnotations = annotations.filter(this.nodeDetector.isInjectDecorator)
+
+        componentAnnotations.forEach(this.requireClassExported)
+        componentAnnotations.forEach(this.requireAbstractClass)
+        moduleAnnotations.forEach(this.requireClassExported)
+        injectAnnotations.forEach(this.requireClassExported)
     }
 
     @bound
     private requireClassExported(decorator: ts.Decorator): void {
         if (ts.isClassDeclaration(decorator.parent)) {
             if (!decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.ExportKeyword)) {
-                this.errorReporter.reportParseFailed("Annotated class must be exported!", decorator.parent)
+                this.errorReporter.reportParseFailed(`${decorator.getText()} annotated class must be exported!`, decorator.parent)
+            }
+        }
+    }
+
+    @bound
+    private requireAbstractClass(decorator: ts.Decorator): void {
+        if (ts.isClassDeclaration(decorator.parent)) {
+            if (!decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
+                this.errorReporter.reportParseFailed(`${decorator.getText()} annotated class must be abstract!`, decorator.parent)
             }
         }
     }
