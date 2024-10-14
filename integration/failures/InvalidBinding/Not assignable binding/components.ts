@@ -13,6 +13,11 @@ export abstract class BadBindingModule {
 
     @Binds
     abstract bindInterface: (x: BadChildInterface) => ParentInterface
+
+    @Provides
+    static provideChild(): BadChildInterface {
+        return {y: 2}
+    }
 }
 
 @Component({modules: [BadBindingModule]})

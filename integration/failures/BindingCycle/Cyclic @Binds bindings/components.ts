@@ -1,4 +1,4 @@
-import {Binds, Component, Module} from "karambit-decorators"
+import {Binds, Component, Module, Provides} from "karambit-decorators"
 
 interface ParentInterface {
     x: number
@@ -24,6 +24,16 @@ export abstract class DuplicateBindingsModule {
 
     @Binds
     abstract bindInterface2_2: (x: ChildInterface2) => ChildInterface1
+
+    @Provides
+    static provideChild1(): ChildInterface1 {
+        return {x: 1, y: 2}
+    }
+
+    @Provides
+    static provideChild2(): ChildInterface2 {
+        return {x: 2, y: 2, z: 0}
+    }
 }
 
 @Component({modules: [DuplicateBindingsModule]})
