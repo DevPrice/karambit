@@ -38,7 +38,7 @@ yargs(hideBin(process.argv))
             .option("name-max-length", {
                 type: "number",
                 description: "Max length of generated identifiers",
-                default: 20,
+                default: 30,
             })
             .option("verbose", {
                 type: "boolean",
