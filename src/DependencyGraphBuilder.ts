@@ -265,7 +265,12 @@ export class DependencyGraphBuilder {
             return map.get(boundType)?.dependencies ?? []
         })
         if (cycle.length > 0) {
-            this.errorReporter.reportDependencyCycle(cycle[cycle.length - 1], cycle)
+            const context = cycle.slice(1)
+                .map(it => map.get(it))
+                .filter(isNotNull)
+                .map(it => it.declaration)
+                .filter(isNotNull)
+            this.errorReporter.reportDependencyCycle(cycle[cycle.length - 1], cycle, context)
         }
     }
 

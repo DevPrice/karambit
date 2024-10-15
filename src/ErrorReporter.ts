@@ -173,11 +173,14 @@ export class ErrorReporter {
         )
     }
 
-    reportDependencyCycle(type: QualifiedType, chain: QualifiedType[]): never {
+    reportDependencyCycle(type: QualifiedType, chain: QualifiedType[], context: ErrorContext): never {
         ErrorReporter.fail(
             KarambitErrorScope.DEPENDENCY_CYCLE,
-            `${qualifiedTypeToString(type)} causes a dependency cycle (circular dependency)!\n\n` +
-            `${chain.map(qualifiedTypeToString).join(" -> ")}\n`,
+            addContext(
+                `${qualifiedTypeToString(type)} causes a dependency cycle (circular dependency)!\n\n` +
+                    `${chain.map(qualifiedTypeToString).join(" -> ")}`,
+                context,
+            ),
             this.component,
         )
     }
