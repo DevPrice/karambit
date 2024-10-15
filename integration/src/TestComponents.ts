@@ -300,31 +300,6 @@ export abstract class IncludesComponent {
     abstract readonly anotherQualifiedValue: number & AnotherQualifier
 }
 
-@Inject
-export class ProvidedOptional {
-    constructor(readonly requiredString?: string, readonly initializedValue: boolean = true, readonly optionalValue?: number) { }
-}
-
-export class MissingOptional {
-    constructor(readonly requiredValue: number) { }
-}
-
-@Module
-export class OptionalModule {
-
-    @Provides
-    static provideRequiredString(): string {
-        return "not optional"
-    }
-}
-
-@Component({modules: [OptionalModule]})
-export abstract class OptionalComponent {
-
-    abstract readonly providedOptional?: ProvidedOptional
-    abstract readonly missingOptional?: MissingOptional
-}
-
 @Subcomponent({modules: [MultibindingSetSubcomponentModule]})
 export abstract class MultibindingSetSubcomponent {
 

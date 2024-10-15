@@ -4,10 +4,10 @@ import {
     KarambitAssistedInjectComponent,
     KarambitIncludesComponent,
     KarambitMultibindingsComponent,
-    KarambitOptionalComponent,
     KarambitProviderComponent,
     KarambitScopedComponent,
 } from "../src/karambit-generated/src/TestComponents"
+import {KarambitOptionalComponent} from "../src/karambit-generated/src/OptionalComponent"
 import {ChildComponent, childInstance, nullProvidedCount} from "../src/TestComponents"
 import {multibindingScopedProvidedCount} from "../src/MultibindingModules"
 
@@ -97,6 +97,14 @@ describe("Injection", () => {
         })
         it("provided class with optional value does not have optional parameter", () => {
             assert.strictEqual(optionalComponent.providedOptional!.optionalValue, undefined)
+        })
+        it("optional has all available dependencies", () => {
+            const subcomponent = optionalComponent.subcomponentFactory()
+            const nestedSubcomponent = subcomponent.subcomponentFactory()
+            assert.strictEqual(optionalComponent.missingOptional, undefined)
+            assert.ok(subcomponent.presentOptional)
+            assert.strictEqual(subcomponent.presentOptional.optionalSymbol, undefined)
+            assert.strictEqual(nestedSubcomponent.presentOptional.optionalSymbol, Symbol.for("optional"))
         })
     })
     describe("Subcomponents", () => {

@@ -1,7 +1,7 @@
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {TypeResolver} from "./TypeResolver"
 import {ConstructorHelper} from "./ConstructorHelper"
-import {Container, findCycles, isNotNull} from "./Util"
+import {Container, findCycles, isNotNull, memoized} from "./Util"
 import * as ts from "typescript"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
@@ -81,13 +81,30 @@ export class DependencyGraphBuilder {
             const boundType = this.typeResolver.resolveBoundType(next.type)
             if (given.has(boundType) || resolved.has(boundType)) continue
 
-            const providerResult = this.getProvider(boundType)
-            if (providerResult) {
-                const {provider, dependencies} = providerResult
-                if (provider !== undefined) resolved.set(boundType, provider)
-                if (dependencies !== undefined) todo.push(...dependencies)
+            if (next.optional) {
+                const optionalGraph = this.buildDependencyGraph(
+                    new Set([{...next, optional: false}]),
+                    new Set(resolved.keys()),
+                )
+                if (Array.from(optionalGraph.missing.keys()).every(it => it.optional)) {
+                    for (const [type, optional] of optionalGraph.resolved) {
+                        resolved.set(type, optional)
+                    }
+                    for (const dep of optionalGraph.missing.keys()) {
+                        missing.add(dep)
+                    }
+                } else {
+                    missing.add(next)
+                }
             } else {
-                missing.add(next)
+                const providerResult = this.getProvider(boundType)
+                if (providerResult) {
+                    const {provider, dependencies} = providerResult
+                    if (provider !== undefined) resolved.set(boundType, provider)
+                    if (dependencies !== undefined) todo.push(...dependencies)
+                } else {
+                    missing.add(next)
+                }
             }
         }
 
@@ -116,6 +133,7 @@ export class DependencyGraphBuilder {
         }
     }
 
+    @memoized
     private getProvider(boundType: QualifiedType): { provider?: DependencyProvider, dependencies?: Iterable<Dependency> } | undefined {
         const providedType = this.nodeDetector.isProvider(boundType.type)
         if (providedType) {
@@ -200,6 +218,7 @@ export class DependencyGraphBuilder {
         return undefined
     }
 
+    @memoized
     private getInjectableConstructor(type: ts.Type): InjectableConstructor | undefined {
         const symbol = type.getSymbol()
         const declarations = symbol?.getDeclarations()?.filter(ts.isClassDeclaration)
@@ -220,16 +239,22 @@ export class DependencyGraphBuilder {
 
         if (this.scopeFilter === undefined) return constructor
 
+        const isReusableScope = scope && this.nodeDetector.isReusableScope(scope)
+
         //  this is another component's scope
-        if (scope && !this.nodeDetector.isReusableScope(scope) && scope !== this.scopeFilter.filterOnly) return undefined
+        if (scope && !isReusableScope && scope !== this.scopeFilter.filterOnly) return undefined
 
         // this is our scope
         if (scope === this.scopeFilter.filterOnly && this.scopeFilter.filterOnly) return constructor
 
         const parentGraph = this.parentGraph
+        const parentCanProvide = parentGraph
+            && parentGraph(createQualifiedType({type}))
+            // TODO: Ideally, we would let the parent provide this if we can't provide the optional param either
+            && parameters.every(param => !param.optional || parentGraph(param.type))
 
         // unscoped, if the parent can provide this, then let it
-        if (parentGraph && parentGraph(createQualifiedType({type}))) return undefined
+        if (parentCanProvide) return undefined
         return constructor
     }
 
