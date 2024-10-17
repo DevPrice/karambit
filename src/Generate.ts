@@ -54,7 +54,14 @@ yargs(hideBin(process.argv))
                 default: false,
             }),
         args => {
-            const tsconfigFile = fs.lstatSync(args.tsconfig).isDirectory() ? Path.join(args.tsconfig, "tsconfig.json") : args.tsconfig
+            if (!fs.existsSync(args.tsconfig)) {
+                console.error("No such file or directory:", args.tsconfig)
+                process.exit(1)
+            }
+
+            const tsconfigFile = fs.lstatSync(args.tsconfig).isDirectory()
+                ? Path.join(args.tsconfig, "tsconfig.json")
+                : args.tsconfig
 
             const configFile = ts.readConfigFile(tsconfigFile, ts.sys.readFile)
             if (configFile.error) {
