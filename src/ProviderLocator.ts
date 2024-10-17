@@ -36,8 +36,7 @@ export class ProviderLocator {
         dependencyParams.forEach(param => {
             const name = this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)
             const type = param.type
-            const isInstanceBinding = param.decorators.some(this.nodeDetector.isBindsInstanceDecorator)
-            if (isInstanceBinding) {
+            if (this.nodeDetector.getBindsInstanceAnnotation(param.declaration)) {
                 const provider: PropertyProvider = {
                     providerType: ProviderType.PROPERTY,
                     declaration: param.declaration,

@@ -96,7 +96,12 @@ export class InjectNodeDetector {
     }
 
     @bound
-    isBindsInstanceDecorator(decorator: ts.Node): decorator is ts.Decorator {
+    getBindsInstanceAnnotation(node: Annotated): AnnotationLike | undefined {
+        return node.modifiers?.find(this.isBindsInstanceDecorator) || this.hasJSDocTag(node, "bindsInstance")
+    }
+
+    @bound
+    private isBindsInstanceDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "BindsInstance")
     }
 
