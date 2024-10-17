@@ -127,7 +127,7 @@ export class InjectNodeDetector {
 
     @bound
     getModuleAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isModuleDecorator) ?? this.hasJSDocTag(node, "module")
+        return node.modifiers?.find(this.isModuleDecorator) ?? this.hasJSDocTag(node, "karambitModule")
     }
 
     @bound

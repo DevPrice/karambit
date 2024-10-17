@@ -194,7 +194,7 @@ export abstract class ScopedSubcomponent {
 
 export interface ParentInterface { }
 
-/** @module */
+/** @karambitModule */
 export abstract class ParentModule {
 
     /** @binds */
