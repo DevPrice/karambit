@@ -4,6 +4,7 @@ import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType
 import {ErrorReporter} from "./ErrorReporter"
 import {bound, isNotNull} from "./Util"
 import {Hacks} from "./Hacks"
+import {KarambitOptions} from "./karambit"
 
 interface Decorated extends ts.Node {
     name?: { getText: () => string }
@@ -18,6 +19,7 @@ export class InjectNodeDetector {
         private readonly typeChecker: ts.TypeChecker,
         private readonly hacks: Hacks,
         private readonly errorReporter: ErrorReporter,
+        private readonly karambitOptions: KarambitOptions,
     ) { }
 
     @bound
@@ -74,7 +76,7 @@ export class InjectNodeDetector {
 
     @bound
     isProvidesAnnotated(node: Decorated): boolean {
-        return !!node.modifiers?.some(this.isProvidesDecorator) || hasJSDocTag(node, "provides")
+        return !!node.modifiers?.some(this.isProvidesDecorator) || this.hasJSDocTag(node, "provides")
     }
 
     @bound
@@ -84,7 +86,7 @@ export class InjectNodeDetector {
 
     @bound
     isBindsAnnotated(node: Decorated): boolean {
-        return !!node.modifiers?.some(this.isBindsDecorator) || hasJSDocTag(node, "binds")
+        return !!node.modifiers?.some(this.isBindsDecorator) || this.hasJSDocTag(node, "binds")
     }
 
     @bound
@@ -306,8 +308,9 @@ export class InjectNodeDetector {
         if (!match || match.length < 2) throw ErrorReporter.reportParseFailed(`Failed to resolve string literal: ${literal.getText()}`)
         return match[1]
     }
-}
 
-function hasJSDocTag(node: ts.Node, tagName: string): boolean {
-    return ts.getJSDocTags(node).some(tag => tag.tagName.text.localeCompare(tagName, undefined, {sensitivity: "accent"}) === 0)
+    private hasJSDocTag(node: ts.Node, tagName: string): boolean {
+        return this.karambitOptions.experimentalTags
+            && ts.getJSDocTags(node).some(tag => tag.tagName.text.localeCompare(tagName, undefined, {sensitivity: "accent"}) === 0)
+    }
 }

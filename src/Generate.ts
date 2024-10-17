@@ -11,6 +11,7 @@ interface GenerateCommandOptions {
     verbose: boolean
     dryRun: boolean
     nameMaxLength: number
+    experimentalTags: boolean
 }
 
 yargs(hideBin(process.argv))
@@ -45,6 +46,11 @@ yargs(hideBin(process.argv))
                 alias: "v",
                 description: "Enable verbose output",
                 default: false,
+            })
+            .option("experimental-tags", {
+                type: "boolean",
+                description: "Enable experimental JS Doc tag support",
+                default: false,
             }),
         args => {
             const tsconfigFile = Path.basename(args.tsconfig) === "tsconfig.json" ? args.tsconfig : Path.join(args.tsconfig, "tsconfig.json")
@@ -78,6 +84,7 @@ function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOpt
             dryRun: cliOptions.dryRun,
             nameMaxLength: cliOptions.nameMaxLength,
             verbose: cliOptions.verbose,
+            experimentalTags: cliOptions.experimentalTags,
         })
     } catch (e) {
         if (e instanceof KarambitError && !cliOptions.verbose) {

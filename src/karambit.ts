@@ -37,6 +37,7 @@ export interface KarambitOptions {
     dryRun: boolean
     verbose: boolean
     nameMaxLength: number
+    experimentalTags: boolean
 }
 
 export function generateComponentFiles(program: ts.Program, options?: Partial<KarambitOptions>) {
@@ -65,4 +66,5 @@ const defaultOptions: KarambitOptions = {
     dryRun: false,
     verbose: false,
     nameMaxLength: 30,
+    experimentalTags: false,
 }
