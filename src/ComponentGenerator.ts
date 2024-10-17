@@ -170,6 +170,11 @@ export class ComponentGenerator {
             )
         }
 
+        const builder = this.componentDeclarationBuilderFactory(
+            typeResolver,
+            mergedGraph.resolved,
+        )
+
         const missingOptionals: [QualifiedType, UndefinedProvider][] = Array.from(mergedGraph.missing.keys()).map(it => {
             return [it.type, {providerType: ProviderType.UNDEFINED, type: it.type}]
         })
@@ -178,11 +183,6 @@ export class ComponentGenerator {
                 Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals),
                 ([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type
             )
-        )
-        const builder = this.componentDeclarationBuilderFactory(
-            typeResolver,
-            generatedDeps,
-            new Set(missingSubcomponentDependencies.map(it => it.type)),
         )
         const classDeclaration = builder.declareComponent({
             identifier: componentIdentifier,
@@ -255,6 +255,10 @@ export class ComponentGenerator {
 
         const mergedGraph = graphBuilder.buildDependencyGraph(new Set([...definition.exposedProperties, ...missingSubcomponentDependencies]))
 
+        const subcomponentBuilder = this.componentDeclarationBuilderFactory(
+            typeResolver,
+            mergedGraph.resolved,
+        )
 
         const resolvedTypes = new Set(mergedGraph.resolved.keys())
         const missing = Array.from(mergedGraph.missing.keys())
@@ -277,11 +281,6 @@ export class ComponentGenerator {
                 Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals),
                 ([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type
             )
-        )
-        const subcomponentBuilder = this.componentDeclarationBuilderFactory(
-            typeResolver,
-            generatedDeps,
-            new Set(missingSubcomponentDependencies.map(it => it.type)),
         )
         const members = [
             ...definition.exposedProperties.map(it => subcomponentBuilder.declareComponentProperty(factory.declaration, it)),

@@ -21,11 +21,7 @@ import {Assisted, AssistedInject} from "karambit-decorators"
 import {bound} from "./Util"
 import {isTypeNullable} from "./TypescriptUtil"
 
-export type ComponentDeclarationBuilderFactory = (
-    typeResolver: TypeResolver,
-    instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
-    neededBySubcomponent: ReadonlySet<QualifiedType>,
-) => ComponentDeclarationBuilder
+export type ComponentDeclarationBuilderFactory = (typeResolver: TypeResolver, instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>) => ComponentDeclarationBuilder
 
 @AssistedInject
 export class ComponentDeclarationBuilder {
@@ -38,7 +34,6 @@ export class ComponentDeclarationBuilder {
         private readonly errorReporter: ErrorReporter,
         @Assisted private readonly typeResolver: TypeResolver,
         @Assisted private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
-        @Assisted private subcomponentsNeedAccess: ReadonlySet<QualifiedType>,
     ) { }
 
     declareComponent(options: {declaration: ts.ClassDeclaration, constructorParams: ConstructorParameter[], members: ts.ClassElement[], identifier: ts.Identifier}): ts.ClassDeclaration {
@@ -109,7 +104,7 @@ export class ComponentDeclarationBuilder {
     }
 
     getProviderDeclaration(provider: InstanceProvider, componentScope?: ts.Symbol): ts.ClassElement[] {
-        if (provider.providerType == ProviderType.PARENT) return this.subcomponentsNeedAccess.has(provider.type) ? [this.getParentProvidedDeclaration(provider.type, provider.optional)] : []
+        if (provider.providerType == ProviderType.PARENT) return [this.getParentProvidedDeclaration(provider.type, provider.optional)]
         if (provider.providerType == ProviderType.PROPERTY) return [this.getComponentProvidedDeclaration(provider)]
         if (provider.providerType == ProviderType.SUBCOMPONENT_FACTORY) return [this.getSubcomponentFactoryDeclaration(provider)]
         if (provider.providerType == ProviderType.ASSISTED_FACTORY) return [this.getAssistedFactoryDeclaration(provider)]
@@ -186,9 +181,6 @@ export class ComponentDeclarationBuilder {
     @bound
     private getParamExpression(paramType: QualifiedType): ts.Expression {
         const instanceProvider = this.instanceProviders.get(paramType)
-        if (instanceProvider && instanceProvider.providerType === ProviderType.PARENT && !this.subcomponentsNeedAccess.has(paramType)) {
-            return this.accessParentGetter(paramType)
-        }
         const providedType = this.nodeDetector.isProvider(paramType.type)
         if (providedType) {
             const qualifiedProvidedType = createQualifiedType({
