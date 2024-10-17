@@ -11,6 +11,8 @@ interface Decorated extends ts.Node {
     modifiers?: ts.NodeArray<ts.ModifierLike>
 }
 
+export type AnnotationLike = ts.Decorator | ts.JSDocTag
+
 @Inject
 @Reusable
 export class InjectNodeDetector {
@@ -75,8 +77,8 @@ export class InjectNodeDetector {
     }
 
     @bound
-    isProvidesAnnotated(node: Decorated): boolean {
-        return !!node.modifiers?.some(this.isProvidesDecorator) || this.hasJSDocTag(node, "provides")
+    getProvidesAnnotation(node: Decorated): AnnotationLike | undefined {
+        return node.modifiers?.find(this.isProvidesDecorator) || this.hasJSDocTag(node, "provides")
     }
 
     @bound
@@ -85,8 +87,8 @@ export class InjectNodeDetector {
     }
 
     @bound
-    isBindsAnnotated(node: Decorated): boolean {
-        return !!node.modifiers?.some(this.isBindsDecorator) || this.hasJSDocTag(node, "binds")
+    getBindsAnnotation(node: Decorated): AnnotationLike | undefined {
+        return node.modifiers?.find(this.isBindsDecorator) || this.hasJSDocTag(node, "binds")
     }
 
     @bound
@@ -97,6 +99,11 @@ export class InjectNodeDetector {
     @bound
     isBindsInstanceDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "BindsInstance")
+    }
+
+    @bound
+    getInjectAnnotation(node: Decorated): AnnotationLike | undefined {
+        return node.modifiers?.find(this.isInjectDecorator) ?? this.hasJSDocTag(node, "inject")
     }
 
     @bound
@@ -309,8 +316,8 @@ export class InjectNodeDetector {
         return match[1]
     }
 
-    private hasJSDocTag(node: ts.Node, tagName: string): boolean {
-        return this.karambitOptions.experimentalTags
-            && ts.getJSDocTags(node).some(tag => tag.tagName.text.localeCompare(tagName, undefined, {sensitivity: "accent"}) === 0)
+    private hasJSDocTag(node: ts.Node, tagName: string): ts.JSDocTag | undefined {
+        if (!this.karambitOptions.experimentalTags) return undefined
+        return ts.getJSDocTags(node).find(tag => tag.tagName.text.localeCompare(tagName, undefined, {sensitivity: "accent"}) === 0)
     }
 }

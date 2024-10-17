@@ -145,18 +145,18 @@ export class ModuleLocator {
 
     private getFactoriesAndBindings(module: ts.ClassDeclaration): {factories: ProvidesMethod[], bindings: Binding[]} {
         const factories = module.members.filter((node): node is ts.MethodDeclaration => {
-            return ts.isMethodDeclaration(node) && this.nodeDetector.isProvidesAnnotated(node)
+            return ts.isMethodDeclaration(node) && !!this.nodeDetector.getProvidesAnnotation(node)
         })
             .flatMap(this.getProvidesMethod)
             .map(factory => ({...factory, module}))
 
         const bindings = module.members.filter((node): node is ts.MethodDeclaration => {
-            return ts.isMethodDeclaration(node) && this.nodeDetector.isBindsAnnotated(node)
+            return ts.isMethodDeclaration(node) && !!this.nodeDetector.getBindsAnnotation(node)
         })
             .map(this.getBinding)
             .concat(
                 module.members.filter((node): node is ts.PropertyDeclaration => {
-                    return ts.isPropertyDeclaration(node) && this.nodeDetector.isBindsAnnotated(node)
+                    return ts.isPropertyDeclaration(node) && !!this.nodeDetector.getBindsAnnotation(node)
                 })
                     .map(this.getPropertyBinding)
             )

@@ -164,9 +164,10 @@ export abstract class ChildSubcomponent implements ChildSubcomponentInterface {
 }
 export type ChildSubcomponentFactory = (values: number[]) => ChildSubcomponentInterface
 
-@Inject
+
+/** @inject */
 @TestSubcomponentScope
-export class ScopedSubcomponentClass {
+export abstract class ScopedSubcomponentClass {
     constructor(readonly value: string) { }
 }
 

@@ -16,6 +16,7 @@ export class AnnotationValidator {
 
     @bound
     validateAnnotations(node: ts.Node): void {
+        // TODO: Validate JSDoc annotated nodes
         const annotations = findAllChildren(node, this.nodeDetector.isKarambitDecorator)
         const componentAnnotations = annotations.filter(this.nodeDetector.isComponentDecorator)
         const moduleAnnotations = annotations.filter(this.nodeDetector.isModuleDecorator)
@@ -34,7 +35,7 @@ export class AnnotationValidator {
     private requireClassExported(decorator: ts.Decorator): void {
         if (ts.isClassDeclaration(decorator.parent)) {
             if (!decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.ExportKeyword)) {
-                this.errorReporter.reportParseFailed(`${this.getDecoratorName(decorator)} annotated class must be exported!`, decorator.parent)
+                this.errorReporter.reportParseFailed(`${this.getAnnotationName(decorator)} annotated class must be exported!`, decorator.parent)
             }
         }
     }
@@ -43,7 +44,7 @@ export class AnnotationValidator {
     private requireAbstractClass(decorator: ts.Decorator): void {
         if (ts.isClassDeclaration(decorator.parent)) {
             if (!decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-                this.errorReporter.reportParseFailed(`${this.getDecoratorName(decorator)} annotated class must be abstract!`, decorator.parent)
+                this.errorReporter.reportParseFailed(`${this.getAnnotationName(decorator)} annotated class must be abstract!`, decorator.parent)
             }
         }
     }
@@ -52,16 +53,16 @@ export class AnnotationValidator {
     private requireConcreteClass(decorator: ts.Decorator): void {
         if (ts.isClassDeclaration(decorator.parent)) {
             if (decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-                this.errorReporter.reportParseFailed(`${this.getDecoratorName(decorator)} annotated class must not be abstract!`, decorator.parent)
+                this.errorReporter.reportParseFailed(`${this.getAnnotationName(decorator)} annotated class must not be abstract!`, decorator.parent)
             }
         }
     }
 
-    private getDecoratorName(decorator: ts.Decorator): string {
+    private getAnnotationName(decorator: {getText(): string}): string {
         const text = decorator.getText()
         const regex = /^(@[^()]*)(?:\(.*\))?$/
         const matches = text.match(regex)
         if (matches) return matches[1]
-        return text
+        return `@${text}`
     }
 }
