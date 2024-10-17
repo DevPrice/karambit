@@ -1,13 +1,5 @@
 import chalk = require("chalk")
 
-declare global {
-    export interface Array<T> {
-        distinctBy(predicate: (item: T) => unknown): T[]
-    }
-}
-
-Array.prototype.distinctBy = function <T> (this: Array<T>, predicate: (item: T) => unknown) { return distinctBy(this, predicate) }
-
 export function identity<T>(value: T): T {
     return value
 }

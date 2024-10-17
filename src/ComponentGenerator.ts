@@ -23,7 +23,7 @@ import {Inject, Reusable} from "karambit-decorators"
 import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"
 import {isTypeNullable} from "./TypescriptUtil"
 import {ModuleProviders, ProviderLocator} from "./ProviderLocator"
-import {isNotNull} from "./Util"
+import {distinctBy, isNotNull} from "./Util"
 
 interface GeneratedSubcomponent {
     readonly name: string
@@ -133,10 +133,12 @@ export class ComponentGenerator {
             )
         }
 
-        const subcomponents = Array.from(graph.resolved.keys()).map(it => it.type)
-            .map(subcomponentFactoryLocator.asSubcomponentFactory)
-            .filter(isNotNull)
-            .distinctBy(it => it.subcomponentType)
+        const subcomponents = distinctBy(
+            Array.from(graph.resolved.keys()).map(it => it.type)
+                .map(subcomponentFactoryLocator.asSubcomponentFactory)
+                .filter(isNotNull),
+            it => it.subcomponentType
+        )
         const canBind = (type: QualifiedType, given: ReadonlySet<QualifiedType>) => {
             return graphBuilder.buildDependencyGraph(new Set([{type, optional: false}]), given).missing.size === 0
         }
@@ -177,8 +179,10 @@ export class ComponentGenerator {
             return [it.type, {providerType: ProviderType.UNDEFINED, type: it.type}]
         })
         const generatedDeps = new Map(
-            Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals)
-                .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
+            distinctBy(
+                Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals),
+                ([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type
+            )
         )
         const classDeclaration = builder.declareComponent({
             identifier: componentIdentifier,
@@ -227,10 +231,12 @@ export class ComponentGenerator {
         const subcomponentName = factory.subcomponentType.type.symbol.name
         const subcomponentIdentifier = ts.factory.createUniqueName(subcomponentName)
 
-        const subcomponents = Array.from(graph.resolved.keys()).map(it => it.type)
-            .map(subcomponentFactoryLocator.asSubcomponentFactory)
-            .filter(isNotNull)
-            .distinctBy(it => it.subcomponentType)
+        const subcomponents = distinctBy(
+            Array.from(graph.resolved.keys()).map(it => it.type)
+                .map(subcomponentFactoryLocator.asSubcomponentFactory)
+                .filter(isNotNull),
+            it => it.subcomponentType
+        )
         const duplicateScope = definition.scope && ancestorScopes.get(definition.scope)
         if (duplicateScope) {
             this.errorReporter.reportDuplicateScope(subcomponentName, duplicateScope)
@@ -271,8 +277,10 @@ export class ComponentGenerator {
             return [it.type, {providerType: ProviderType.PARENT, type: it.type, optional: !parentCanBind(it.type, resolvedTypes)}]
         })
         const generatedDeps = new Map(
-            Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals)
-                .distinctBy(([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type)
+            distinctBy(
+                Array.from<[QualifiedType, InstanceProvider]>(mergedGraph.resolved.entries()).concat(missingOptionals),
+                ([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type
+            )
         )
         const members = [
             ...definition.exposedProperties.map(it => subcomponentBuilder.declareComponentProperty(factory.declaration, it)),
