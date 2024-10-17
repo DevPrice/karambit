@@ -33,8 +33,7 @@ export class InjectNodeDetector {
 
     @bound
     isIterableProvider(item: ts.MethodDeclaration): boolean {
-        const modifiers = item.modifiers ?? []
-        return modifiers.some(it => this.isElementsIntoMapDecorator(it) || this.isElementsIntoSetDecorator(it))
+        return !!(this.getElementsIntoSetAnnotation(item) || this.getElementsIntoMapAnnotation(item))
     }
 
     @bound
@@ -142,12 +141,22 @@ export class InjectNodeDetector {
     }
 
     @bound
-    isElementsIntoSetDecorator(decorator: ts.Node): decorator is ts.Decorator {
+    getElementsIntoSetAnnotation(node: Annotated): AnnotationLike | undefined {
+        return node.modifiers?.find(this.isElementsIntoSetDecorator) ?? this.hasJSDocTag(node, "elementsIntoSet")
+    }
+
+    @bound
+    private isElementsIntoSetDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "ElementsIntoSet")
     }
 
     @bound
-    isElementsIntoMapDecorator(decorator: ts.Node): decorator is ts.Decorator {
+    getElementsIntoMapAnnotation(node: Annotated): AnnotationLike | undefined {
+        return node.modifiers?.find(this.isElementsIntoMapDecorator) ?? this.hasJSDocTag(node, "elementsIntoMap")
+    }
+
+    @bound
+    private isElementsIntoMapDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "ElementsIntoMap")
     }
 

@@ -57,8 +57,10 @@ export abstract class MultibindingSetModule {
         return two
     }
 
-    @Provides
-    @ElementsIntoSet
+    /**
+     * @provides
+     * @elementsIntoSet
+     */
     static provideIterableIntoSet(): number[] {
         return [10, 11, 12]
     }

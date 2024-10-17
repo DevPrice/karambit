@@ -104,7 +104,7 @@ export class ProviderLocator {
                 const existingFactory = factories.get(elementProviderType)
                 if (existingFactory) throw this.errorReporter.reportDuplicateProviders(elementProviderType, [existingFactory, providesMethod])
                 factories.set(elementProviderType, {...providesMethod, type: elementProviderType})
-            } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isElementsIntoSetDecorator)) {
+            } else if (this.nodeDetector.getElementsIntoSetAnnotation(providesMethod.declaration)) {
                 const iterableType = this.nodeDetector.isIterable(providesMethod.type.type)
                 if (!iterableType) this.errorReporter.reportParseFailed("@ElementsIntoSet provider must return an iterable!", providesMethod.declaration)
                 const qualifiedType = createQualifiedType({...providesMethod.type, type: iterableType})
@@ -123,7 +123,7 @@ export class ProviderLocator {
                 const existingFactory = factories.get(elementsProviderType)
                 if (existingFactory) throw this.errorReporter.reportDuplicateProviders(elementsProviderType, [existingFactory, providesMethod])
                 factories.set(elementsProviderType, {...providesMethod, type: elementsProviderType})
-            } else if (providesMethod.declaration.modifiers?.some(this.nodeDetector.isElementsIntoMapDecorator)) {
+            } else if (this.nodeDetector.getElementsIntoMapAnnotation(providesMethod.declaration)) {
                 const iterableType = this.nodeDetector.isIterable(providesMethod.type.type)
                 if (!iterableType) this.errorReporter.reportParseFailed("@ElementsIntoMap provider must return an iterable!", providesMethod.declaration)
 
