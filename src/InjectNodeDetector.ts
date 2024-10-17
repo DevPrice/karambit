@@ -76,7 +76,12 @@ export class InjectNodeDetector {
     }
 
     @bound
-    isAssistedInjectDecorator(decorator: ts.Node): decorator is ts.Decorator {
+    getAssistedInjectDecorator(node: Annotated): AnnotationLike | undefined {
+        return node.modifiers?.find(this.isAssistedInjectDecorator) ?? this.hasJSDocTag(node, "assistedInject")
+    }
+
+    @bound
+    private isAssistedInjectDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "AssistedInject")
     }
 

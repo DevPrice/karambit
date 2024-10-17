@@ -33,7 +33,7 @@ export class AssistedFactoryLocator {
         const declaration = declarations[0]
         if (!ts.isClassDeclaration(declaration)) return undefined
 
-        const decorator = declaration.modifiers?.find(this.nodeDetector.isAssistedInjectDecorator)
+        const decorator = this.nodeDetector.getAssistedInjectDecorator(declaration)
         if (!decorator) return undefined
 
         const constructorParams = this.constructorHelper.getConstructorParamsForDeclaration(declaration)

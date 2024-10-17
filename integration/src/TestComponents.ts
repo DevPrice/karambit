@@ -341,7 +341,7 @@ export class AssistedInjectClass {
     ) { }
 }
 
-@AssistedInject
+/** @assistedInject */
 export class AnotherAssistedInjectClass {
 
     constructor(
