@@ -46,7 +46,7 @@ export function generateComponentFiles(program: ts.Program, options?: Partial<Ka
     const generatedFiles = program.getSourceFiles()
         .filter(sourceFile => !program.isSourceFileFromExternalLibrary(sourceFile) && !program.isSourceFileDefaultLibrary(sourceFile))
         .map(sourceFile => {
-            programComponent.logger.debug(`Reading ${sourceFile.fileName}...`)
+            programComponent.logger.debug(`Reading ${Path.relative(".", sourceFile.fileName)}...`)
             const sourceFileComponent = programComponent.sourceFileSubcomponentFactory(sourceFile)
             for (const visitor of sourceFileComponent.sourceFileVisitors) {
                 visitor(sourceFile)
@@ -59,7 +59,7 @@ export function generateComponentFiles(program: ts.Program, options?: Partial<Ka
         if (!karambitOptions.dryRun) {
             programComponent.fileWriter.writeComponentFile(file, outputFilename)
         } else {
-            programComponent.logger.debug(`Not writing ${outputFilename} (dry-run)`)
+            programComponent.logger.debug(`Not writing ${Path.relative(karambitOptions.outDir, outputFilename)} (dry-run)`)
         }
     }
 }
