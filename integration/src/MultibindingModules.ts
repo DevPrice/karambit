@@ -38,8 +38,10 @@ export abstract class MultibindingSetModule {
     @k.IntoSet
     abstract bindMultibindingType: (impl: MultibindingTypeImpl) => MultibindingType
 
-    @Provides
-    @IntoSet
+    /**
+     * @provides
+     * @intoSet
+     */
     static provideOne(): number {
         return 1
     }

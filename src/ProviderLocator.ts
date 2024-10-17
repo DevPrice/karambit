@@ -84,16 +84,16 @@ export class ProviderLocator {
             if (providesMethod.scope && !this.nodeDetector.isReusableScope(providesMethod.scope) && providesMethod.scope != componentScope) {
                 this.errorReporter.reportInvalidScope(providesMethod, componentScope)
             }
-            const intoSetDecorator = providesMethod.declaration.modifiers?.find(this.nodeDetector.isIntoSetDecorator)
-            const intoMapDecorator = providesMethod.declaration.modifiers?.find(this.nodeDetector.isIntoMapDecorator)
-            if (intoSetDecorator) {
+            const intoSetAnnotation = this.nodeDetector.getIntoSetAnnotation(providesMethod.declaration)
+            const intoMapAnnotation = this.nodeDetector.getIntoMapAnnotation(providesMethod.declaration)
+            if (intoSetAnnotation) {
                 const existing: SetMultibinding = setMultibindings.get(providesMethod.type) ?? {
                     providerType: ProviderType.SET_MULTIBINDING,
                     type: providesMethod.type,
                     elementProviders: [],
                 }
-                const optional = this.nodeDetector.getBooleanPropertyNode(intoSetDecorator, "optional") ?? false
-                if (optional) this.errorReporter.reportParseFailed("Optional multibindings not currently supported!", intoSetDecorator)
+                const optional = ts.isDecorator(intoSetAnnotation) && !!this.nodeDetector.getBooleanPropertyNode(intoSetAnnotation, "optional")
+                if (optional) this.errorReporter.reportParseFailed("Optional multibindings not currently supported!", intoSetAnnotation)
                 const elementProviderType = createQualifiedType({...providesMethod.type, discriminator: Symbol("element")})
                 existing.elementProviders.push({
                     type: elementProviderType,
@@ -146,7 +146,7 @@ export class ProviderLocator {
                 const existingFactory = factories.get(entriesProviderType)
                 if (existingFactory) throw this.errorReporter.reportDuplicateProviders(entriesProviderType, [existingFactory, providesMethod])
                 factories.set(entriesProviderType, {...providesMethod, type: entriesProviderType})
-            } else if (intoMapDecorator) {
+            } else if (intoMapAnnotation) {
                 const info = this.nodeDetector.getMapBindingInfo(providesMethod.type, providesMethod.declaration)
                 if (!info) this.errorReporter.reportParseFailed("@IntoMap provider must have @MapKey or return tuple of size 2.", providesMethod.declaration)
 
@@ -155,8 +155,8 @@ export class ProviderLocator {
                     type: info.valueType,
                     entryProviders: [],
                 }
-                const optional = this.nodeDetector.getBooleanPropertyNode(intoMapDecorator, "optional") ?? false
-                if (optional) this.errorReporter.reportParseFailed("Optional multibindings not currently supported!", intoMapDecorator)
+                const optional = ts.isDecorator(intoMapAnnotation) && !!this.nodeDetector.getBooleanPropertyNode(intoMapAnnotation, "optional")
+                if (optional) this.errorReporter.reportParseFailed("Optional multibindings not currently supported!", intoMapAnnotation)
                 const entryProviderType = createQualifiedType({...providesMethod.type, discriminator: Symbol("entry")})
                 existing.entryProviders.push({
                     type: entryProviderType,
@@ -176,7 +176,7 @@ export class ProviderLocator {
         })
         const bindings: Binding[] = []
         installedModules.flatMap(it => it.bindings).forEach(binding => {
-            if (binding.declaration.modifiers?.some(this.nodeDetector.isIntoSetDecorator)) {
+            if (this.nodeDetector.getIntoSetAnnotation(binding.declaration)) {
                 const existing: SetMultibinding = setMultibindings.get(binding.returnType) ?? {
                     providerType: ProviderType.SET_MULTIBINDING,
                     type: binding.returnType,
@@ -192,7 +192,7 @@ export class ProviderLocator {
 
                 const entryBinding: Binding = {...binding, returnType: elementProviderType}
                 bindings.push(entryBinding)
-            } else if (binding.declaration.modifiers?.some(this.nodeDetector.isIntoMapDecorator)) {
+            } else if (this.nodeDetector.getIntoMapAnnotation(binding.declaration)) {
                 const info = this.nodeDetector.getMapBindingInfo(binding.returnType, binding.declaration)
                 if (!info) this.errorReporter.reportParseFailed("@IntoMap binding must have @MapKey or return tuple of size 2.", binding.declaration)
                 const existing: MapMultibinding = mapMultibindings.get([info.valueType, info.keyType]) ?? {

@@ -6,7 +6,7 @@ import {bound, isNotNull} from "./Util"
 import {Hacks} from "./Hacks"
 import {KarambitOptions} from "./karambit"
 
-interface Decorated extends ts.Node {
+interface Annotated extends ts.Node {
     name?: { getText: () => string }
     modifiers?: ts.NodeArray<ts.ModifierLike>
 }
@@ -38,7 +38,7 @@ export class InjectNodeDetector {
     }
 
     @bound
-    getScope(item: Decorated): ts.Symbol | undefined {
+    getScope(item: Annotated): ts.Symbol | undefined {
         const scopeDecorators = item.modifiers?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)).filter(isNotNull) ?? []
         if (scopeDecorators.length > 1) ErrorReporter.reportParseFailed(`Scoped element may only have one scope! ${item.name?.getText()} has ${scopeDecorators.length}.`)
         if (scopeDecorators.length === 1) {
@@ -77,7 +77,7 @@ export class InjectNodeDetector {
     }
 
     @bound
-    getProvidesAnnotation(node: Decorated): AnnotationLike | undefined {
+    getProvidesAnnotation(node: Annotated): AnnotationLike | undefined {
         return node.modifiers?.find(this.isProvidesDecorator) || this.hasJSDocTag(node, "provides")
     }
 
@@ -87,7 +87,7 @@ export class InjectNodeDetector {
     }
 
     @bound
-    getBindsAnnotation(node: Decorated): AnnotationLike | undefined {
+    getBindsAnnotation(node: Annotated): AnnotationLike | undefined {
         return node.modifiers?.find(this.isBindsDecorator) || this.hasJSDocTag(node, "binds")
     }
 
@@ -102,7 +102,7 @@ export class InjectNodeDetector {
     }
 
     @bound
-    getInjectAnnotation(node: Decorated): AnnotationLike | undefined {
+    getInjectAnnotation(node: Annotated): AnnotationLike | undefined {
         return node.modifiers?.find(this.isInjectDecorator) ?? this.hasJSDocTag(node, "inject")
     }
 
@@ -112,7 +112,7 @@ export class InjectNodeDetector {
     }
 
     @bound
-    getModuleAnnotation(node: Decorated): AnnotationLike | undefined {
+    getModuleAnnotation(node: Annotated): AnnotationLike | undefined {
         return node.modifiers?.find(this.isModuleDecorator) ?? this.hasJSDocTag(node, "module")
     }
 
@@ -122,12 +122,22 @@ export class InjectNodeDetector {
     }
 
     @bound
-    isIntoSetDecorator(decorator: ts.Node): decorator is ts.Decorator {
+    getIntoSetAnnotation(node: Annotated): AnnotationLike | undefined {
+        return node.modifiers?.find(this.isIntoSetDecorator) ?? this.hasJSDocTag(node, "intoSet")
+    }
+
+    @bound
+    private isIntoSetDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "IntoSet")
     }
 
     @bound
-    isIntoMapDecorator(decorator: ts.Node): decorator is ts.Decorator {
+    getIntoMapAnnotation(node: Annotated): AnnotationLike | undefined {
+        return node.modifiers?.find(this.isIntoMapDecorator) ?? this.hasJSDocTag(node, "intoMap")
+    }
+
+    @bound
+    private isIntoMapDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "IntoMap")
     }
 
