@@ -73,14 +73,18 @@ export class InjectNodeDetector {
     }
 
     @bound
-    isProvidesDecorator(decorator: ts.Node): decorator is ts.Decorator {
+    isProvidesAnnotated(node: Decorated): boolean {
+        return !!node.modifiers?.some(this.isProvidesDecorator) || hasJSDocTag(node, "provides")
+    }
+
+    @bound
+    private isProvidesDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Provides")
     }
 
     @bound
     isBindsAnnotated(node: Decorated): boolean {
-        return !!node.modifiers?.some(this.isBindsDecorator)
-            || ts.getJSDocTags(node).some(tag => tag.tagName.text.localeCompare("binds", undefined, {sensitivity: "accent"}))
+        return !!node.modifiers?.some(this.isBindsDecorator) || hasJSDocTag(node, "binds")
     }
 
     @bound
@@ -297,9 +301,13 @@ export class InjectNodeDetector {
         }
     }
 
-    resolveStringLiteral(literal: ts.StringLiteral): string {
+    private resolveStringLiteral(literal: ts.StringLiteral): string {
         const match = literal.getText().match(/^['"](.*)['"]$/)
         if (!match || match.length < 2) throw ErrorReporter.reportParseFailed(`Failed to resolve string literal: ${literal.getText()}`)
         return match[1]
     }
+}
+
+function hasJSDocTag(node: ts.Node, tagName: string): boolean {
+    return ts.getJSDocTags(node).some(tag => tag.tagName.text.localeCompare(tagName, undefined, {sensitivity: "accent"}) === 0)
 }

@@ -203,7 +203,7 @@ export abstract class ParentModule {
     @Binds()
     abstract bindChildSubcomponentFactory: (factory: (values: number[]) => ChildSubcomponent) => ChildSubcomponentFactory
 
-    @Provides()
+    /** @provides */
     static provideParentInterface(): ParentInterface {
         return {}
     }
