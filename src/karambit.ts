@@ -54,8 +54,8 @@ export function generateComponentFiles(program: ts.Program, options?: Partial<Ka
         const outputFilename = Path.basename(file.fileName)
         if (!karambitOptions.dryRun) {
             programComponent.fileWriter.writeComponentFile(file, outputFilename)
-        } else if (karambitOptions.verbose) {
-            console.debug(`Not writing ${outputFilename} (dry-run)`)
+        } else {
+            programComponent.logger.debug(`Not writing ${outputFilename} (dry-run)`)
         }
     }
 }

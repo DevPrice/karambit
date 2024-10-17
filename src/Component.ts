@@ -13,6 +13,7 @@ import type {KarambitOptions} from "./karambit"
 import {AnnotationValidator} from "./AnnotationValidator"
 import {FileWriter} from "./FileWriter"
 import {SourceFileVisitor} from "./Visitor"
+import {ignore, Logger} from "./Util"
 
 @Module
 export abstract class ComponentGenerationModule {
@@ -72,6 +73,21 @@ export abstract class ProgramModule {
     static providePrinter(): ts.Printer {
         return ts.createPrinter()
     }
+
+    @Provides
+    @Reusable
+    static provideLogger(options: KarambitOptions): Logger {
+        if (options.verbose) {
+            return console
+        } else {
+            return {
+                debug: ignore,
+                info: console.info,
+                warn: console.warn,
+                error: console.error,
+            }
+        }
+    }
 }
 
 @Component({modules: [ProgramModule], subcomponents: [SourceFileSubcomponent]})
@@ -80,6 +96,7 @@ export abstract class ProgramComponent {
 
     constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitOptions) { }
 
+    abstract readonly logger: Logger
     abstract readonly fileWriter: FileWriter
     abstract readonly sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>
 }

@@ -1,5 +1,9 @@
 import chalk = require("chalk")
 
+export type Logger = Pick<typeof console, "debug" | "info" | "warn" | "error">
+
+export function ignore(..._: unknown[]) { }
+
 export function identity<T>(value: T): T {
     return value
 }
