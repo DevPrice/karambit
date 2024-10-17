@@ -297,7 +297,7 @@ export class ComponentDeclarationBuilder {
                                 factory,
                                 factory.constructorParams
                                     .map(it => {
-                                        if (it.decorators.some(this.nodeDetector.isAssistedDecorator)) {
+                                        if (this.nodeDetector.getAssistedAnnotation(it.declaration)) {
                                             const factoryParam = factory.factoryParams
                                                 .find(p => p.type === it.type)
                                             if (!factoryParam) throw new Error("Error generating Assisted Factory!")
@@ -305,7 +305,7 @@ export class ComponentDeclarationBuilder {
                                         } else {
                                             return this.getParamExpression(it.type)
                                         }
-                                    })
+                                    }),
                             ),
                         )
                     )

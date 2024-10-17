@@ -172,7 +172,7 @@ export class DependencyGraphBuilder {
 
         const assistedFactory = this.assistedFactoryLocator.asAssistedFactory(boundType.type)
         if (assistedFactory) {
-            const dependencies = assistedFactory.constructorParams.filter(it => !it.decorators.some(this.nodeDetector.isAssistedDecorator))
+            const dependencies = assistedFactory.constructorParams.filter(it => !this.nodeDetector.getAssistedAnnotation(it.declaration))
             return {
                 provider: {...assistedFactory, dependencies: new Set(dependencies.map(it => it.type))},
                 dependencies,

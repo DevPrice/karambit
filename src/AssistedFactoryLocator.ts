@@ -38,7 +38,7 @@ export class AssistedFactoryLocator {
 
         const constructorParams = this.constructorHelper.getConstructorParamsForDeclaration(declaration)
 
-        const assistedParams = constructorParams.filter(param => param.decorators.some(it => this.nodeDetector.isAssistedDecorator(it)))
+        const assistedParams = constructorParams.filter(param => this.nodeDetector.getAssistedAnnotation(param.declaration))
         if (assistedParams.length < 1) return undefined
 
         const assistedParamTypes = new Set(assistedParams.map(it => it.type))
@@ -59,7 +59,7 @@ export class AssistedFactoryLocator {
             type: createQualifiedType({type}),
             factoryParams: signatureDeclaration.parameters.map(param => {
                 const constructorParamIndex = constructorParams.findIndex(it =>
-                    it.decorators.some(this.nodeDetector.isAssistedDecorator) && it.type.type === this.typeChecker.getTypeAtLocation(param.type ?? param)
+                    !!this.nodeDetector.getAssistedAnnotation(it.declaration) && it.type.type === this.typeChecker.getTypeAtLocation(param.type ?? param)
                 )
                 if (constructorParamIndex < 0) {
                     ErrorReporter.reportParseFailed(`Error parsing assisted factory: ${declaration.name?.getText()}`)

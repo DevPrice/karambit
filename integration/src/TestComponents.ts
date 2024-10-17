@@ -345,10 +345,10 @@ export class AssistedInjectClass {
 export class AnotherAssistedInjectClass {
 
     constructor(
-        @Assisted readonly assistedNumber: number,
+        /** @assisted */ readonly assistedNumber: number,
         readonly string: string,
-        @Assisted readonly assistedSymbol: symbol,
-        @Assisted readonly assistedObject: object,
+        /** @assisted */ readonly assistedSymbol: symbol,
+        /** @assisted */ readonly assistedObject: object,
     ) { }
 }
 
