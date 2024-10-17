@@ -146,9 +146,6 @@ abstract bindAnimal: (dog: Dog) => Animal
 > **Note**
 > Abstract property decorators are currently only supported if [`experimentalDecorators`](https://www.typescriptlang.org/tsconfig#experimentalDecorators) are enabled.
 
-> **Note**
-> Method-based bindings from previous releases are still supported, but are deprecated and may be removed in a future major version release.
-
 ### Includes
 
 A Module may also include other modules via the `modules` property of its configuration. For example:
