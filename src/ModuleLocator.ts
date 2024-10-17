@@ -55,9 +55,9 @@ export class ModuleLocator {
     private getModuleForSymbol(symbol: ts.Symbol): Module {
         const declarations = symbol.getDeclarations()?.filter(dec => ts.isClassDeclaration(dec)) ?? []
         const includes = declarations.flatMap(declaration => {
-            const moduleDecorator = declaration.modifiers?.find(this.nodeDetector.isModuleDecorator)
-            if (!moduleDecorator) throw this.errorReporter.reportParseFailed(`Module missing for symbol: ${symbol.getName()}`)
-            return this.getSymbolList(moduleDecorator, "includes")
+            const moduleAnnotation = this.nodeDetector.getModuleAnnotation(declaration)
+            if (!moduleAnnotation) throw this.errorReporter.reportParseFailed(`Module missing for symbol: ${symbol.getName()}`)
+            return ts.isDecorator(moduleAnnotation) ? this.getSymbolList(moduleAnnotation, "includes") : []
         })
         const {factories, bindings} = declarations.reduce<{factories: ProvidesMethod[], bindings: Binding[]}>((prev, declaration) => {
             const {factories, bindings} = this.getFactoriesAndBindings(declaration)
