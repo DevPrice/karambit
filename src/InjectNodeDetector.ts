@@ -5,7 +5,7 @@ import {ErrorReporter} from "./ErrorReporter"
 import {bound, isNotNull} from "./Util"
 import {Hacks} from "./Hacks"
 
-interface Decorated {
+interface Decorated extends ts.Node {
     name?: { getText: () => string }
     modifiers?: ts.NodeArray<ts.ModifierLike>
 }
@@ -48,7 +48,7 @@ export class InjectNodeDetector {
     }
 
     @bound
-    getQualifier(_: Decorated): TypeQualifier | undefined {
+    getQualifier(_: unknown): TypeQualifier | undefined {
         return undefined
     }
 
@@ -78,7 +78,13 @@ export class InjectNodeDetector {
     }
 
     @bound
-    isBindsDecorator(decorator: ts.Node): decorator is ts.Decorator {
+    isBindsAnnotated(node: Decorated): boolean {
+        return !!node.modifiers?.some(this.isBindsDecorator)
+            || ts.getJSDocTags(node).some(tag => tag.tagName.text.localeCompare("binds", undefined, {sensitivity: "accent"}))
+    }
+
+    @bound
+    private isBindsDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Binds")
     }
 

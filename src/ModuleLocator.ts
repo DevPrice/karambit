@@ -151,12 +151,12 @@ export class ModuleLocator {
             .map(factory => ({...factory, module}))
 
         const bindings = findAllChildren(module, (node): node is ts.MethodDeclaration => {
-            return ts.isMethodDeclaration(node) && !!node.modifiers?.some(this.nodeDetector.isBindsDecorator)
+            return ts.isMethodDeclaration(node) && this.nodeDetector.isBindsAnnotated(node)
         })
             .map(this.getBinding)
             .concat(
                 findAllChildren(module, (node): node is ts.PropertyDeclaration => {
-                    return ts.isPropertyDeclaration(node) && !!node.modifiers?.some(this.nodeDetector.isBindsDecorator)
+                    return ts.isPropertyDeclaration(node) && this.nodeDetector.isBindsAnnotated(node)
                 })
                     .map(this.getPropertyBinding)
             )

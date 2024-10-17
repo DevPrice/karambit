@@ -197,8 +197,8 @@ export interface ParentInterface { }
 @Module()
 export abstract class ParentModule {
 
-    @Binds()
-    abstract bindParentClassInterface: (concrete: ParentClass) => ParentClassInterface
+    /** @binds */
+    abstract bindParentClassInterface(concrete: ParentClass): ParentClassInterface
 
     @Binds()
     abstract bindChildSubcomponentFactory: (factory: (values: number[]) => ChildSubcomponent) => ChildSubcomponentFactory
