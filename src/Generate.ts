@@ -1,5 +1,6 @@
 import * as ts from "typescript"
 import * as Path from "node:path"
+import * as fs from "fs"
 import {hideBin} from "yargs/helpers"
 import * as yargs from "yargs"
 import {generateComponentFiles} from "./karambit"
@@ -53,7 +54,7 @@ yargs(hideBin(process.argv))
                 default: false,
             }),
         args => {
-            const tsconfigFile = Path.basename(args.tsconfig) === "tsconfig.json" ? args.tsconfig : Path.join(args.tsconfig, "tsconfig.json")
+            const tsconfigFile = fs.lstatSync(args.tsconfig).isDirectory() ? Path.join(args.tsconfig, "tsconfig.json") : args.tsconfig
 
             const configFile = ts.readConfigFile(tsconfigFile, ts.sys.readFile)
             if (configFile.error) {
