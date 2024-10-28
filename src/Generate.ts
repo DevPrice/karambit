@@ -4,7 +4,7 @@ import * as fs from "fs"
 import {hideBin} from "yargs/helpers"
 import * as yargs from "yargs"
 import {generateComponentFiles} from "./karambit"
-import {KarambitError} from "./ErrorReporter"
+import {KarambitError} from "./KarambitError"
 
 interface GenerateCommandOptions {
     tsconfig: string

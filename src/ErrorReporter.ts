@@ -16,20 +16,9 @@ import {filterTree, isNotNull, printTreeMap} from "./Util"
 import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
 import {Binding} from "./ModuleLocator"
 import {Chalk} from "chalk"
+import {KarambitError, KarambitErrorScope} from "./KarambitError"
 
 const chalk: Chalk = require("chalk")
-
-export enum KarambitErrorScope {
-    INTERNAL = "Internal",
-    PARSE = "Parse",
-    INVALID_SCOPE = "InvalidScope",
-    INVALID_BINDING = "InvalidBinding",
-    MISSING_PROVIDER = "MissingProviders",
-    DUPLICATE_PROVIDERS = "DuplicateProviders",
-    DUPLICATE_BINDINGS = "DuplicateBindings",
-    DEPENDENCY_CYCLE = "DependencyCycle",
-    BINDING_CYCLE = "BindingCycle",
-}
 
 type ErrorContext = ts.Node | ts.Node[]
 
@@ -208,13 +197,6 @@ export class ErrorReporter {
 
     static fail(scope: KarambitErrorScope, message: string, component?: ts.ClassLikeDeclaration): never {
         throw new KarambitError(message, scope, component)
-    }
-}
-
-export class KarambitError extends Error {
-
-    constructor(description: string, readonly scope: KarambitErrorScope, component?: ts.ClassLikeDeclaration) {
-        super(`${chalk.red(`[Karambit/${scope}]`)} ${component && component.name ? `${component.name.getText()}: ` : ""}${description}`)
     }
 }
 
