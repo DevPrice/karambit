@@ -102,6 +102,11 @@ export class DependencyGraphBuilder {
                     const {provider, dependencies} = providerResult
                     if (provider !== undefined) resolved.set(boundType, provider)
                     if (dependencies !== undefined) todo.push(...dependencies)
+                    if ((provider?.providerType === ProviderType.SET_MULTIBINDING || provider?.providerType === ProviderType.MAP_MULTIBINDING)
+                        && this.parentGraph && this.parentGraph(boundType)) {
+                        // not really "missing", but we need the parent to attempt to generate this if possible
+                        missing.add({...next, optional: true})
+                    }
                 } else {
                     missing.add(next)
                 }

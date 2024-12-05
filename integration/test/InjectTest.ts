@@ -6,6 +6,8 @@ import {
     KarambitMultibindingsComponent,
     KarambitProviderComponent,
     KarambitScopedComponent,
+    KarambitNotExposedMultibindingsComponent,
+    KarambitEmptyRootMultibindingsComponent,
 } from "../src/karambit-generated/src/TestComponents"
 import {KarambitOptionalComponent} from "../src/karambit-generated/src/OptionalComponent"
 import {ChildComponent, childInstance, nullProvidedCount} from "../src/TestComponents"
@@ -199,6 +201,18 @@ describe("Injection", () => {
             assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("ten"), 10)
             assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("eleven"), 11)
             assert.strictEqual(multibindingComponent.subcomponentFactory().numberMapExtension.get("twelve"), 12)
+        })
+        it("subcomponent can use multibindings not exposed in ancestors", () => {
+            const emptyRootComponent = new KarambitNotExposedMultibindingsComponent()
+            const subcomponent = emptyRootComponent.subcomponentFactory()
+            assert.strictEqual(subcomponent.numberSetExtension.size, 7)
+            assert.strictEqual(subcomponent.numberMapExtension.size, 7)
+        })
+        it("subcomponent can use multibindings not present in ancestors", () => {
+            const emptyRootComponent = new KarambitEmptyRootMultibindingsComponent()
+            const subcomponent = emptyRootComponent.subcomponentFactory()
+            assert.strictEqual(subcomponent.numberSetExtension.size, 1)
+            assert.strictEqual(subcomponent.numberMapExtension.size, 1)
         })
     })
     describe("Configuration", () => {

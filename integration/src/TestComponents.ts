@@ -332,6 +332,18 @@ export abstract class MultibindingsComponent {
     abstract readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
 }
 
+@k.Component({modules: [MultibindingSetModule, MultibindingMapModule], subcomponents: [MultibindingSetSubcomponent]})
+export abstract class NotExposedMultibindingsComponent {
+
+    abstract readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
+}
+
+@k.Component({modules: [], subcomponents: [MultibindingSetSubcomponent]})
+export abstract class EmptyRootMultibindingsComponent {
+
+    abstract readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
+}
+
 @AssistedInject
 export class AssistedInjectClass {
 
