@@ -27,7 +27,7 @@ export class AssistedFactoryLocator {
         if (!signatureDeclaration || ts.isJSDocSignature(signatureDeclaration)) return undefined
 
         const returnType = signature.getReturnType()
-        const declarations = returnType.symbol.declarations
+        const declarations = returnType.getSymbol()?.declarations
         if (!declarations || declarations.length === 0) return undefined
 
         const declaration = declarations[0]

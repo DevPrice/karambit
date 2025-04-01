@@ -33,7 +33,7 @@ export class SubcomponentFactoryLocator {
 
         const returnType = signature.getReturnType()
         if (!this.installedSubcomponents.has(returnType.symbol)) return undefined
-        const declarations = returnType.symbol.declarations
+        const declarations = returnType.getSymbol()?.declarations
         if (!declarations || declarations.length === 0) return undefined
 
         const declaration = declarations[0]
@@ -65,7 +65,7 @@ export class SubcomponentFactoryLocator {
         const aliasedType = this.nodeDetector.isSubcomponentFactory(type)
         if (!aliasedType) return undefined
 
-        const declarations = aliasedType.symbol.declarations
+        const declarations = aliasedType.getSymbol()?.declarations
         if (!declarations || declarations.length === 0) return undefined
 
         const declaration = declarations[0]
