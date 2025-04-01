@@ -106,6 +106,11 @@ export class Importer {
                 )
             )
         )
-        return Path.relative(generatedFilePath, fileToImport.fileName).replace(/\.ts$/, "")
+        const outputPath = Path.relative(generatedFilePath, fileToImport.fileName).replace(/\.ts$/, "")
+        if (Path.sep === "\\") {
+            // Windows can handle '/' characters, but Unix-like environments don't like '\'
+            return outputPath.replaceAll("\\", "/")
+        }
+        return outputPath
     }
 }
