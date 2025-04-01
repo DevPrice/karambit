@@ -148,7 +148,7 @@ This is only scratching the surface of what Karambit is capable of, so check out
 ## License
 
 ```text
-Copyright 2022-2024 Devin Price
+Copyright 2022-2025 Devin Price
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
