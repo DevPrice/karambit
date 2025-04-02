@@ -20,6 +20,7 @@ import {ErrorReporter} from "./ErrorReporter"
 import {Assisted, AssistedInject} from "karambit-decorators"
 import {bound} from "./Util"
 import {isTypeNullable} from "./TypescriptUtil"
+import {findAllChildren} from "./Visitor"
 
 export type ComponentDeclarationBuilderFactory = (typeResolver: TypeResolver, instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>) => ComponentDeclarationBuilder
 
@@ -62,15 +63,15 @@ export class ComponentDeclarationBuilder {
                             undefined,
                             this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                             undefined,
-                            constructorParamType(ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(parentSymbol)), param.index),
-                            undefined
+                            this.constructorParamTypeNode(ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(parentSymbol)), param.index, parentSymbol),
+                            undefined,
                         )
                     ),
                     ts.factory.createBlock(
                         [ts.factory.createExpressionStatement(ts.factory.createCallExpression(
                             ts.factory.createSuper(),
                             undefined,
-                            options.constructorParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration))
+                            options.constructorParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)),
                         ))],
                         true
                     )
@@ -159,7 +160,7 @@ export class ComponentDeclarationBuilder {
                                 undefined,
                                 this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                                 undefined,
-                                constructorParamType(ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(symbol)), param.index),
+                                this.constructorParamTypeNode(ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(symbol)), param.index, symbol),
                                 undefined
                             )
                         )],
@@ -229,7 +230,7 @@ export class ComponentDeclarationBuilder {
                                     undefined,
                                     it.name,
                                     undefined,
-                                    constructorParamType(
+                                    this.constructorParamTypeNode(
                                         ts.factory.createTypeQueryNode(
                                             ts.factory.createQualifiedName(
                                                 ts.factory.createIdentifier("this"),
@@ -237,6 +238,7 @@ export class ComponentDeclarationBuilder {
                                             )
                                         ),
                                         it.index + 1,
+                                        factory.subcomponentType.type.symbol,
                                     ),
                                     undefined
                                 )
@@ -287,7 +289,7 @@ export class ComponentDeclarationBuilder {
                                         undefined,
                                         it.name,
                                         undefined,
-                                        typeNode && constructorParamType(typeNode, it.constructorParamIndex),
+                                        typeNode && this.constructorParamTypeNode(typeNode, it.constructorParamIndex),
                                         undefined,
                                     )
                                 ),
@@ -590,6 +592,35 @@ export class ComponentDeclarationBuilder {
 
     private typeOfUnsetSymbol() {
         return ts.factory.createTypeQueryNode(this.nameGenerator.getUnsetSymbolIdentifier(), undefined)
+    }
+
+    private constructorParamTypeNode(typeNode: ts.TypeNode, index: number, constructorSymbol?: ts.Symbol) {
+        const type = constructorSymbol && this.typeChecker.getTypeOfSymbol(constructorSymbol)
+        const isProtected = type && !!type.symbol && !!type.symbol.declarations && type.symbol.declarations.some(declaration => {
+            if (ts.isClassDeclaration(declaration)) {
+                const constructor = findAllChildren(declaration, ts.isConstructorDeclaration)
+                    .find(constructor => constructor.body)
+                return constructor && constructor.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ProtectedKeyword || modifier.kind === ts.SyntaxKind.PrivateKeyword)
+            }
+        })
+        if (isProtected) {
+            // for protected constructors, we need to intersect with the { new(): never } type to satisfy the type checker
+            return constructorParamType(
+                ts.factory.createIntersectionTypeNode([
+                    ts.factory.createTypeLiteralNode([
+                        ts.factory.createConstructSignature(
+                            undefined,
+                            [],
+                            ts.factory.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword),
+                        )
+                    ]),
+                    typeNode,
+                ]),
+                index,
+            )
+        } else {
+            return constructorParamType(typeNode, index)
+        }
     }
 
     accessParentGetter(type: QualifiedType): ts.Expression {

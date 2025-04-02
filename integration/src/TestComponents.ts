@@ -221,7 +221,7 @@ export abstract class InheritedClass {
 @Component({generatedClassName: "CustomComponentName", modules: [ParentModule], subcomponents: [ChildSubcomponent, ScopedSubcomponent]})
 export abstract class ParentComponent extends InheritedClass {
 
-    constructor(child: ChildComponent, typeLiteralChild: {value: symbol}, /** @bindsInstance */ public boundString: string) {
+    protected constructor(child: ChildComponent, typeLiteralChild: {value: symbol}, /** @bindsInstance */ public boundString: string) {
         super()
     }
 
