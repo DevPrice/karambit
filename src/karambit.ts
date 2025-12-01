@@ -39,6 +39,7 @@ export interface KarambitOptions {
     verbose: boolean
     nameMaxLength: number
     experimentalTags: boolean
+    printerOptions?: ts.PrinterOptions
 }
 
 export function generateComponentFiles(program: ts.Program, options?: Partial<KarambitOptions>) {

@@ -72,8 +72,8 @@ export abstract class ProgramModule {
 
     @Provides
     @Reusable
-    static providePrinter(): ts.Printer {
-        return ts.createPrinter()
+    static providePrinter(options: KarambitOptions): ts.Printer {
+        return ts.createPrinter(options.printerOptions)
     }
 
     @Provides
