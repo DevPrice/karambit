@@ -1,8 +1,5 @@
-import {isNotNull} from "./Util"
-import * as ts from "typescript"
-import * as Path from "path"
+import type * as ts from "typescript"
 import {KarambitProgramComponent} from "./karambit-generated/src/Component"
-import {findAllChildren} from "./Visitor"
 
 export {KarambitError, KarambitErrorScope} from "./KarambitError"
 
@@ -45,24 +42,7 @@ export interface KarambitOptions {
 export function generateComponentFiles(program: ts.Program, options?: Partial<KarambitOptions>) {
     const karambitOptions = {...defaultOptions, ...options}
     const programComponent = new KarambitProgramComponent(program, karambitOptions)
-    const generatedComponents = program.getSourceFiles()
-        .filter(sourceFile => !program.isSourceFileFromExternalLibrary(sourceFile) && !program.isSourceFileDefaultLibrary(sourceFile))
-        .flatMap(sourceFile => {
-            programComponent.logger.debug(`Reading ${Path.relative(".", sourceFile.fileName)}...`)
-            const sourceFileComponent = programComponent.sourceFileSubcomponentFactory(sourceFile)
-            for (const visitor of sourceFileComponent.sourceFileVisitors) {
-                visitor(sourceFile)
-            }
-            const components: ts.ClassDeclaration[] = findAllChildren(sourceFile, (n): n is ts.ClassDeclaration => {
-                return ts.isClassDeclaration(n) && !!n.modifiers?.some(sourceFileComponent.nodeDetector.isComponentDecorator)
-            })
-            return components.map(component => {
-                return sourceFileComponent.componentGeneratorDependenciesFactory(component).generatedComponent
-            })
-        })
-        .filter(isNotNull)
-    const generatedFile = programComponent.sourceFileGenerator.generateSourceFile(generatedComponents)
-    programComponent.fileWriter.writeComponentFile(generatedFile, karambitOptions.outFile)
+    programComponent.generateComponentFile()
 }
 
 const defaultOptions: KarambitOptions = {

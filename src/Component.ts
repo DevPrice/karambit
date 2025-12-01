@@ -1,6 +1,6 @@
 import * as ts from "typescript"
 import {Binds, BindsInstance, Component, IntoSet, Module, Provides, Reusable, Subcomponent} from "karambit-decorators"
-import {Provider, SubcomponentFactory} from "karambit-inject"
+import {Provider, Qualified, SubcomponentFactory} from "karambit-inject"
 import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
 import type {SourceFileGenerator} from "./SourceFileGenerator"
 import {
@@ -12,9 +12,13 @@ import {
 import type {KarambitOptions} from "./karambit"
 import {AnnotationValidator} from "./AnnotationValidator"
 import {ComponentWriter, DryRunWriter, FileWriter} from "./FileWriter"
-import {SourceFileVisitor} from "./Visitor"
-import {ignore, Logger} from "./Util"
+import {findAllChildren, SourceFileVisitor} from "./Visitor"
+import {ignore, isNotNull, Logger} from "./Util"
 import {InjectNodeDetector} from "./InjectNodeDetector"
+import * as Path from "path"
+
+declare const generatedQualifier: unique symbol
+type GeneratedSourceFile = ts.SourceFile & Qualified<typeof generatedQualifier>
 
 @Module
 export abstract class ComponentGenerationModule {
@@ -103,16 +107,53 @@ export abstract class ProgramModule {
         }
         return fileWriterProvider()
     }
+
+    @Provides
+    @Reusable
+    static provideGeneratedComponents(
+        program: ts.Program,
+        logger: Logger,
+        sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>,
+    ) {
+        // TODO: Avoid business logic in the module
+        return program.getSourceFiles()
+            .filter(sourceFile => !program.isSourceFileFromExternalLibrary(sourceFile) && !program.isSourceFileDefaultLibrary(sourceFile))
+            .flatMap(sourceFile => {
+                logger.debug(`Reading ${Path.relative(".", sourceFile.fileName)}...`)
+                const sourceFileComponent = sourceFileSubcomponentFactory(sourceFile)
+                for (const visitor of sourceFileComponent.sourceFileVisitors) {
+                    visitor(sourceFile)
+                }
+                const components: ts.ClassDeclaration[] = findAllChildren(sourceFile, (n): n is ts.ClassDeclaration => {
+                    return ts.isClassDeclaration(n) && !!n.modifiers?.some(sourceFileComponent.nodeDetector.isComponentDecorator)
+                })
+                return components.map(component => {
+                    return sourceFileComponent.componentGeneratorDependenciesFactory(component).generatedComponent
+                })
+            })
+            .filter(isNotNull)
+    }
+
+    @Provides
+    @Reusable
+    static provideGeneratedSource(
+        sourceFileGenerator: SourceFileGenerator,
+        generatedComponents: GeneratedComponent[],
+    ): GeneratedSourceFile {
+        return sourceFileGenerator.generateSourceFile(generatedComponents)
+    }
 }
 
 @Component({modules: [ProgramModule], subcomponents: [SourceFileSubcomponent]})
 @ProgramScope
 export abstract class ProgramComponent {
 
-    constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitOptions) { }
+    protected constructor(@BindsInstance program: ts.Program, @BindsInstance private readonly options: KarambitOptions) { }
 
-    abstract readonly logger: Logger
-    abstract readonly fileWriter: ComponentWriter
-    abstract readonly sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>
-    abstract readonly sourceFileGenerator: SourceFileGenerator
+    protected abstract readonly fileWriter: ComponentWriter
+    protected abstract readonly generatedFile: GeneratedSourceFile
+
+    generateComponentFile() {
+        this.fileWriter.writeComponentFile(this.generatedFile, this.options.outFile)
+    }
 }
