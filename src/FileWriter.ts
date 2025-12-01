@@ -2,9 +2,14 @@ import {Inject} from "karambit-decorators"
 import * as ts from "typescript"
 import * as Path from "path"
 import * as fs from "fs"
+import {Logger} from "./Util"
+
+export interface ComponentWriter {
+    writeComponentFile(sourceFile: ts.SourceFile, outputFilename: string): void
+}
 
 @Inject
-export class FileWriter {
+export class FileWriter implements ComponentWriter {
 
     constructor(
         private readonly printer: ts.Printer,
@@ -19,5 +24,17 @@ export class FileWriter {
             }
             fs.writeFileSync(outputFilename, resultText)
         }
+    }
+}
+
+@Inject
+export class DryRunWriter implements ComponentWriter {
+
+    constructor(
+        private readonly logger: Logger,
+    ) { }
+
+    writeComponentFile(_: ts.SourceFile, outputFilename: string) {
+        this.logger.debug(`Not writing ${outputFilename} (dry-run)`)
     }
 }

@@ -61,11 +61,7 @@ export function generateComponentFiles(program: ts.Program, options?: Partial<Ka
         })
         .filter(isNotNull)
     const generatedFile = programComponent.sourceFileGenerator.generateSourceFile(generatedComponents)
-    if (karambitOptions.dryRun) {
-        programComponent.logger.debug(`Not writing ${karambitOptions.outFile} (dry-run)`)
-    } else {
-        programComponent.fileWriter.writeComponentFile(generatedFile, karambitOptions.outFile)
-    }
+    programComponent.fileWriter.writeComponentFile(generatedFile, karambitOptions.outFile)
 }
 
 const defaultOptions: KarambitOptions = {

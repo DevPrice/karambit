@@ -1,6 +1,6 @@
 import * as ts from "typescript"
 import {Binds, BindsInstance, Component, IntoSet, Module, Provides, Reusable, Subcomponent} from "karambit-decorators"
-import {SubcomponentFactory} from "karambit-inject"
+import {Provider, SubcomponentFactory} from "karambit-inject"
 import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
 import type {SourceFileGenerator} from "./SourceFileGenerator"
 import {
@@ -11,7 +11,7 @@ import {
 } from "./ComponentGenerator"
 import type {KarambitOptions} from "./karambit"
 import {AnnotationValidator} from "./AnnotationValidator"
-import {FileWriter} from "./FileWriter"
+import {ComponentWriter, DryRunWriter, FileWriter} from "./FileWriter"
 import {SourceFileVisitor} from "./Visitor"
 import {ignore, Logger} from "./Util"
 import {InjectNodeDetector} from "./InjectNodeDetector"
@@ -90,6 +90,19 @@ export abstract class ProgramModule {
             }
         }
     }
+
+    @Provides
+    @Reusable
+    static provideComponentWriter(
+        options: KarambitOptions,
+        fileWriterProvider: Provider<FileWriter>,
+        dryRunWriterProvider: Provider<DryRunWriter>,
+    ): ComponentWriter {
+        if (options.dryRun) {
+            return dryRunWriterProvider()
+        }
+        return fileWriterProvider()
+    }
 }
 
 @Component({modules: [ProgramModule], subcomponents: [SourceFileSubcomponent]})
@@ -99,7 +112,7 @@ export abstract class ProgramComponent {
     constructor(@BindsInstance program: ts.Program, @BindsInstance options: KarambitOptions) { }
 
     abstract readonly logger: Logger
-    abstract readonly fileWriter: FileWriter
+    abstract readonly fileWriter: ComponentWriter
     abstract readonly sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>
     abstract readonly sourceFileGenerator: SourceFileGenerator
 }
