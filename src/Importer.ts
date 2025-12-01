@@ -81,7 +81,7 @@ export class Importer {
         const newImport = ts.factory.createImportDeclaration(
             undefined,
             ts.factory.createImportClause(
-                false,
+                undefined,
                 undefined,
                 ts.factory.createNamespaceImport(this.getImportIdentifier(importSpecifier)),
             ),
