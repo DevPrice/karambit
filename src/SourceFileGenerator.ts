@@ -22,9 +22,9 @@ export class SourceFileGenerator {
         const sourceFile = ts.createSourceFile(
             this.options.outFile,
             "",
-            ts.ScriptTarget.Latest,
+            this.options.outputScriptTarget,
             undefined,
-            undefined,
+            ts.ScriptKind.TS,
         )
         return ts.factory.updateSourceFile(
             sourceFile,

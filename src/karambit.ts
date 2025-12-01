@@ -1,4 +1,4 @@
-import type * as ts from "typescript"
+import * as ts from "typescript"
 import {KarambitProgramComponent} from "./karambit-generated/src/Component"
 
 export {KarambitError, KarambitErrorScope} from "./KarambitError"
@@ -36,6 +36,7 @@ export interface KarambitOptions {
     verbose: boolean
     nameMaxLength: number
     experimentalTags: boolean
+    outputScriptTarget: ts.ScriptTarget
     printerOptions?: ts.PrinterOptions
 }
 
@@ -52,4 +53,5 @@ const defaultOptions: KarambitOptions = {
     verbose: false,
     nameMaxLength: 30,
     experimentalTags: false,
+    outputScriptTarget: ts.ScriptTarget.Latest,
 }

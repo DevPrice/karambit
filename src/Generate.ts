@@ -5,6 +5,19 @@ import {hideBin} from "yargs/helpers"
 import * as yargs from "yargs"
 import {generateComponentFiles} from "./karambit"
 import {KarambitError} from "./KarambitError"
+import {isNotNull} from "./Util"
+
+const scriptTargets: ReadonlyMap<string, ts.ScriptTarget> = new Map(
+    Object.entries(ts.ScriptTarget)
+        .filter(([key]) => key.localeCompare("json", undefined, {sensitivity: "base"}))
+        .map(([key, value]) => {
+            if (isNaN(Number(key)) && typeof value !== "string") {
+                return [key.toLowerCase(), value] as const
+            }
+            return undefined
+        })
+        .filter(isNotNull)
+)
 
 interface GenerateCommandOptions {
     tsconfig: string
@@ -13,6 +26,7 @@ interface GenerateCommandOptions {
     dryRun: boolean
     nameMaxLength: number
     experimentalTags: boolean
+    scriptTarget?: string
 }
 
 yargs(hideBin(process.argv))
@@ -52,6 +66,12 @@ yargs(hideBin(process.argv))
                 type: "boolean",
                 description: "Enable experimental JS Doc tag support",
                 default: false,
+            })
+            .option("script-target", {
+                type: "string",
+                alias: "t",
+                description: "The script target to use for the generated output file(s)",
+                choices: Array.from(scriptTargets.keys()),
             }),
         args => {
             if (!fs.existsSync(args.tsconfig)) {
@@ -93,6 +113,7 @@ function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOpt
             nameMaxLength: cliOptions.nameMaxLength,
             verbose: cliOptions.verbose,
             experimentalTags: cliOptions.experimentalTags,
+            outputScriptTarget: cliOptions.scriptTarget ? scriptTargets.get(cliOptions.scriptTarget) : compilerOptions.target,
         })
     } catch (e) {
         if (e instanceof KarambitError && !cliOptions.verbose) {
