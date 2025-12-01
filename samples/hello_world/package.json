@@ -10,7 +10,7 @@
   "author": "DevPrice",
   "devDependencies": {
     "karambit-inject": "file:../..",
-    "typescript": "^5.6.2"
+    "typescript": "^5.9.3"
   },
   "dependencies": {
     "karambit-decorators": "file:../../decorators"
