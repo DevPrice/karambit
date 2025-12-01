@@ -8,8 +8,8 @@ import {
     KarambitScopedComponent,
     KarambitNotExposedMultibindingsComponent,
     KarambitEmptyRootMultibindingsComponent,
-} from "../src/karambit-generated/src/TestComponents"
-import {KarambitOptionalComponent} from "../src/karambit-generated/src/OptionalComponent"
+    KarambitOptionalComponent,
+} from "../src/karambit-generated/karambit"
 import {ChildComponent, childInstance, nullProvidedCount} from "../src/TestComponents"
 import {multibindingScopedProvidedCount} from "../src/MultibindingModules"
 

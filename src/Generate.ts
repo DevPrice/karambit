@@ -29,8 +29,8 @@ yargs(hideBin(process.argv))
             .option("output", {
                 type: "string",
                 alias: "o",
-                description: "Output directory",
-                default: "karambit-generated",
+                description: "Output file",
+                default: "gen/karambit.ts",
             })
             .option("dry-run", {
                 type: "boolean",
@@ -88,7 +88,7 @@ function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOpt
     try {
         generateComponentFiles(program, {
             sourceRoot: Path.dirname(cliOptions.tsconfig),
-            outDir: cliOptions.output,
+            outFile: cliOptions.output,
             dryRun: cliOptions.dryRun,
             nameMaxLength: cliOptions.nameMaxLength,
             verbose: cliOptions.verbose,

@@ -14,6 +14,7 @@ import {AnnotationValidator} from "./AnnotationValidator"
 import {FileWriter} from "./FileWriter"
 import {SourceFileVisitor} from "./Visitor"
 import {ignore, Logger} from "./Util"
+import {InjectNodeDetector} from "./InjectNodeDetector"
 
 @Module
 export abstract class ComponentGenerationModule {
@@ -56,7 +57,8 @@ export abstract class SourceFileSubcomponent {
     constructor(@BindsInstance sourceFile: ts.SourceFile) { }
 
     abstract readonly sourceFileVisitors: ReadonlySet<SourceFileVisitor>
-    abstract readonly sourceFileGenerator: SourceFileGenerator
+    abstract readonly componentGeneratorDependenciesFactory: ComponentGeneratorDependenciesFactory
+    abstract readonly nodeDetector: InjectNodeDetector
 }
 
 @Module
@@ -99,4 +101,5 @@ export abstract class ProgramComponent {
     abstract readonly logger: Logger
     abstract readonly fileWriter: FileWriter
     abstract readonly sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>
+    abstract readonly sourceFileGenerator: SourceFileGenerator
 }

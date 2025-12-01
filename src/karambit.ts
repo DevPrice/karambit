@@ -1,7 +1,8 @@
 import {isNotNull} from "./Util"
-import type * as ts from "typescript"
+import * as ts from "typescript"
 import * as Path from "path"
 import {KarambitProgramComponent} from "./karambit-generated/src/Component"
+import {findAllChildren} from "./Visitor"
 
 export {KarambitError, KarambitErrorScope} from "./KarambitError"
 
@@ -33,7 +34,7 @@ export interface SubcomponentFactory<T extends ConstructorType<T>> {
 
 export interface KarambitOptions {
     sourceRoot: string
-    outDir: string
+    outFile: string
     dryRun: boolean
     verbose: boolean
     nameMaxLength: number
@@ -43,30 +44,33 @@ export interface KarambitOptions {
 export function generateComponentFiles(program: ts.Program, options?: Partial<KarambitOptions>) {
     const karambitOptions = {...defaultOptions, ...options}
     const programComponent = new KarambitProgramComponent(program, karambitOptions)
-    const generatedFiles = program.getSourceFiles()
+    const generatedComponents = program.getSourceFiles()
         .filter(sourceFile => !program.isSourceFileFromExternalLibrary(sourceFile) && !program.isSourceFileDefaultLibrary(sourceFile))
-        .map(sourceFile => {
+        .flatMap(sourceFile => {
             programComponent.logger.debug(`Reading ${Path.relative(".", sourceFile.fileName)}...`)
             const sourceFileComponent = programComponent.sourceFileSubcomponentFactory(sourceFile)
             for (const visitor of sourceFileComponent.sourceFileVisitors) {
                 visitor(sourceFile)
             }
-            return sourceFileComponent.sourceFileGenerator.generateSourceFile(sourceFile)
+            const components: ts.ClassDeclaration[] = findAllChildren(sourceFile, (n): n is ts.ClassDeclaration => {
+                return ts.isClassDeclaration(n) && !!n.modifiers?.some(sourceFileComponent.nodeDetector.isComponentDecorator)
+            })
+            return components.map(component => {
+                return sourceFileComponent.componentGeneratorDependenciesFactory(component).generatedComponent
+            })
         })
         .filter(isNotNull)
-    for (const file of generatedFiles) {
-        const outputFilename = Path.basename(file.fileName)
-        if (!karambitOptions.dryRun) {
-            programComponent.fileWriter.writeComponentFile(file, outputFilename)
-        } else {
-            programComponent.logger.debug(`Not writing ${Path.relative(karambitOptions.outDir, outputFilename)} (dry-run)`)
-        }
+    const generatedFile = programComponent.sourceFileGenerator.generateSourceFile(generatedComponents)
+    if (karambitOptions.dryRun) {
+        programComponent.logger.debug(`Not writing ${karambitOptions.outFile} (dry-run)`)
+    } else {
+        programComponent.fileWriter.writeComponentFile(generatedFile, karambitOptions.outFile)
     }
 }
 
 const defaultOptions: KarambitOptions = {
     sourceRoot: ".",
-    outDir: "karambit-generated",
+    outFile: "gen/karambit.ts",
     dryRun: false,
     verbose: false,
     nameMaxLength: 30,

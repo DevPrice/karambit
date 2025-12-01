@@ -1,18 +1,17 @@
 import * as ts from "typescript"
 import * as Path from "path"
 import {Inject} from "karambit-decorators"
-import {SourceFileScope} from "./Scopes"
+import {ProgramScope} from "./Scopes"
 import {KarambitOptions} from "./karambit"
 import {bound, memoized} from "./Util"
 
 @Inject
-@SourceFileScope
+@ProgramScope
 export class Importer {
 
     private newImports = new Map<string, ts.ImportDeclaration>()
 
     constructor(
-        private readonly sourceFile: ts.SourceFile,
         private readonly karambitOptions: KarambitOptions,
         private readonly typeChecker: ts.TypeChecker,
     ) { }
@@ -97,16 +96,11 @@ export class Importer {
         const nodeModuleRegex = /(?:^|\/)node_modules\/((?:@[^/]+\/)?[^/]+)/
         const match = nodeModuleRegex.exec(fileToImport.fileName)
         if (match) return match[1]
-        const generatedFilePath = Path.join(
-            this.karambitOptions.outDir,
-            Path.dirname(
-                Path.relative(
-                    this.karambitOptions.sourceRoot,
-                    this.sourceFile.fileName,
-                )
-            )
+        const generatedFileDir = Path.relative(
+            this.karambitOptions.sourceRoot,
+            Path.dirname(this.karambitOptions.outFile),
         )
-        const outputPath = Path.relative(generatedFilePath, fileToImport.fileName).replace(/\.ts$/, "")
+        const outputPath = Path.relative(generatedFileDir, fileToImport.fileName).replace(/\.ts$/, "")
         if (Path.sep === "\\") {
             // Windows can handle '/' characters, but Unix-like environments don't like '\'
             return outputPath.replaceAll("\\", "/")
