@@ -6,6 +6,7 @@ import {ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers
 import {ErrorReporter} from "./ErrorReporter"
 import {findAllChildren} from "./Visitor"
 import {bound, isNotNull, memoized} from "./Util"
+import {KarambitOptions} from "./karambit"
 
 export interface Binding {
     paramType: QualifiedType
@@ -24,6 +25,7 @@ export interface Module {
 export class ModuleLocator {
 
     constructor(
+        private readonly karambitOptions: KarambitOptions,
         private readonly typeChecker: ts.TypeChecker,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly errorReporter: ErrorReporter,
@@ -47,8 +49,20 @@ export class ModuleLocator {
         return this.getSymbolList(decorator, "subcomponents")
     }
 
-    getGeneratedClassName(decorator: ts.Decorator): string | undefined {
-        return this.nodeDetector.getStringPropertyNode(decorator, "generatedClassName")
+    getGeneratedName(declaration: ts.ClassLikeDeclaration): string | undefined {
+        if (this.karambitOptions.experimentalTags) {
+            const tag = this.nodeDetector.getJSDocTag(declaration, "generatedName")
+            if (tag && typeof tag.comment === "string") {
+                if (!isValidIdentifier(tag.comment)) {
+                    this.errorReporter.reportParseFailed(`Invalid identifier '${tag.comment}'!`, tag)
+                }
+                return tag.comment
+            }
+        }
+        const decorator = declaration.modifiers?.find(this.nodeDetector.isComponentDecorator)
+        if (decorator) {
+            return this.nodeDetector.getStringPropertyNode(decorator, "generatedClassName")
+        }
     }
 
     @memoized
@@ -176,4 +190,8 @@ export class ModuleLocator {
             .map(it => this.typeChecker.getTypeAtLocation(it).getSymbol())
             .filter(isNotNull)
     }
+}
+
+function isValidIdentifier(identifier: string): boolean {
+    return identifier.match(/^[a-zA-Z_$][a-zA-Z_$0-9]*$/) !== null
 }

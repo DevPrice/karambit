@@ -67,7 +67,7 @@ export class InjectNodeDetector {
 
     @bound
     getAssistedAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isAssistedDecorator) ?? this.hasJSDocTag(node, "assisted")
+        return node.modifiers?.find(this.isAssistedDecorator) ?? this.getJSDocTag(node, "assisted")
     }
 
     @bound
@@ -77,7 +77,7 @@ export class InjectNodeDetector {
 
     @bound
     getAssistedInjectDecorator(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isAssistedInjectDecorator) ?? this.hasJSDocTag(node, "assistedInject")
+        return node.modifiers?.find(this.isAssistedInjectDecorator) ?? this.getJSDocTag(node, "assistedInject")
     }
 
     @bound
@@ -87,7 +87,7 @@ export class InjectNodeDetector {
 
     @bound
     getProvidesAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isProvidesDecorator) || this.hasJSDocTag(node, "provides")
+        return node.modifiers?.find(this.isProvidesDecorator) || this.getJSDocTag(node, "provides")
     }
 
     @bound
@@ -97,7 +97,7 @@ export class InjectNodeDetector {
 
     @bound
     getBindsAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isBindsDecorator) || this.hasJSDocTag(node, "binds")
+        return node.modifiers?.find(this.isBindsDecorator) || this.getJSDocTag(node, "binds")
     }
 
     @bound
@@ -107,7 +107,7 @@ export class InjectNodeDetector {
 
     @bound
     getBindsInstanceAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isBindsInstanceDecorator) || this.hasJSDocTag(node, "bindsInstance")
+        return node.modifiers?.find(this.isBindsInstanceDecorator) || this.getJSDocTag(node, "bindsInstance")
     }
 
     @bound
@@ -117,7 +117,7 @@ export class InjectNodeDetector {
 
     @bound
     getInjectAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isInjectDecorator) ?? this.hasJSDocTag(node, "inject")
+        return node.modifiers?.find(this.isInjectDecorator) ?? this.getJSDocTag(node, "inject")
     }
 
     @bound
@@ -127,7 +127,16 @@ export class InjectNodeDetector {
 
     @bound
     getModuleAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isModuleDecorator) ?? this.hasJSDocTag(node, "karambitModule")
+        const tags = ts.getJSDocTags(node).filter(tag => tag.tagName.text.localeCompare("includes", undefined, {sensitivity: "base"}) === 0)
+        for (const tag of tags) {
+            const linkTags = tag.getChildren().filter(ts.isJSDocLink)
+            for (const linkTag of linkTags) {
+                const type = linkTag.name && this.typeChecker.getTypeAtLocation(linkTag.name)
+                console.log(type && this.typeChecker.typeToString(type))
+            }
+            console.log(node.name?.getText() ?? "<unknown_node>", ": ", linkTags.map(it => it.getText()).join(", "))
+        }
+        return node.modifiers?.find(this.isModuleDecorator) ?? this.getJSDocTag(node, "karambitModule")
     }
 
     @bound
@@ -137,7 +146,7 @@ export class InjectNodeDetector {
 
     @bound
     getIntoSetAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isIntoSetDecorator) ?? this.hasJSDocTag(node, "intoSet")
+        return node.modifiers?.find(this.isIntoSetDecorator) ?? this.getJSDocTag(node, "intoSet")
     }
 
     @bound
@@ -147,7 +156,7 @@ export class InjectNodeDetector {
 
     @bound
     getIntoMapAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isIntoMapDecorator) ?? this.hasJSDocTag(node, "intoMap")
+        return node.modifiers?.find(this.isIntoMapDecorator) ?? this.getJSDocTag(node, "intoMap")
     }
 
     @bound
@@ -157,7 +166,7 @@ export class InjectNodeDetector {
 
     @bound
     getElementsIntoSetAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isElementsIntoSetDecorator) ?? this.hasJSDocTag(node, "elementsIntoSet")
+        return node.modifiers?.find(this.isElementsIntoSetDecorator) ?? this.getJSDocTag(node, "elementsIntoSet")
     }
 
     @bound
@@ -167,7 +176,7 @@ export class InjectNodeDetector {
 
     @bound
     getElementsIntoMapAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isElementsIntoMapDecorator) ?? this.hasJSDocTag(node, "elementsIntoMap")
+        return node.modifiers?.find(this.isElementsIntoMapDecorator) ?? this.getJSDocTag(node, "elementsIntoMap")
     }
 
     @bound
@@ -349,14 +358,19 @@ export class InjectNodeDetector {
         }
     }
 
+    getJSDocTag(node: ts.Node, tagName: string): ts.JSDocTag | undefined {
+        if (!this.karambitOptions.experimentalTags) return undefined
+        return ts.getJSDocTags(node).find(tag => tag.tagName.text.localeCompare(tagName, undefined, {sensitivity: "accent"}) === 0)
+    }
+
+    getJSDocTags(node: ts.Node, tagName: string): ts.JSDocTag[] {
+        if (!this.karambitOptions.experimentalTags) return []
+        return ts.getJSDocTags(node).filter(tag => tag.tagName.text.localeCompare(tagName, undefined, {sensitivity: "accent"}) === 0)
+    }
+
     private resolveStringLiteral(literal: ts.StringLiteral): string {
         const match = literal.getText().match(/^['"](.*)['"]$/)
         if (!match || match.length < 2) throw ErrorReporter.reportParseFailed(`Failed to resolve string literal: ${literal.getText()}`)
         return match[1]
-    }
-
-    private hasJSDocTag(node: ts.Node, tagName: string): ts.JSDocTag | undefined {
-        if (!this.karambitOptions.experimentalTags) return undefined
-        return ts.getJSDocTags(node).find(tag => tag.tagName.text.localeCompare(tagName, undefined, {sensitivity: "accent"}) === 0)
     }
 }
