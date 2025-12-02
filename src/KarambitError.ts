@@ -11,6 +11,7 @@ export enum KarambitErrorScope {
     DUPLICATE_BINDINGS = "DuplicateBindings",
     DEPENDENCY_CYCLE = "DependencyCycle",
     BINDING_CYCLE = "BindingCycle",
+    NO_COMPONENTS = "NoComponents",
 }
 
 export class KarambitError extends Error {

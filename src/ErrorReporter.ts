@@ -191,6 +191,10 @@ export class ErrorReporter {
         ErrorReporter.fail(KarambitErrorScope.PARSE, message, component)
     }
 
+    static reportNoComponents(): never {
+        ErrorReporter.fail(KarambitErrorScope.NO_COMPONENTS, "No components were found! If you really want this to succeed, use --allow-empty-output")
+    }
+
     static reportInternalFailure(message: string, context?: ErrorContext, component?: ts.ClassLikeDeclaration): never {
         ErrorReporter.fail(KarambitErrorScope.INTERNAL, addContext(message, context), component)
     }

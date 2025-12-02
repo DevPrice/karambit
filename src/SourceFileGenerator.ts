@@ -5,6 +5,7 @@ import {NameGenerator} from "./NameGenerator"
 import {isNotNull} from "./Util"
 import {Importer} from "./Importer"
 import {KarambitOptions} from "./karambit"
+import {ErrorReporter} from "./ErrorReporter"
 
 @Inject
 @Reusable
@@ -17,6 +18,9 @@ export class SourceFileGenerator {
     ) { }
 
     generateSourceFile(components: GeneratedComponent[]): ts.SourceFile {
+        if (components.length === 0 && !this.options.allowEmptyOutput) {
+            ErrorReporter.reportNoComponents()
+        }
         const classDeclarations = components.map(it => it.classDeclaration)
         const requiresUnsetSymbolDeclaration = components.some(it => it.requiresUnsetSymbolDeclaration)
         const sourceFile = ts.createSourceFile(

@@ -25,6 +25,7 @@ interface GenerateCommandOptions {
     verbose: boolean
     dryRun: boolean
     nameMaxLength: number
+    allowEmptyOutput: boolean
     experimentalTags: boolean
     scriptTarget?: string
 }
@@ -55,6 +56,11 @@ yargs(hideBin(process.argv))
                 type: "number",
                 description: "Max length of generated identifiers",
                 default: 30,
+            })
+            .option("allow-empty-output", {
+                type: "boolean",
+                description: "Succeed even if nothing is generated",
+                default: false,
             })
             .option("verbose", {
                 type: "boolean",
@@ -111,6 +117,7 @@ function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOpt
             outFile: cliOptions.output,
             dryRun: cliOptions.dryRun,
             nameMaxLength: cliOptions.nameMaxLength,
+            allowEmptyOutput: cliOptions.allowEmptyOutput,
             verbose: cliOptions.verbose,
             experimentalTags: cliOptions.experimentalTags,
             outputScriptTarget: cliOptions.scriptTarget ? scriptTargets.get(cliOptions.scriptTarget) : compilerOptions.target,
