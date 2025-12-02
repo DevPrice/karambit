@@ -98,9 +98,6 @@ export class ComponentGenerator {
     generateComponent(): GeneratedComponent {
         const component = this.component
         const componentDecorator = component.modifiers?.find(this.nodeDetector.isComponentDecorator)
-        if (!componentDecorator) {
-            this.errorReporter.reportInternalFailure("Can't generate implementation of undecorated component!", component)
-        }
         const definition = this.getComponentDefinition(component, componentDecorator)
         if (definition.exposedProperties.length === 0) {
             this.errorReporter.reportParseFailed(
@@ -299,9 +296,9 @@ export class ComponentGenerator {
         }
     }
 
-    private getComponentDefinition(declaration: ts.ClassLikeDeclaration, decorator: ts.Decorator): ComponentDefinition {
+    private getComponentDefinition(declaration: ts.ClassLikeDeclaration, decorator: ts.Decorator | undefined): ComponentDefinition {
         const scope = this.nodeDetector.getScope(declaration)
-        const providers = this.providerLocator.findFactoriesAndBindings(decorator, scope)
+        const providers = this.providerLocator.findFactoriesAndBindings(declaration, decorator, scope)
         return {
             ...providers,
             declaration,

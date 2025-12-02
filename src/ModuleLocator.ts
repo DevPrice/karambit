@@ -31,15 +31,44 @@ export class ModuleLocator {
         private readonly errorReporter: ErrorReporter,
     ) { }
 
-    getInstalledModules(decorator: ts.Decorator): Module[] {
-        const installedSymbols: ts.Symbol[] = this.getSymbolList(decorator, "modules")
+    getInstalledModules(declaration: ts.ClassLikeDeclaration, decorator: ts.Decorator | undefined): Module[] {
+        if (this.karambitOptions.experimentalTags) {
+            const tags = this.nodeDetector.getJSDocTags(declaration, "includeModule")
+            if (tags.length > 0) {
+                const linkTags = tags
+                    .flatMap(tag => {
+                        const linkTags = tag.getChildren().filter(ts.isJSDocLink)
+                        if (linkTags.length <= 0) {
+                            this.errorReporter.reportParseFailed("Expected at least one @link TSDoc tag for @includeModule tag!", tag)
+                        }
+                        return linkTags
+                    })
+
+                const installedSymbols = linkTags
+                    .map(tag => {
+                        const symbol = tag.name && this.typeChecker.getSymbolAtLocation(tag.name)
+                        if (!symbol) {
+                            this.errorReporter.reportParseFailed("Expected valid symbol!", tag)
+                        }
+                        return symbol
+                    })
+                return this.getModulesFromSymbols(installedSymbols)
+            }
+        }
+        if (decorator) {
+            return this.getModulesFromSymbols(this.getSymbolList(decorator, "modules"))
+        }
+        return []
+    }
+
+    private getModulesFromSymbols(symbols: ts.Symbol[]): Module[] {
         const installedModules: Map<ts.Symbol, Module> = new Map()
         let symbol: ts.Symbol | undefined
-        while (symbol = installedSymbols.shift()) { // eslint-disable-line
+        while (symbol = symbols.shift()) { // eslint-disable-line
             if (!installedModules.has(symbol)) {
                 const module = this.getModuleForSymbol(symbol)
                 installedModules.set(symbol, module)
-                installedSymbols.push(...module.includes)
+                symbols.push(...module.includes)
             }
         }
         return Array.from(installedModules.values())

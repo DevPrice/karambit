@@ -74,8 +74,8 @@ export class ProviderLocator {
         return dependencyMap
     }
 
-    findFactoriesAndBindings(componentDecorator: ts.Decorator, componentScope?: ts.Symbol): ModuleProviders {
-        const installedModules = this.moduleLocator.getInstalledModules(componentDecorator)
+    findFactoriesAndBindings(declaration: ts.ClassLikeDeclaration, componentDecorator: ts.Decorator | undefined, componentScope?: ts.Symbol): ModuleProviders {
+        const installedModules = this.moduleLocator.getInstalledModules(declaration, componentDecorator)
         const factories = new Map<QualifiedType, ProvidesMethod>()
         const setMultibindings = new Map<QualifiedType, SetMultibinding>()
         const mapMultibindings = new TupleMap<[QualifiedType, ts.Type], MapMultibinding>()
