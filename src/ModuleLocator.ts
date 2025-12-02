@@ -74,7 +74,7 @@ export class ModuleLocator {
         return Array.from(installedModules.values())
     }
 
-    getInstalledSubcomponents(declaration: ts.ClassLikeDeclaration): ts.Symbol[] {
+    getInstalledSubcomponents(declaration: ts.ClassLikeDeclaration, decorator: ts.Decorator | undefined): ts.Symbol[] {
         if (this.karambitOptions.experimentalTags) {
             const tags = this.nodeDetector.getJSDocTags(declaration, "includeSubcomponent")
             if (tags.length > 0) {
@@ -97,7 +97,6 @@ export class ModuleLocator {
                     })
             }
         }
-        const decorator = declaration.modifiers?.find(this.nodeDetector.isComponentDecorator)
         if (decorator) {
             return this.getSymbolList(decorator, "subcomponents")
         }
