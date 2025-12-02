@@ -97,8 +97,8 @@ export class ComponentGenerator {
 
     generateComponent(): GeneratedComponent {
         const component = this.component
-        const componentDecorator = component.modifiers?.find(this.nodeDetector.isComponentDecorator)
-        const definition = this.getComponentDefinition(component, componentDecorator)
+        const componentAnnotation = this.nodeDetector.getComponentAnnotation(component)
+        const definition = this.getComponentDefinition(component, componentAnnotation && ts.isDecorator(componentAnnotation) ? componentAnnotation : undefined)
         if (definition.exposedProperties.length === 0) {
             this.errorReporter.reportParseFailed(
                 "Component exposes no properties! A Component must have at least one abstract property for Karambit to implement!",
@@ -296,9 +296,9 @@ export class ComponentGenerator {
         }
     }
 
-    private getComponentDefinition(declaration: ts.ClassLikeDeclaration, decorator: ts.Decorator | undefined): ComponentDefinition {
+    private getComponentDefinition(declaration: ts.ClassLikeDeclaration, annotation: ts.Decorator | undefined): ComponentDefinition {
         const scope = this.nodeDetector.getScope(declaration)
-        const providers = this.providerLocator.findFactoriesAndBindings(declaration, decorator, scope)
+        const providers = this.providerLocator.findFactoriesAndBindings(declaration, annotation, scope)
         return {
             ...providers,
             declaration,
@@ -306,7 +306,7 @@ export class ComponentGenerator {
             preferredClassName: this.moduleLocator.getGeneratedName(declaration),
             providedProperties: this.providerLocator.findPropertyProviders(declaration),
             exposedProperties: this.getRootDependencies(this.typeChecker.getTypeAtLocation(declaration)),
-            subcomponents: this.moduleLocator.getInstalledSubcomponents(declaration, decorator),
+            subcomponents: this.moduleLocator.getInstalledSubcomponents(declaration, annotation),
         }
     }
 

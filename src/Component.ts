@@ -125,7 +125,7 @@ export abstract class ProgramModule {
                     visitor(sourceFile)
                 }
                 const components: ts.ClassDeclaration[] = findAllChildren(sourceFile, (n): n is ts.ClassDeclaration => {
-                    return ts.isClassDeclaration(n) && !!n.modifiers?.some(sourceFileComponent.nodeDetector.isComponentDecorator)
+                    return ts.isClassDeclaration(n) && !!sourceFileComponent.nodeDetector.getComponentAnnotation(n)
                 })
                 return components.map(component => {
                     return sourceFileComponent.componentGeneratorDependenciesFactory(component).generatedComponent

@@ -113,8 +113,8 @@ export class ModuleLocator {
                 return tag.comment
             }
         }
-        const decorator = declaration.modifiers?.find(this.nodeDetector.isComponentDecorator)
-        if (decorator) {
+        const decorator = this.nodeDetector.getComponentAnnotation(declaration)
+        if (decorator && ts.isDecorator(decorator)) {
             return this.nodeDetector.getStringPropertyNode(decorator, "generatedClassName")
         }
     }

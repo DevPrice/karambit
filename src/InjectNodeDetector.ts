@@ -56,7 +56,12 @@ export class InjectNodeDetector {
     }
 
     @bound
-    isComponentDecorator(decorator: ts.Node): decorator is ts.Decorator {
+    getComponentAnnotation(node: Annotated): AnnotationLike | undefined {
+        return node.modifiers?.find(this.isComponentDecorator) ?? this.getJSDocTag(node, "component")
+    }
+
+    @bound
+    private isComponentDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Component")
     }
 

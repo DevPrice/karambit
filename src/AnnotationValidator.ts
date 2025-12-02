@@ -1,5 +1,5 @@
 import * as ts from "typescript"
-import {InjectNodeDetector} from "./InjectNodeDetector"
+import {AnnotationLike, InjectNodeDetector} from "./InjectNodeDetector"
 import {Inject, Reusable} from "karambit-decorators"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound} from "./Util"
@@ -18,12 +18,13 @@ export class AnnotationValidator {
     validateAnnotations(node: ts.Node): void {
         // TODO: Validate JSDoc annotated nodes
         const annotations = findAllChildren(node, this.nodeDetector.isKarambitDecorator)
-        const componentAnnotations = annotations.filter(this.nodeDetector.isComponentDecorator)
+        const componentAnnotation = this.nodeDetector.getComponentAnnotation(node)
         const moduleAnnotations = annotations.filter(this.nodeDetector.isModuleDecorator)
         const injectAnnotations = annotations.filter(this.nodeDetector.isInjectDecorator)
 
-        componentAnnotations.forEach(this.requireClassExported)
-        componentAnnotations.forEach(this.requireAbstractClass)
+        // TODO: This validation isn't applied to TSDoc components
+        componentAnnotation && this.requireClassExported(componentAnnotation)
+        componentAnnotation && this.requireAbstractClass(componentAnnotation)
 
         moduleAnnotations.forEach(this.requireClassExported)
 
@@ -32,7 +33,7 @@ export class AnnotationValidator {
     }
 
     @bound
-    private requireClassExported(decorator: ts.Decorator): void {
+    private requireClassExported(decorator: AnnotationLike): void {
         if (ts.isClassDeclaration(decorator.parent)) {
             if (!decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.ExportKeyword)) {
                 this.errorReporter.reportParseFailed(`${this.getAnnotationName(decorator)} annotated class must be exported!`, decorator.parent)
@@ -41,7 +42,7 @@ export class AnnotationValidator {
     }
 
     @bound
-    private requireAbstractClass(decorator: ts.Decorator): void {
+    private requireAbstractClass(decorator: AnnotationLike): void {
         if (ts.isClassDeclaration(decorator.parent)) {
             if (!decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
                 this.errorReporter.reportParseFailed(`${this.getAnnotationName(decorator)} annotated class must be abstract!`, decorator.parent)
