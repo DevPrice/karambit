@@ -45,8 +45,34 @@ export class ModuleLocator {
         return Array.from(installedModules.values())
     }
 
-    getInstalledSubcomponents(decorator: ts.Decorator): ts.Symbol[] {
-        return this.getSymbolList(decorator, "subcomponents")
+    getInstalledSubcomponents(declaration: ts.ClassLikeDeclaration): ts.Symbol[] {
+        if (this.karambitOptions.experimentalTags) {
+            const tags = this.nodeDetector.getJSDocTags(declaration, "includeSubcomponent")
+            if (tags.length > 0) {
+                const linkTags = tags
+                    .flatMap(tag => {
+                        const linkTags = tag.getChildren().filter(ts.isJSDocLink)
+                        if (linkTags.length <= 0) {
+                            this.errorReporter.reportParseFailed("Expected at least one @link TSDoc tag for @includeSubcomponent tag!", tag)
+                        }
+                        return linkTags
+                    })
+
+                return linkTags
+                    .map(tag => {
+                        const symbol = tag.name && this.typeChecker.getSymbolAtLocation(tag.name)
+                        if (!symbol) {
+                            this.errorReporter.reportParseFailed("Expected valid symbol!", tag)
+                        }
+                        return symbol
+                    })
+            }
+        }
+        const decorator = declaration.modifiers?.find(this.nodeDetector.isComponentDecorator)
+        if (decorator) {
+            return this.getSymbolList(decorator, "subcomponents")
+        }
+        return []
     }
 
     getGeneratedName(declaration: ts.ClassLikeDeclaration): string | undefined {

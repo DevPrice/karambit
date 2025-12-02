@@ -309,7 +309,7 @@ export class ComponentGenerator {
             preferredClassName: this.moduleLocator.getGeneratedName(declaration),
             providedProperties: this.providerLocator.findPropertyProviders(declaration),
             exposedProperties: this.getRootDependencies(this.typeChecker.getTypeAtLocation(declaration)),
-            subcomponents: this.moduleLocator.getInstalledSubcomponents(decorator),
+            subcomponents: this.moduleLocator.getInstalledSubcomponents(declaration),
         }
     }
 
