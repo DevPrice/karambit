@@ -84,7 +84,7 @@ export interface ConstructorParameter {
 export interface SubcomponentFactory {
     readonly providerType: ProviderType.SUBCOMPONENT_FACTORY
     readonly declaration: ts.ClassDeclaration
-    readonly decorator: ts.Decorator
+    readonly decorator?: ts.Decorator
     readonly type: QualifiedType
     readonly subcomponentType: QualifiedType
     readonly constructorParams: ConstructorParameter[]

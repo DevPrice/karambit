@@ -39,8 +39,8 @@ export class SubcomponentFactoryLocator {
         const declaration = declarations[0]
         if (!ts.isClassDeclaration(declaration)) return undefined
 
-        const decorator = declaration.modifiers?.find(this.nodeDetector.isSubcomponentDecorator)
-        if (!decorator) return undefined
+        const annotation = declaration && this.nodeDetector.getSubcomponentAnnotation(declaration)
+        if (!annotation) return undefined
 
         const constructorParams = this.constructorHelper.getConstructorParamsForDeclaration(declaration)
         if (!constructorParams) return undefined
@@ -57,7 +57,7 @@ export class SubcomponentFactoryLocator {
             type: createQualifiedType({type}),
             constructorParams,
             declaration,
-            decorator,
+            decorator: ts.isDecorator(annotation) ? annotation : undefined,
         }
     }
 
@@ -71,8 +71,8 @@ export class SubcomponentFactoryLocator {
         const declaration = declarations[0]
         if (!ts.isClassDeclaration(declaration)) return undefined
 
-        const decorator = declaration.modifiers?.find(this.nodeDetector.isSubcomponentDecorator)
-        if (!decorator) return undefined
+        const annotation = this.nodeDetector.getSubcomponentAnnotation(declaration)
+        if (!annotation) return undefined
 
         const constructorParams = this.constructorHelper.getConstructorParamsForDeclaration(declaration)
         if (!constructorParams) return undefined
@@ -85,7 +85,7 @@ export class SubcomponentFactoryLocator {
             type: createQualifiedType({type}),
             constructorParams,
             declaration,
-            decorator
+            decorator: ts.isDecorator(annotation) ? annotation : undefined,
         }
     }
 }

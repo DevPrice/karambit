@@ -189,8 +189,11 @@ export class ScopedSubcomponentModule {
     }
 }
 
-@Subcomponent({modules: [ScopedSubcomponentModule]})
-@TestSubcomponentScope
+/**
+ * @subcomponent
+ * @includeModule {@link ScopedSubcomponentModule}
+ * @scope {@link TestSubcomponentScope}
+ */
 export abstract class ScopedSubcomponent {
 
     abstract readonly scopedClass: ScopedSubcomponentClass
