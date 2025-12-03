@@ -82,15 +82,16 @@ export abstract class ProgramModule {
 
     @Provides
     @Reusable
-    static provideLogger(options: KarambitOptions): Logger {
+    static provideDefaultLogger(options: KarambitOptions): Logger {
+        const logger = options.logger ?? console
         if (options.verbose) {
-            return console
+            return logger
         } else {
             return {
                 debug: ignore,
-                info: console.info,
-                warn: console.warn,
-                error: console.error,
+                info: logger.info,
+                warn: logger.warn,
+                error: logger.error,
             }
         }
     }

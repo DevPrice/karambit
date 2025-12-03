@@ -1,5 +1,6 @@
 import * as ts from "typescript"
 import {KarambitProgramComponent} from "./karambit-generated/src/Component"
+import {Logger} from "./Util"
 
 export {KarambitError, KarambitErrorScope} from "./KarambitError"
 
@@ -39,6 +40,7 @@ export interface KarambitOptions {
     allowEmptyOutput: boolean
     experimentalTags: boolean
     outputScriptTarget: ts.ScriptTarget
+    logger?: Logger
     printerOptions?: ts.PrinterOptions
 }
 
