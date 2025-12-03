@@ -21,7 +21,7 @@ import {
 import {ErrorReporter} from "./ErrorReporter"
 import {Inject, Reusable} from "karambit-decorators"
 import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"
-import {ComponentLikeDeclaration, ComponentScope, isTypeNullable} from "./TypescriptUtil"
+import {ComponentDeclaration, ComponentLikeDeclaration, ComponentScope, isTypeNullable} from "./TypescriptUtil"
 import {ModuleProviders, ProviderLocator} from "./ProviderLocator"
 import {distinctBy, isNotNull} from "./Util"
 
@@ -43,7 +43,7 @@ export interface ComponentGeneratorDependencies {
     readonly generatedComponent: GeneratedComponent
 }
 
-export type ComponentGeneratorDependenciesFactory = (componentDeclaration: ts.ClassDeclaration) => ComponentGeneratorDependencies
+export type ComponentGeneratorDependenciesFactory = (componentDeclaration: ComponentDeclaration) => ComponentGeneratorDependencies
 
 type RootDependency = Dependency & {name: ts.PropertyName, typeNode?: ts.TypeNode}
 
@@ -69,7 +69,7 @@ export class ComponentGenerator {
         private readonly propertyExtractor: PropertyExtractor,
         private readonly errorReporter: ErrorReporter,
         private readonly providerLocator: ProviderLocator,
-        private readonly component: ts.ClassDeclaration,
+        private readonly component: ComponentDeclaration,
         private readonly componentDeclarationBuilderFactory: ComponentDeclarationBuilderFactory,
         private readonly subcomponentFactoryLocatorFactory: SubcomponentFactoryLocatorFactory,
         private readonly typeResolverFactory: TypeResolverFactory,
@@ -183,7 +183,7 @@ export class ComponentGenerator {
         const classDeclaration = builder.declareComponent({
             identifier: componentIdentifier,
             declaration: component,
-            constructorParams: this.constructorHelper.getConstructorParamsForDeclaration(component) ?? [],
+            constructorParams: ts.isClassLike(component) ? this.constructorHelper.getConstructorParamsForDeclaration(component) : [],
             members: [
                 ...definition.exposedProperties.map(it => builder.declareComponentProperty(component, it)),
                 ...Array.from(generatedDeps.values()).flatMap(it => builder.getProviderDeclaration(it, definition.scope)),

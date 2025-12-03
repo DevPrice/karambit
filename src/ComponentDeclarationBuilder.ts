@@ -18,8 +18,8 @@ import {
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {Assisted, AssistedInject} from "karambit-decorators"
-import {bound} from "./Util"
-import {ComponentScope, isTypeNullable} from "./TypescriptUtil"
+import {bound, isNotNull} from "./Util"
+import {ComponentDeclaration, ComponentScope, isTypeNullable} from "./TypescriptUtil"
 import {findAllChildren} from "./Visitor"
 
 export type ComponentDeclarationBuilderFactory = (typeResolver: TypeResolver, instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>) => ComponentDeclarationBuilder
@@ -37,7 +37,7 @@ export class ComponentDeclarationBuilder {
         @Assisted private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
     ) { }
 
-    declareComponent(options: {declaration: ts.ClassDeclaration, constructorParams: ConstructorParameter[], members: ts.ClassElement[], identifier: ts.Identifier}): ts.ClassDeclaration {
+    declareComponent(options: {declaration: ComponentDeclaration, constructorParams: ConstructorParameter[], members: ts.ClassElement[], identifier: ts.Identifier}): ts.ClassDeclaration {
         const parentName = options.declaration.name
         if (!parentName) {
             this.errorReporter.reportParseFailed("Component missing name!", options.declaration)
@@ -48,7 +48,7 @@ export class ComponentDeclarationBuilder {
             options.identifier,
             [],
             [ts.factory.createHeritageClause(
-                ts.SyntaxKind.ExtendsKeyword,
+                ts.isClassLike(options.declaration) ? ts.SyntaxKind.ExtendsKeyword : ts.SyntaxKind.ImplementsKeyword,
                 [ts.factory.createExpressionWithTypeArguments(
                     this.importer.getExpressionForSymbol(parentSymbol),
                     undefined
@@ -68,11 +68,15 @@ export class ComponentDeclarationBuilder {
                         )
                     ),
                     ts.factory.createBlock(
-                        [ts.factory.createExpressionStatement(ts.factory.createCallExpression(
-                            ts.factory.createSuper(),
-                            undefined,
-                            options.constructorParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)),
-                        ))],
+                        [
+                            ts.isClassLike(options.declaration)
+                                ? ts.factory.createExpressionStatement(ts.factory.createCallExpression(
+                                    ts.factory.createSuper(),
+                                    undefined,
+                                    options.constructorParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)),
+                                ))
+                                : undefined
+                        ].filter(isNotNull),
                         true
                     )
                 ),
@@ -81,7 +85,7 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    declareComponentProperty(declaration: ts.ClassDeclaration, options: {type: QualifiedType, name: ts.PropertyName, optional: boolean}) {
+    declareComponentProperty(declaration: ComponentDeclaration, options: {type: QualifiedType, name: ts.PropertyName, optional: boolean}) {
         const parentName = declaration.name
         if (!parentName) {
             this.errorReporter.reportParseFailed("Component missing name!", declaration)
@@ -138,7 +142,7 @@ export class ComponentDeclarationBuilder {
                 identifier,
                 undefined,
                 [ts.factory.createHeritageClause(
-                    ts.SyntaxKind.ExtendsKeyword,
+                    ts.isClassLike(declaration) ? ts.SyntaxKind.ExtendsKeyword : ts.SyntaxKind.ImplementsKeyword,
                     [ts.factory.createExpressionWithTypeArguments(
                         this.importer.getExpressionForDeclaration(declaration),
                         undefined
@@ -165,11 +169,15 @@ export class ComponentDeclarationBuilder {
                             )
                         )],
                         ts.factory.createBlock(
-                            [ts.factory.createExpressionStatement(ts.factory.createCallExpression(
-                                ts.factory.createSuper(),
-                                undefined,
-                                factory.constructorParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration))
-                            ))],
+                            [
+                                ts.isClassLike(declaration)
+                                    ? ts.factory.createExpressionStatement(ts.factory.createCallExpression(
+                                        ts.factory.createSuper(),
+                                        undefined,
+                                        factory.constructorParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration))
+                                    ))
+                                    : undefined
+                            ].filter(isNotNull),
                             true
                         )
                     ),

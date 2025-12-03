@@ -65,9 +65,14 @@ export abstract class ScopeModule {
 
 export type NullableClass = InjectClass | null
 
+export interface ScopedComponentInterface {
+    readonly unscopedClass: UnscopedClass
+    readonly scopedClass: ScopedClass
+}
+
 /** @scope {@link TestScope} */
 @Component({modules: [ScopeModule]})
-export abstract class ScopedComponent {
+export abstract class ScopedComponent implements ScopedComponentInterface {
 
     abstract readonly unscopedClass: UnscopedClass
 
@@ -337,9 +342,8 @@ export abstract class MultibindingsComponent {
  * @includeModule {@link MultibindingSetModule} {@link MultibindingMapModule}
  * @includeSubcomponent {@link MultibindingSetSubcomponent}
  */
-export abstract class NotExposedMultibindingsComponent {
-
-    abstract readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
+export interface NotExposedMultibindingsComponent {
+    readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
 }
 
 @k.Component({modules: [], subcomponents: [MultibindingSetSubcomponent]})

@@ -16,6 +16,7 @@ import {findAllChildren, SourceFileVisitor} from "./Visitor"
 import {ignore, isNotNull, Logger} from "./Util"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import * as Path from "path"
+import {ComponentDeclaration} from "./TypescriptUtil"
 
 declare const generatedQualifier: unique symbol
 type GeneratedSourceFile = ts.SourceFile & Qualified<typeof generatedQualifier>
@@ -34,7 +35,7 @@ export abstract class ComponentGenerationModule {
 @ComponentGenerationScope
 export abstract class ComponentGenerationSubcomponent implements ComponentGeneratorDependencies {
 
-    constructor(@BindsInstance componentDeclaration: ts.ClassDeclaration) { }
+    constructor(@BindsInstance componentDeclaration: ComponentDeclaration) { }
 
     abstract readonly generatedComponent: GeneratedComponent
 }
@@ -49,7 +50,7 @@ export abstract class SourceFileModule {
 
     @Provides
     @IntoSet
-    static provideExportVerifierVisitor(annotationValidator: AnnotationValidator): SourceFileVisitor {
+    static provideAnnotationValidationVisitor(annotationValidator: AnnotationValidator): SourceFileVisitor {
         return annotationValidator.validateAnnotations
     }
 }
@@ -125,8 +126,8 @@ export abstract class ProgramModule {
                 for (const visitor of sourceFileComponent.sourceFileVisitors) {
                     visitor(sourceFile)
                 }
-                const components: ts.ClassDeclaration[] = findAllChildren(sourceFile, (n): n is ts.ClassDeclaration => {
-                    return ts.isClassDeclaration(n) && !!sourceFileComponent.nodeDetector.getComponentAnnotation(n)
+                const components: ComponentDeclaration[] = findAllChildren(sourceFile, (n): n is ComponentDeclaration => {
+                    return (ts.isClassDeclaration(n) || ts.isInterfaceDeclaration(n)) && !!sourceFileComponent.nodeDetector.getComponentAnnotation(n)
                 })
                 return components.map(component => {
                     return sourceFileComponent.componentGeneratorDependenciesFactory(component).generatedComponent

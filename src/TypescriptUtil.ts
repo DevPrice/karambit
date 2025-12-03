@@ -9,6 +9,7 @@ export const reusableScope: unique symbol = Symbol()
 
 export type AnnotationLike = ts.Decorator | ts.JSDocTag
 export type ComponentScope = ts.Symbol | typeof reusableScope | string
+export type ComponentDeclaration = ts.ClassDeclaration | ts.InterfaceDeclaration
 export type ComponentLikeDeclaration = ts.ClassLikeDeclaration | ts.InterfaceDeclaration
 
 export function scopeToString(scope: ComponentScope): string {

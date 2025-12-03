@@ -17,7 +17,7 @@ import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
 import {Binding} from "./ModuleLocator"
 import {Chalk} from "chalk"
 import {KarambitError, KarambitErrorScope} from "./KarambitError"
-import {ComponentScope, scopeToString} from "./TypescriptUtil"
+import {ComponentDeclaration, ComponentScope, scopeToString} from "./TypescriptUtil"
 
 const chalk: Chalk = require("chalk")
 
@@ -29,7 +29,7 @@ export class ErrorReporter {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
-        private readonly component?: ts.ClassDeclaration,
+        private readonly component?: ComponentDeclaration,
     ) { }
 
     reportCompileTimeConstantRequired(context: ts.Node, identifierName: string): never {
@@ -188,7 +188,7 @@ export class ErrorReporter {
         ErrorReporter.reportInternalFailure(addContext(message, context), this.component)
     }
 
-    static reportParseFailed(message: string, component?: ts.ClassLikeDeclaration): never {
+    static reportParseFailed(message: string, component?: ComponentDeclaration): never {
         ErrorReporter.fail(KarambitErrorScope.PARSE, message, component)
     }
 
@@ -196,11 +196,11 @@ export class ErrorReporter {
         ErrorReporter.fail(KarambitErrorScope.NO_COMPONENTS, "No components were found! If you really want this to succeed, use --allow-empty-output")
     }
 
-    static reportInternalFailure(message: string, context?: ErrorContext, component?: ts.ClassLikeDeclaration): never {
+    static reportInternalFailure(message: string, context?: ErrorContext, component?: ComponentDeclaration): never {
         ErrorReporter.fail(KarambitErrorScope.INTERNAL, addContext(message, context), component)
     }
 
-    static fail(scope: KarambitErrorScope, message: string, component?: ts.ClassLikeDeclaration): never {
+    static fail(scope: KarambitErrorScope, message: string, component?: ComponentDeclaration): never {
         throw new KarambitError(message, scope, component)
     }
 }

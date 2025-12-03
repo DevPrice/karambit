@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import {ComponentDeclaration} from "./TypescriptUtil"
 import chalk = require("chalk")
 
 export enum KarambitErrorScope {
@@ -16,7 +16,7 @@ export enum KarambitErrorScope {
 
 export class KarambitError extends Error {
 
-    constructor(description: string, readonly scope: KarambitErrorScope, component?: ts.ClassLikeDeclaration) {
+    constructor(description: string, readonly scope: KarambitErrorScope, component?: ComponentDeclaration) {
         super(`${chalk.red(`[Karambit/${scope}]`)} ${component && component.name ? `${component.name.getText()}: ` : ""}${description}`)
     }
 }

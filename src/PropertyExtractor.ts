@@ -1,6 +1,7 @@
 import * as ts from "typescript"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-decorators"
+import {ComponentLikeDeclaration} from "./TypescriptUtil"
 
 export type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
 export type ElementLike = ts.ClassElement | ts.TypeElement
@@ -29,8 +30,9 @@ export class PropertyExtractor {
     getUnimplementedAbstractProperties(type: ts.Type): PropertyLike[] {
         const declarations = type.getSymbol()?.getDeclarations() ?? []
         const properties = declarations
-            .filter(it => ts.isClassLike(it))
-            .flatMap(declaration => declaration.members)
+            .filter(it => ts.isClassLike(it) || ts.isInterfaceDeclaration(it))
+            .map(declaration => declaration.members)
+            .flat()
             .filter(it => ts.isPropertyDeclaration(it) || ts.isPropertySignature(it))
             .map(it => it as PropertyLike)
 
@@ -41,15 +43,16 @@ export class PropertyExtractor {
             .filter(it => !implementedProperties.includes(it.name.getText()))
 
         return properties
-            .filter(it => it.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.AbstractKeyword))
+            .filter(it => ts.isTypeElement(it) || it.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.AbstractKeyword))
             .concat(baseProperties)
     }
 
     getUnimplementedAbstractMethods(type: ts.Type): MethodLike[] {
         const declarations = type.getSymbol()?.getDeclarations() ?? []
         const methods = declarations
-            .filter(it => ts.isClassLike(it))
-            .flatMap(declaration => declaration.members)
+            .filter((it): it is ComponentLikeDeclaration => ts.isClassLike(it) || ts.isInterfaceDeclaration(it))
+            .map(declaration => declaration.members)
+            .flat()
             .filter(it => ts.isMethodDeclaration(it) || ts.isMethodSignature(it))
             .map(it => it as MethodLike)
 
@@ -60,7 +63,7 @@ export class PropertyExtractor {
             .filter(it => !implementedMethods.includes(it.name.getText()))
 
         return methods
-            .filter(it => it.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.AbstractKeyword))
+            .filter(it => ts.isTypeElement(it) || it.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.AbstractKeyword))
             .concat(baseMethods)
     }
 
