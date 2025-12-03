@@ -5,7 +5,7 @@ import {ErrorReporter} from "./ErrorReporter"
 import {bound, isNotNull} from "./Util"
 import {Hacks} from "./Hacks"
 import {KarambitOptions} from "./karambit"
-import {Annotated, AnnotationLike, ComponentScope, isValidIdentifier} from "./TypescriptUtil"
+import {Annotated, AnnotationLike, ComponentScope, isValidIdentifier, reusableScope} from "./TypescriptUtil"
 
 @Inject
 @Reusable
@@ -43,6 +43,9 @@ export class InjectNodeDetector {
     }
 
     private getTagScope(item: Annotated): ComponentScope | undefined {
+        const reusableTag = this.getJSDocTag(item, "reusable")
+        if (reusableTag) return reusableScope
+
         const scopeTag = this.getJSDocTag(item, "scope")
         if (scopeTag) {
             const children = scopeTag.getChildren()
@@ -336,6 +339,7 @@ export class InjectNodeDetector {
 
     @bound
     isReusableScope(symbol: ComponentScope): boolean {
+        if (symbol === reusableScope) return true
         if (typeof symbol === "string") return false
         return this.getPropertyNamesForSymbol(symbol).has("__karambitReusableScopeAnnotation")
     }

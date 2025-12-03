@@ -29,8 +29,8 @@ export class InjectClass { x: number = 1 }
 @TestScope
 export class ScopedInjectClass { }
 
+/** @reusable */
 @Inject
-@Reusable
 export class ReusableInjectClass { }
 
 export let nullProvidedCount: number = 0

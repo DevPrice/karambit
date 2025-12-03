@@ -5,10 +5,15 @@ export interface Annotated extends ts.Node {
     modifiers?: ts.NodeArray<ts.ModifierLike>
 }
 
+export const reusableScope: unique symbol = Symbol()
+
 export type AnnotationLike = ts.Decorator | ts.JSDocTag
-export type ComponentScope = ts.Symbol | string
+export type ComponentScope = ts.Symbol | typeof reusableScope | string
 
 export function scopeToString(scope: ComponentScope): string {
+    if (scope === reusableScope) {
+        return "<Reusable>"
+    }
     if (typeof scope === "string") {
         return `named(${scope})`
     }
