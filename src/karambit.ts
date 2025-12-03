@@ -35,6 +35,7 @@ export interface KarambitOptions {
     dryRun: boolean
     verbose: boolean
     nameMaxLength: number
+    allowEmptyModules: boolean
     allowEmptyOutput: boolean
     experimentalTags: boolean
     outputScriptTarget: ts.ScriptTarget
@@ -53,6 +54,7 @@ const defaultOptions: KarambitOptions = {
     dryRun: false,
     verbose: false,
     nameMaxLength: 30,
+    allowEmptyModules: false,
     allowEmptyOutput: false,
     experimentalTags: false,
     outputScriptTarget: ts.ScriptTarget.Latest,

@@ -134,6 +134,9 @@ export class ModuleLocator {
                 bindings: prev.bindings.concat(bindings),
             }
         }, {factories: [], bindings: []})
+        if (includes.length <= 0 && factories.length <= 0 && bindings.length <= 0 && !this.karambitOptions.allowEmptyModules) {
+            this.errorReporter.reportParseFailed("Modules must define at least one @provides or @binds, or include another module! If you really want this to succeed, use --allow-empty-modules", declarations[0])
+        }
         return {includes, factories, bindings}
     }
 
