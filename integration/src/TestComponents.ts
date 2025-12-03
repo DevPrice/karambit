@@ -194,7 +194,7 @@ export abstract class ScopedSubcomponent {
 
 export interface ParentInterface { }
 
-/** @karambitModule */
+// test that modules with no Decorator are valid
 export abstract class ParentModule {
 
     /** @binds */
@@ -266,7 +266,7 @@ export class AnotherIncludedModule {
     }
 }
 
-@Module({includes: [AnotherIncludedModule]})
+/** @includeModule {@link AnotherIncludedModule} */
 export class IncludedModule { }
 
 @Module({includes: [IncludedModule]})
@@ -332,7 +332,11 @@ export abstract class MultibindingsComponent {
     abstract readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
 }
 
-@k.Component({modules: [MultibindingSetModule, MultibindingMapModule], subcomponents: [MultibindingSetSubcomponent]})
+/**
+ * @component
+ * @includeModule {@link MultibindingSetModule} {@link MultibindingMapModule}
+ * @includeSubcomponent {@link MultibindingSetSubcomponent}
+ */
 export abstract class NotExposedMultibindingsComponent {
 
     abstract readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
