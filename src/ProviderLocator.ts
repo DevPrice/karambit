@@ -9,7 +9,7 @@ import {ErrorReporter} from "./ErrorReporter"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {NameGenerator} from "./NameGenerator"
 import {PropertyExtractor} from "./PropertyExtractor"
-import {ComponentScope} from "./TypescriptUtil"
+import {ComponentLikeDeclaration, ComponentScope} from "./TypescriptUtil"
 
 export interface ModuleProviders {
     factories: ReadonlyMap<QualifiedType, ProvidesMethod>
@@ -31,8 +31,8 @@ export class ProviderLocator {
         private readonly errorReporter: ErrorReporter,
     ) { }
 
-    findPropertyProviders(component: ts.ClassLikeDeclaration): ReadonlyMap<QualifiedType, PropertyProvider> {
-        const dependencyParams = this.constructorHelper.getConstructorParamsForDeclaration(component) ?? []
+    findPropertyProviders(component: ComponentLikeDeclaration): ReadonlyMap<QualifiedType, PropertyProvider> {
+        const dependencyParams = ts.isClassLike(component) ? this.constructorHelper.getConstructorParamsForDeclaration(component) : []
         const dependencyMap = new Map<QualifiedType, PropertyProvider>()
         dependencyParams.forEach(param => {
             const name = this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)
@@ -75,7 +75,7 @@ export class ProviderLocator {
         return dependencyMap
     }
 
-    findFactoriesAndBindings(declaration: ts.ClassLikeDeclaration, componentDecorator: ts.Decorator | undefined, componentScope?: ComponentScope): ModuleProviders {
+    findFactoriesAndBindings(declaration: ComponentLikeDeclaration, componentDecorator: ts.Decorator | undefined, componentScope?: ComponentScope): ModuleProviders {
         const installedModules = this.moduleLocator.getInstalledModules(declaration, componentDecorator)
         const factories = new Map<QualifiedType, ProvidesMethod>()
         const setMultibindings = new Map<QualifiedType, SetMultibinding>()

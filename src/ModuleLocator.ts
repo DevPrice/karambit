@@ -7,7 +7,7 @@ import {ErrorReporter} from "./ErrorReporter"
 import {findAllChildren} from "./Visitor"
 import {bound, isNotNull, memoized} from "./Util"
 import {KarambitOptions} from "./karambit"
-import {isValidIdentifier} from "./TypescriptUtil"
+import {ComponentLikeDeclaration, isValidIdentifier} from "./TypescriptUtil"
 
 export interface Binding {
     paramType: QualifiedType
@@ -32,7 +32,7 @@ export class ModuleLocator {
         private readonly errorReporter: ErrorReporter,
     ) { }
 
-    getInstalledModules(declaration: ts.ClassLikeDeclaration, decorator: ts.Decorator | undefined): Module[] {
+    getInstalledModules(declaration: ComponentLikeDeclaration, decorator: ts.Decorator | undefined): Module[] {
         const installedFromTags = this.getInstalledFromTags(declaration)
         if (installedFromTags.length > 0) {
             const installedSymbols = this.getInstalledFromTags(declaration)
@@ -44,7 +44,7 @@ export class ModuleLocator {
         return []
     }
 
-    private getInstalledFromTags(declaration: ts.ClassLikeDeclaration): ts.Symbol[] {
+    private getInstalledFromTags(declaration: ComponentLikeDeclaration): ts.Symbol[] {
         const tags = this.nodeDetector.getJSDocTags(declaration, "includeModule")
         return tags
             .flatMap(tag => {
@@ -76,7 +76,7 @@ export class ModuleLocator {
         return Array.from(installedModules.values())
     }
 
-    getInstalledSubcomponents(declaration: ts.ClassLikeDeclaration, decorator: ts.Decorator | undefined): ts.Symbol[] {
+    getInstalledSubcomponents(declaration: ComponentLikeDeclaration, decorator: ts.Decorator | undefined): ts.Symbol[] {
         const tags = this.nodeDetector.getJSDocTags(declaration, "includeSubcomponent")
         if (tags.length > 0) {
             const linkTags = tags
@@ -103,7 +103,7 @@ export class ModuleLocator {
         return []
     }
 
-    getGeneratedName(declaration: ts.ClassLikeDeclaration): string | undefined {
+    getGeneratedName(declaration: ComponentLikeDeclaration): string | undefined {
         const tag = this.nodeDetector.getJSDocTag(declaration, "generatedName")
         if (tag && typeof tag.comment === "string") {
             if (!isValidIdentifier(tag.comment)) {

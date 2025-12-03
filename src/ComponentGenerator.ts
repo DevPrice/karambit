@@ -21,7 +21,7 @@ import {
 import {ErrorReporter} from "./ErrorReporter"
 import {Inject, Reusable} from "karambit-decorators"
 import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"
-import {ComponentScope, isTypeNullable} from "./TypescriptUtil"
+import {ComponentLikeDeclaration, ComponentScope, isTypeNullable} from "./TypescriptUtil"
 import {ModuleProviders, ProviderLocator} from "./ProviderLocator"
 import {distinctBy, isNotNull} from "./Util"
 
@@ -48,7 +48,7 @@ export type ComponentGeneratorDependenciesFactory = (componentDeclaration: ts.Cl
 type RootDependency = Dependency & {name: ts.PropertyName, typeNode?: ts.TypeNode}
 
 interface ComponentDefinition extends ModuleProviders {
-    declaration: ts.ClassLikeDeclaration
+    declaration: ComponentLikeDeclaration
     scope?: ComponentScope
     preferredClassName?: string
     providedProperties: ReadonlyMap<QualifiedType, PropertyProvider>
@@ -295,7 +295,7 @@ export class ComponentGenerator {
         }
     }
 
-    private getComponentDefinition(declaration: ts.ClassLikeDeclaration, annotation: ts.Decorator | undefined): ComponentDefinition {
+    private getComponentDefinition(declaration: ComponentLikeDeclaration, annotation: ts.Decorator | undefined): ComponentDefinition {
         const scope = this.nodeDetector.getScope(declaration)
         const providers = this.providerLocator.findFactoriesAndBindings(declaration, annotation, scope)
         return {
