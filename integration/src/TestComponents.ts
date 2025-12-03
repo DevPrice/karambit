@@ -194,10 +194,9 @@ export class ScopedSubcomponentModule {
  * @includeModule {@link ScopedSubcomponentModule}
  * @scope {@link TestSubcomponentScope}
  */
-export abstract class ScopedSubcomponent {
-
-    abstract readonly scopedClass: ScopedSubcomponentClass
-    abstract readonly scopedInterface: ScopedSubcomponentInterface
+export interface ScopedSubcomponent {
+    readonly scopedClass: ScopedSubcomponentClass
+    readonly scopedInterface: ScopedSubcomponentInterface
 }
 
 export interface ParentInterface { }
@@ -226,7 +225,10 @@ export abstract class InheritedClass {
     abstract readonly implementedProperty: boolean
 }
 
-@Component({generatedClassName: "CustomComponentName", modules: [ParentModule], subcomponents: [ChildSubcomponent, ScopedSubcomponent]})
+/**
+ * @includeSubcomponent {@link ChildSubcomponent} {@link ScopedSubcomponent}
+ */
+@Component({generatedClassName: "CustomComponentName", modules: [ParentModule]})
 export abstract class ParentComponent extends InheritedClass {
 
     protected constructor(child: ChildComponent, typeLiteralChild: {value: symbol}, /** @bindsInstance */ public boundString: string) {

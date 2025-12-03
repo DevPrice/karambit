@@ -37,12 +37,12 @@ export class SubcomponentFactoryLocator {
         if (!declarations || declarations.length === 0) return undefined
 
         const declaration = declarations[0]
-        if (!ts.isClassDeclaration(declaration)) return undefined
+        if (!ts.isClassDeclaration(declaration) && !ts.isInterfaceDeclaration(declaration)) return undefined
 
         const annotation = declaration && this.nodeDetector.getSubcomponentAnnotation(declaration)
         if (!annotation) return undefined
 
-        const constructorParams = this.constructorHelper.getConstructorParamsForDeclaration(declaration)
+        const constructorParams = ts.isClassLike(declaration) ? this.constructorHelper.getConstructorParamsForDeclaration(declaration) : []
         if (!constructorParams) return undefined
 
         const factoryParamTypes = signatureDeclaration.parameters
@@ -69,12 +69,12 @@ export class SubcomponentFactoryLocator {
         if (!declarations || declarations.length === 0) return undefined
 
         const declaration = declarations[0]
-        if (!ts.isClassDeclaration(declaration)) return undefined
+        if (!ts.isClassDeclaration(declaration) && !ts.isInterfaceDeclaration(declaration)) return undefined
 
         const annotation = this.nodeDetector.getSubcomponentAnnotation(declaration)
         if (!annotation) return undefined
 
-        const constructorParams = this.constructorHelper.getConstructorParamsForDeclaration(declaration)
+        const constructorParams = ts.isClassLike(declaration) ? this.constructorHelper.getConstructorParamsForDeclaration(declaration) : []
         if (!constructorParams) return undefined
 
         const subcomponentType = this.typeChecker.getTypeAtLocation(declaration)

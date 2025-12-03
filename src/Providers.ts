@@ -1,6 +1,6 @@
 import * as ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
-import {ComponentScope} from "./TypescriptUtil"
+import {ComponentDeclaration, ComponentLikeDeclaration, ComponentScope} from "./TypescriptUtil"
 
 export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | AssistedFactory | UndefinedProvider | ParentProvider | SetMultibinding | MapMultibinding
 export type MultibindingProvider = SetMultibinding | MapMultibinding
@@ -83,7 +83,7 @@ export interface ConstructorParameter {
 
 export interface SubcomponentFactory {
     readonly providerType: ProviderType.SUBCOMPONENT_FACTORY
-    readonly declaration: ts.ClassDeclaration
+    readonly declaration: ComponentDeclaration
     readonly decorator?: ts.Decorator
     readonly type: QualifiedType
     readonly subcomponentType: QualifiedType
