@@ -42,7 +42,7 @@ export class InjectNodeDetector {
         if (scopeDecorators.length > 1) ErrorReporter.reportParseFailed(`Scoped element may only have one scope! ${item.name?.getText()} has ${scopeDecorators.length}.`)
         if (scopeDecorators.length === 1) {
             const [symbol] = scopeDecorators
-            return this.getAliasedSymbol(symbol)
+            return this.getOriginalSymbol(symbol)
         }
     }
 
@@ -323,7 +323,7 @@ export class InjectNodeDetector {
         return new Set(type.getProperties().map(it => it.name))
     }
 
-    private getAliasedSymbol(symbol: ts.Symbol): ts.Symbol {
+    getOriginalSymbol(symbol: ts.Symbol): ts.Symbol {
         if (symbol.flags & ts.SymbolFlags.Alias) {
             return this.typeChecker.getAliasedSymbol(symbol)
         } else {

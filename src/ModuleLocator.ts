@@ -118,7 +118,10 @@ export class ModuleLocator {
 
     @memoized
     private getModuleForSymbol(symbol: ts.Symbol): Module {
-        const declarations = symbol.getDeclarations()?.filter(dec => ts.isClassDeclaration(dec)) ?? []
+        const declarations = this.nodeDetector.getOriginalSymbol(symbol).getDeclarations()?.filter(dec => ts.isClassDeclaration(dec))
+        if (declarations === undefined || declarations.length === 0) {
+            this.errorReporter.reportParseFailed(`No declarations found for symbol '${symbol.name}'!`)
+        }
         const includes = declarations.flatMap(declaration => {
             const moduleAnnotation = this.nodeDetector.getModuleAnnotation(declaration)
             const tagIncludes = this.getInstalledFromTags(declaration)
