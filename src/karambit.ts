@@ -1,6 +1,6 @@
 import * as ts from "typescript"
 import {KarambitProgramComponent} from "./karambit-generated/src/Component"
-import {Logger} from "./Util"
+import type {Logger} from "./Util"
 
 export {KarambitError, KarambitErrorScope} from "./KarambitError"
 
