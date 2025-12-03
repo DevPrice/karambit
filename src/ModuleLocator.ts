@@ -32,33 +32,34 @@ export class ModuleLocator {
     ) { }
 
     getInstalledModules(declaration: ts.ClassLikeDeclaration, decorator: ts.Decorator | undefined): Module[] {
-        if (this.karambitOptions.experimentalTags) {
-            const tags = this.nodeDetector.getJSDocTags(declaration, "includeModule")
-            if (tags.length > 0) {
-                const linkTags = tags
-                    .flatMap(tag => {
-                        const linkTags = tag.getChildren().filter(ts.isJSDocLink)
-                        if (linkTags.length <= 0) {
-                            this.errorReporter.reportParseFailed("Expected at least one @link TSDoc tag for @includeModule tag!", tag)
-                        }
-                        return linkTags
-                    })
-
-                const installedSymbols = linkTags
-                    .map(tag => {
-                        const symbol = tag.name && this.typeChecker.getSymbolAtLocation(tag.name)
-                        if (!symbol) {
-                            this.errorReporter.reportParseFailed("Expected valid symbol!", tag)
-                        }
-                        return symbol
-                    })
-                return this.getModulesFromSymbols(installedSymbols)
-            }
+        const installedFromTags = this.getInstalledFromTags(declaration)
+        if (installedFromTags.length > 0) {
+            const installedSymbols = this.getInstalledFromTags(declaration)
+            return this.getModulesFromSymbols(installedSymbols)
         }
         if (decorator) {
             return this.getModulesFromSymbols(this.getSymbolList(decorator, "modules"))
         }
         return []
+    }
+
+    private getInstalledFromTags(declaration: ts.ClassLikeDeclaration): ts.Symbol[] {
+        const tags = this.nodeDetector.getJSDocTags(declaration, "includeModule")
+        return tags
+            .flatMap(tag => {
+                const linkTags = tag.getChildren().filter(ts.isJSDocLink)
+                if (linkTags.length <= 0) {
+                    this.errorReporter.reportParseFailed("Expected at least one @link TSDoc tag for @includeModule tag!", tag)
+                }
+                return linkTags
+            })
+            .map(tag => {
+                const symbol = tag.name && this.typeChecker.getSymbolAtLocation(tag.name)
+                if (!symbol) {
+                    this.errorReporter.reportParseFailed("Expected valid symbol!", tag)
+                }
+                return symbol
+            })
     }
 
     private getModulesFromSymbols(symbols: ts.Symbol[]): Module[] {
@@ -75,27 +76,25 @@ export class ModuleLocator {
     }
 
     getInstalledSubcomponents(declaration: ts.ClassLikeDeclaration, decorator: ts.Decorator | undefined): ts.Symbol[] {
-        if (this.karambitOptions.experimentalTags) {
-            const tags = this.nodeDetector.getJSDocTags(declaration, "includeSubcomponent")
-            if (tags.length > 0) {
-                const linkTags = tags
-                    .flatMap(tag => {
-                        const linkTags = tag.getChildren().filter(ts.isJSDocLink)
-                        if (linkTags.length <= 0) {
-                            this.errorReporter.reportParseFailed("Expected at least one @link TSDoc tag for @includeSubcomponent tag!", tag)
-                        }
-                        return linkTags
-                    })
+        const tags = this.nodeDetector.getJSDocTags(declaration, "includeSubcomponent")
+        if (tags.length > 0) {
+            const linkTags = tags
+                .flatMap(tag => {
+                    const linkTags = tag.getChildren().filter(ts.isJSDocLink)
+                    if (linkTags.length <= 0) {
+                        this.errorReporter.reportParseFailed("Expected at least one @link TSDoc tag for @includeSubcomponent tag!", tag)
+                    }
+                    return linkTags
+                })
 
-                return linkTags
-                    .map(tag => {
-                        const symbol = tag.name && this.typeChecker.getSymbolAtLocation(tag.name)
-                        if (!symbol) {
-                            this.errorReporter.reportParseFailed("Expected valid symbol!", tag)
-                        }
-                        return symbol
-                    })
-            }
+            return linkTags
+                .map(tag => {
+                    const symbol = tag.name && this.typeChecker.getSymbolAtLocation(tag.name)
+                    if (!symbol) {
+                        this.errorReporter.reportParseFailed("Expected valid symbol!", tag)
+                    }
+                    return symbol
+                })
         }
         if (decorator) {
             return this.getSymbolList(decorator, "subcomponents")
@@ -104,14 +103,12 @@ export class ModuleLocator {
     }
 
     getGeneratedName(declaration: ts.ClassLikeDeclaration): string | undefined {
-        if (this.karambitOptions.experimentalTags) {
-            const tag = this.nodeDetector.getJSDocTag(declaration, "generatedName")
-            if (tag && typeof tag.comment === "string") {
-                if (!isValidIdentifier(tag.comment)) {
-                    this.errorReporter.reportParseFailed(`Invalid identifier '${tag.comment}'!`, tag)
-                }
-                return tag.comment
+        const tag = this.nodeDetector.getJSDocTag(declaration, "generatedName")
+        if (tag && typeof tag.comment === "string") {
+            if (!isValidIdentifier(tag.comment)) {
+                this.errorReporter.reportParseFailed(`Invalid identifier '${tag.comment}'!`, tag)
             }
+            return tag.comment
         }
         const decorator = this.nodeDetector.getComponentAnnotation(declaration)
         if (decorator && ts.isDecorator(decorator)) {
@@ -124,8 +121,11 @@ export class ModuleLocator {
         const declarations = symbol.getDeclarations()?.filter(dec => ts.isClassDeclaration(dec)) ?? []
         const includes = declarations.flatMap(declaration => {
             const moduleAnnotation = this.nodeDetector.getModuleAnnotation(declaration)
-            if (!moduleAnnotation) throw this.errorReporter.reportParseFailed(`Module missing for symbol: ${symbol.getName()}`)
-            return ts.isDecorator(moduleAnnotation) ? this.getSymbolList(moduleAnnotation, "includes") : []
+            const tagIncludes = this.getInstalledFromTags(declaration)
+            if (tagIncludes.length > 0) {
+                return tagIncludes
+            }
+            return moduleAnnotation && ts.isDecorator(moduleAnnotation) ? this.getSymbolList(moduleAnnotation, "includes") : []
         })
         const {factories, bindings} = declarations.reduce<{factories: ProvidesMethod[], bindings: Binding[]}>((prev, declaration) => {
             const {factories, bindings} = this.getFactoriesAndBindings(declaration)
