@@ -48,6 +48,12 @@ yargs(hideBin(process.argv))
                 description: "Output file",
                 default: "gen/karambit.ts",
             })
+            .option("watch", {
+                type: "boolean",
+                alias: "w",
+                description: "Watch input for changes and automatically regenerate output",
+                default: false,
+            })
             .option("dry-run", {
                 type: "boolean",
                 description: "Run all validation and logic, but skip writing generated files",
@@ -110,13 +116,49 @@ yargs(hideBin(process.argv))
                 }
                 process.exit(1)
             }
-            generateComponents(parsedCommandLine.fileNames, parsedCommandLine.options, args)
+
+            if (args.watch) {
+                watchComponents(parsedCommandLine.fileNames, parsedCommandLine.options, args)
+            } else {
+                generateComponents(parsedCommandLine.fileNames, parsedCommandLine.options, args)
+            }
         },
     )
     .parseSync()
 
 function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
     const program = ts.createProgram(fileNames, {...compilerOptions, incremental: false})
+    process.exit(generateFromProgram(program, compilerOptions, cliOptions))
+}
+
+function watchComponents(fileNames: string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
+    const watchRef: {value?: ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>} = {}
+    watchRef.value = ts.createWatchProgram(
+        ts.createWatchCompilerHost(
+            fileNames.filter(file => file !== cliOptions.output),
+            compilerOptions,
+            ts.sys,
+            ts.createEmitAndSemanticDiagnosticsBuilderProgram,
+            diagnostic => {
+                const watch = watchRef.value
+                if (watch) {
+                    process.stdout.write("Regenerating Karambit output...")
+                    const result = generateFromProgram(watch.getProgram().getProgram(), watch.getProgram().getCompilerOptions(), cliOptions)
+                    if (result === 0) {
+                        process.stdout.write(" done.\n")
+                    } else {
+                        process.stdout.write("\n")
+                        console.error(diagnostic.messageText)
+                    }
+                }
+            },
+            () => {},
+        )
+    )
+    generateFromProgram(watchRef.value.getProgram().getProgram(), watchRef.value.getProgram().getCompilerOptions(), cliOptions)
+}
+
+function generateFromProgram(program: ts.Program, compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): number {
     try {
         generateComponentFiles(program, {
             sourceRoot: Path.dirname(cliOptions.tsconfig),
@@ -135,7 +177,7 @@ function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOpt
         } else {
             console.error(e)
         }
-        process.exit(1)
+        return 1
     }
-    process.exit(0)
+    return 0
 }
