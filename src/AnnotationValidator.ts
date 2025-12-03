@@ -4,7 +4,7 @@ import {Inject, Reusable} from "karambit-decorators"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound} from "./Util"
 import {findAllChildren} from "./Visitor"
-import {AnnotationLike} from "./TypescriptUtil"
+import {AnnotationLike, ComponentLikeDeclaration, isJSDocTag} from "./TypescriptUtil"
 
 @Inject
 @Reusable
@@ -17,54 +17,66 @@ export class AnnotationValidator {
 
     @bound
     validateAnnotations(node: ts.Node): void {
-        // TODO: Validate JSDoc annotated nodes
-        const annotations = findAllChildren(node, this.nodeDetector.isKarambitDecorator)
-        const componentAnnotation = this.nodeDetector.getComponentAnnotation(node)
-        const moduleAnnotations = annotations.filter(this.nodeDetector.isModuleDecorator)
-        const injectAnnotations = annotations.filter(this.nodeDetector.isInjectDecorator)
+        const annotations = findAllChildren(node, this.nodeDetector.isKarambitAnnotation)
+        const componentAnnotations = annotations.filter(this.nodeDetector.isComponentAnnotation)
+        const injectAnnotations = annotations.filter(this.nodeDetector.isInjectAnnotation)
+        const moduleDecorators = annotations.filter(this.nodeDetector.isModuleDecorator)
 
-        // TODO: This validation isn't applied to TSDoc components
-        componentAnnotation && this.requireClassExported(componentAnnotation)
-        componentAnnotation && this.requireAbstractClass(componentAnnotation)
+        componentAnnotations.forEach(this.requireDeclarationExported)
+        componentAnnotations.forEach(this.requireAbstractClassOrInterface)
 
-        moduleAnnotations.forEach(this.requireClassExported)
-
-        injectAnnotations.forEach(this.requireClassExported)
+        injectAnnotations.forEach(this.requireDeclarationExported)
         injectAnnotations.forEach(this.requireConcreteClass)
+
+        moduleDecorators.forEach(this.requireDeclarationExported)
     }
 
     @bound
-    private requireClassExported(decorator: AnnotationLike): void {
-        if (ts.isClassDeclaration(decorator.parent)) {
-            if (!decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.ExportKeyword)) {
-                this.errorReporter.reportParseFailed(`${this.getAnnotationName(decorator)} annotated class must be exported!`, decorator.parent)
-            }
+    private requireDeclarationExported(annotation: AnnotationLike): void {
+        const declaration = getDeclaration(annotation)
+        if (!declaration || !declaration.modifiers?.some(it => it.kind === ts.SyntaxKind.ExportKeyword)) {
+            this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} annotated class must be exported!`, declaration)
         }
     }
 
     @bound
-    private requireAbstractClass(decorator: AnnotationLike): void {
-        if (ts.isClassDeclaration(decorator.parent)) {
-            if (!decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-                this.errorReporter.reportParseFailed(`${this.getAnnotationName(decorator)} annotated class must be abstract!`, decorator.parent)
-            }
+    private requireAbstractClassOrInterface(annotation: AnnotationLike): void {
+        const declaration = getDeclaration(annotation)
+        if (!declaration || !(ts.isInterfaceDeclaration(declaration) || declaration.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword))) {
+            this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} annotated class must be abstract!`, declaration)
         }
     }
 
     @bound
-    private requireConcreteClass(decorator: ts.Decorator): void {
-        if (ts.isClassDeclaration(decorator.parent)) {
-            if (decorator.parent.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
-                this.errorReporter.reportParseFailed(`${this.getAnnotationName(decorator)} annotated class must not be abstract!`, decorator.parent)
-            }
+    private requireConcreteClass(annotation: AnnotationLike): void {
+        const declaration = getDeclaration(annotation)
+        if (!declaration || declaration.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
+            this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} annotated class must not be abstract!`, declaration)
         }
     }
+}
 
-    private getAnnotationName(decorator: {getText(): string}): string {
-        const text = decorator.getText()
-        const regex = /^(@[^()]*)(?:\(.*\))?$/
-        const matches = text.match(regex)
-        if (matches) return matches[1]
-        return `@${text}`
+function getDeclaration(annotation: AnnotationLike): ComponentLikeDeclaration | undefined {
+    if (ts.isClassLike(annotation) || ts.isInterfaceDeclaration(annotation)) {
+        return annotation
     }
+    if (ts.isClassLike(annotation.parent) || ts.isInterfaceDeclaration(annotation.parent)) {
+        return annotation.parent
+    }
+    let current: ts.Node = annotation.parent
+    while (ts.isJSDoc(current)) {
+        current = current.parent
+    }
+    return ts.isClassLike(current) || ts.isInterfaceDeclaration(current) ? current : undefined
+}
+
+function getAnnotationName(decorator: AnnotationLike): string {
+    if (isJSDocTag(decorator)) {
+        return `@${decorator.tagName.getText()}`
+    }
+    const text = decorator.getText()
+    const regex = /^(@[^()]*)(?:\(.*\))?$/
+    const matches = text.match(regex)
+    if (matches) return matches[1]
+    return `@${text}`
 }

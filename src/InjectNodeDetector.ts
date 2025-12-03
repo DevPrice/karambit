@@ -5,7 +5,24 @@ import {ErrorReporter} from "./ErrorReporter"
 import {bound, isNotNull} from "./Util"
 import {Hacks} from "./Hacks"
 import {KarambitOptions} from "./karambit"
-import {Annotated, AnnotationLike, ComponentScope, isValidIdentifier, reusableScope} from "./TypescriptUtil"
+import {Annotated, AnnotationLike, ComponentScope, isJSDocTag, isValidIdentifier, reusableScope} from "./TypescriptUtil"
+
+export const KarambitAnnotationTag = {
+    component: "component",
+    subcomponent: "subcomponent",
+    inject: "inject",
+    assistedInject: "assistedInject",
+    assisted: "assisted",
+    provides: "provides",
+    binds: "binds",
+    bindsInstance: "bindInstance",
+    intoSet: "intoSet",
+    intoMap: "intoMap",
+    elementsIntoSet: "elementsIntoSet",
+    elementsIntoMap: "elementsIntoMap",
+} as const
+
+const annotationTagNames = new Set<string>(Object.values(KarambitAnnotationTag))
 
 @Inject
 @Reusable
@@ -90,7 +107,14 @@ export class InjectNodeDetector {
     }
 
     @bound
-    private isComponentDecorator(decorator: ts.Node): decorator is ts.Decorator {
+    isComponentAnnotation(annotation: AnnotationLike): boolean {
+        return ts.isDecorator(annotation)
+            ? this.isKarambitDecorator(annotation, "Component")
+            : this.karambitOptions.experimentalTags && annotation.tagName.getText() === KarambitAnnotationTag.component
+    }
+
+    @bound
+    isComponentDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Component")
     }
 
@@ -157,6 +181,13 @@ export class InjectNodeDetector {
     @bound
     getInjectAnnotation(node: Annotated): AnnotationLike | undefined {
         return node.modifiers?.find(this.isInjectDecorator) ?? this.getJSDocTag(node, "inject")
+    }
+
+    @bound
+    isInjectAnnotation(annotation: AnnotationLike): boolean {
+        return ts.isDecorator(annotation)
+            ? this.isKarambitDecorator(annotation, "Inject")
+            : this.karambitOptions.experimentalTags && annotation.tagName.getText() === KarambitAnnotationTag.inject
     }
 
     @bound
@@ -269,6 +300,14 @@ export class InjectNodeDetector {
                 expression: this.hacks.cloneNode(argument),
             }
         }
+    }
+
+    @bound
+    isKarambitAnnotation(annotation: ts.Node): annotation is AnnotationLike {
+        if (this.karambitOptions.experimentalTags && isJSDocTag(annotation) && annotationTagNames.has(annotation.tagName.getText())) {
+            return true
+        }
+        return this.isKarambitDecorator(annotation)
     }
 
     @bound

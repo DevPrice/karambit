@@ -1,4 +1,5 @@
 import * as ts from "typescript"
+import {bound} from "./Util"
 
 export interface Annotated extends ts.Node {
     name?: { getText: () => string }
@@ -29,4 +30,8 @@ export function isTypeNullable(type: ts.Type): boolean {
 
 export function isValidIdentifier(identifier: string): boolean {
     return identifier.match(/^[a-zA-Z_$][a-zA-Z_$0-9]*$/) !== null
+}
+
+export function isJSDocTag(node: ts.Node): node is ts.JSDocTag {
+    return node.kind >= ts.SyntaxKind.JSDocTag && node.kind <= ts.SyntaxKind.JSDocImportTag
 }
