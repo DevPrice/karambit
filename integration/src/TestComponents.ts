@@ -65,8 +65,8 @@ export abstract class ScopeModule {
 
 export type NullableClass = InjectClass | null
 
+/** @scope {@link TestScope} */
 @Component({modules: [ScopeModule]})
-@TestScope
 export abstract class ScopedComponent {
 
     abstract readonly unscopedClass: UnscopedClass

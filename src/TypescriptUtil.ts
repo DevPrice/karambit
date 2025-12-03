@@ -10,7 +10,7 @@ export type ComponentScope = ts.Symbol | string
 
 export function scopeToString(scope: ComponentScope): string {
     if (typeof scope === "string") {
-        return scope
+        return `named(${scope})`
     }
     return scope.name
 }
@@ -18,4 +18,8 @@ export function scopeToString(scope: ComponentScope): string {
 export function isTypeNullable(type: ts.Type): boolean {
     if (type.flags & ts.TypeFlags.Null || type.flags & ts.TypeFlags.Undefined) return true
     return type.isUnionOrIntersection() && type.types.some(it => isTypeNullable(it))
+}
+
+export function isValidIdentifier(identifier: string): boolean {
+    return identifier.match(/^[a-zA-Z_$][a-zA-Z_$0-9]*$/) !== null
 }

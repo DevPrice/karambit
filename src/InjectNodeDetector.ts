@@ -5,7 +5,7 @@ import {ErrorReporter} from "./ErrorReporter"
 import {bound, isNotNull} from "./Util"
 import {Hacks} from "./Hacks"
 import {KarambitOptions} from "./karambit"
-import {Annotated, AnnotationLike, ComponentScope} from "./TypescriptUtil"
+import {Annotated, AnnotationLike, ComponentScope, isValidIdentifier} from "./TypescriptUtil"
 
 @Inject
 @Reusable
@@ -32,12 +32,44 @@ export class InjectNodeDetector {
 
     @bound
     getScope(item: Annotated): ComponentScope | undefined {
+        const tagScope = this.getTagScope(item)
+        if (tagScope) return tagScope
         const scopeDecorators = item.modifiers?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)).filter(isNotNull) ?? []
         if (scopeDecorators.length > 1) ErrorReporter.reportParseFailed(`Scoped element may only have one scope! ${item.name?.getText()} has ${scopeDecorators.length}.`)
         if (scopeDecorators.length === 1) {
             const [symbol] = scopeDecorators
             return this.getOriginalSymbol(symbol)
         }
+    }
+
+    private getTagScope(item: Annotated): ComponentScope | undefined {
+        const scopeTag = this.getJSDocTag(item, "scope")
+        if (scopeTag) {
+            const children = scopeTag.getChildren()
+            const linkTags = children.filter(ts.isJSDocLink)
+            if (linkTags.length > 0) {
+                if (linkTags.length > 1) {
+                    this.errorReporter.reportParseFailed("@scope must have at most one @link reference!", scopeTag)
+                }
+                const linkTag = linkTags[0]
+                const symbol = linkTag.name && this.typeChecker.getSymbolAtLocation(linkTag.name)
+                const symbolType = symbol && this.typeChecker.getTypeOfSymbol(symbol)
+                if (!symbolType || !this.isValidTagScope(symbolType)) {
+                    this.errorReporter.reportParseFailed("Invalid scope reference, should reference a `unique symbol` declaration!", linkTag)
+                }
+                return this.getOriginalSymbol(symbol)
+            }
+            if (scopeTag && typeof scopeTag.comment === "string") {
+                if (!isValidIdentifier(scopeTag.comment)) {
+                    this.errorReporter.reportParseFailed(`Invalid identifier '${scopeTag.comment}'!`, scopeTag)
+                }
+                return scopeTag.comment
+            }
+        }
+    }
+
+    private isValidTagScope(type: ts.Type): boolean {
+        return this.isScope(type) || !!(type.flags & ts.TypeFlags.UniqueESSymbol)
     }
 
     private isScope(type: ts.Type): boolean {

@@ -7,6 +7,7 @@ import {ErrorReporter} from "./ErrorReporter"
 import {findAllChildren} from "./Visitor"
 import {bound, isNotNull, memoized} from "./Util"
 import {KarambitOptions} from "./karambit"
+import {isValidIdentifier} from "./TypescriptUtil"
 
 export interface Binding {
     paramType: QualifiedType
@@ -250,8 +251,4 @@ export class ModuleLocator {
             .map(it => this.typeChecker.getTypeAtLocation(it).getSymbol())
             .filter(isNotNull)
     }
-}
-
-function isValidIdentifier(identifier: string): boolean {
-    return identifier.match(/^[a-zA-Z_$][a-zA-Z_$0-9]*$/) !== null
 }
