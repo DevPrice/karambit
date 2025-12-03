@@ -15,6 +15,7 @@
   "license": "Apache-2.0",
   "files": [
     "FEATURES.md",
+    "LICENSE.txt",
     "build/karambit.d.ts",
     "build/KarambitError.d.ts",
     "bin/**/*.js",
