@@ -17,6 +17,7 @@ import {
 import {ErrorReporter} from "./ErrorReporter"
 import {AssistedFactoryLocator} from "./AssistedFactoryLocator"
 import {Assisted, AssistedInject} from "karambit-decorators"
+import {ComponentScope} from "./TypescriptUtil"
 
 export interface Dependency {
     readonly type: QualifiedType
@@ -31,7 +32,7 @@ export interface DependencyGraph {
 export type DependencyProvider = InstanceProvider & { dependencies: ReadonlySet<QualifiedType> }
 
 interface ScopeFilter {
-    filterOnly?: ts.Symbol
+    filterOnly?: ComponentScope
 }
 
 type CanBind = (type: QualifiedType) => boolean

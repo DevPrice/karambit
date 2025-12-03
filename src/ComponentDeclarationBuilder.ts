@@ -19,7 +19,7 @@ import {
 import {ErrorReporter} from "./ErrorReporter"
 import {Assisted, AssistedInject} from "karambit-decorators"
 import {bound} from "./Util"
-import {isTypeNullable} from "./TypescriptUtil"
+import {ComponentScope, isTypeNullable} from "./TypescriptUtil"
 import {findAllChildren} from "./Visitor"
 
 export type ComponentDeclarationBuilderFactory = (typeResolver: TypeResolver, instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>) => ComponentDeclarationBuilder
@@ -104,7 +104,7 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    getProviderDeclaration(provider: InstanceProvider, componentScope?: ts.Symbol): ts.ClassElement[] {
+    getProviderDeclaration(provider: InstanceProvider, componentScope?: ComponentScope): ts.ClassElement[] {
         if (provider.providerType == ProviderType.PARENT) return [this.getParentProvidedDeclaration(provider.type, provider.optional)]
         if (provider.providerType == ProviderType.PROPERTY) return [this.getComponentProvidedDeclaration(provider)]
         if (provider.providerType == ProviderType.SUBCOMPONENT_FACTORY) return [this.getSubcomponentFactoryDeclaration(provider)]
@@ -401,7 +401,7 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    private getConstructorProviderDeclaration(constructor: InjectableConstructor, componentScope?: ts.Symbol): ts.ClassElement[] {
+    private getConstructorProviderDeclaration(constructor: InjectableConstructor, componentScope?: ComponentScope): ts.ClassElement[] {
         const self = this
         function constructorCallExpression(): ts.Expression {
             return ts.factory.createNewExpression(

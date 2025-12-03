@@ -5,13 +5,7 @@ import {ErrorReporter} from "./ErrorReporter"
 import {bound, isNotNull} from "./Util"
 import {Hacks} from "./Hacks"
 import {KarambitOptions} from "./karambit"
-
-interface Annotated extends ts.Node {
-    name?: { getText: () => string }
-    modifiers?: ts.NodeArray<ts.ModifierLike>
-}
-
-export type AnnotationLike = ts.Decorator | ts.JSDocTag
+import {Annotated, AnnotationLike, ComponentScope} from "./TypescriptUtil"
 
 @Inject
 @Reusable
@@ -37,7 +31,7 @@ export class InjectNodeDetector {
     }
 
     @bound
-    getScope(item: Annotated): ts.Symbol | undefined {
+    getScope(item: Annotated): ComponentScope | undefined {
         const scopeDecorators = item.modifiers?.filter(this.isScopeDecorator).map(it => this.typeChecker.getSymbolAtLocation(it.expression)).filter(isNotNull) ?? []
         if (scopeDecorators.length > 1) ErrorReporter.reportParseFailed(`Scoped element may only have one scope! ${item.name?.getText()} has ${scopeDecorators.length}.`)
         if (scopeDecorators.length === 1) {
@@ -309,7 +303,8 @@ export class InjectNodeDetector {
     }
 
     @bound
-    isReusableScope(symbol: ts.Symbol): boolean {
+    isReusableScope(symbol: ComponentScope): boolean {
+        if (typeof symbol === "string") return false
         return this.getPropertyNamesForSymbol(symbol).has("__karambitReusableScopeAnnotation")
     }
 

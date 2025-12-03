@@ -17,6 +17,7 @@ import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
 import {Binding} from "./ModuleLocator"
 import {Chalk} from "chalk"
 import {KarambitError, KarambitErrorScope} from "./KarambitError"
+import {ComponentScope, scopeToString} from "./TypescriptUtil"
 
 const chalk: Chalk = require("chalk")
 
@@ -67,13 +68,13 @@ export class ErrorReporter {
         )
     }
 
-    reportInvalidScope(provider: ProvidesMethod | InjectableConstructor, expected?: ts.Symbol): never {
+    reportInvalidScope(provider: ProvidesMethod | InjectableConstructor, expected?: ComponentScope): never {
         const type = isProvidesMethod(provider) ? provider.type : createQualifiedType({type: provider.type})
         ErrorReporter.fail(
             KarambitErrorScope.INVALID_SCOPE,
             addContext(
                 `Invalid scope for type ${qualifiedTypeToString(type)}! ` +
-                `Got: ${provider.scope?.name ?? "no scope"}, expected: ${expected?.name ?? "no scope"}.\n`,
+                `Got: ${provider.scope ? scopeToString(provider.scope) : "no scope"}, expected: ${expected ? scopeToString(expected) : "no scope"}.\n`,
                 provider.declaration,
             ),
             this.component

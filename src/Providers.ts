@@ -1,5 +1,6 @@
 import * as ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
+import {ComponentScope} from "./TypescriptUtil"
 
 export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | AssistedFactory | UndefinedProvider | ParentProvider | SetMultibinding | MapMultibinding
 export type MultibindingProvider = SetMultibinding | MapMultibinding
@@ -40,7 +41,7 @@ export interface ProvidesMethod {
     readonly declaration: ts.MethodDeclaration
     readonly type: QualifiedType
     readonly parameters: ProvidesMethodParameter[]
-    readonly scope: ts.Symbol | undefined
+    readonly scope: ComponentScope | undefined
     readonly isIterableProvider: boolean
 }
 
@@ -62,7 +63,7 @@ export interface FactoryParameter {
 export interface InjectableConstructor {
     readonly providerType: ProviderType.INJECTABLE_CONSTRUCTOR
     readonly type: ts.Type
-    readonly scope: ts.Symbol | undefined
+    readonly scope: ComponentScope | undefined
     readonly declaration: ts.ClassDeclaration
     readonly parameters: ConstructorParameter[]
 }

@@ -1,9 +1,10 @@
 import * as ts from "typescript"
-import {AnnotationLike, InjectNodeDetector} from "./InjectNodeDetector"
+import {InjectNodeDetector} from "./InjectNodeDetector"
 import {Inject, Reusable} from "karambit-decorators"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound} from "./Util"
 import {findAllChildren} from "./Visitor"
+import {AnnotationLike} from "./TypescriptUtil"
 
 @Inject
 @Reusable

@@ -21,7 +21,7 @@ import {
 import {ErrorReporter} from "./ErrorReporter"
 import {Inject, Reusable} from "karambit-decorators"
 import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"
-import {isTypeNullable} from "./TypescriptUtil"
+import {ComponentScope, isTypeNullable} from "./TypescriptUtil"
 import {ModuleProviders, ProviderLocator} from "./ProviderLocator"
 import {distinctBy, isNotNull} from "./Util"
 
@@ -46,7 +46,6 @@ export interface ComponentGeneratorDependencies {
 export type ComponentGeneratorDependenciesFactory = (componentDeclaration: ts.ClassDeclaration) => ComponentGeneratorDependencies
 
 type RootDependency = Dependency & {name: ts.PropertyName, typeNode?: ts.TypeNode}
-type ComponentScope = ts.Symbol
 
 interface ComponentDefinition extends ModuleProviders {
     declaration: ts.ClassLikeDeclaration
@@ -200,7 +199,7 @@ export class ComponentGenerator {
         factory: SubcomponentFactory,
         parentType: ts.EntityName,
         resolver: TypeResolver,
-        ancestorScopes: ReadonlyMap<ts.Symbol, string>,
+        ancestorScopes: ReadonlyMap<ComponentScope, string>,
         parentCanBind: (type: QualifiedType, given: ReadonlySet<QualifiedType>) => boolean,
     ): GeneratedSubcomponent {
         const definition = this.getComponentDefinition(factory.declaration, factory.decorator)
