@@ -11,6 +11,7 @@
   "main": "lib/karambit-decorators.js",
   "license": "Apache-2.0",
   "files": [
+    "README.md",
     "lib/karambit-decorators.d.ts",
     "lib/**/*.js"
   ],
