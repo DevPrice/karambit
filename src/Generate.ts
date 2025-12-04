@@ -27,7 +27,7 @@ interface GenerateCommandOptions {
     nameMaxLength: number
     allowEmptyModules: boolean
     allowEmptyOutput: boolean
-    experimentalTags: boolean
+    disableTags: boolean
     scriptTarget?: string
 }
 
@@ -80,9 +80,9 @@ yargs(hideBin(process.argv))
                 description: "Enable verbose output",
                 default: false,
             })
-            .option("experimental-tags", {
+            .option("disable-tags", {
                 type: "boolean",
-                description: "Enable experimental JS Doc tag support",
+                description: "Disable JS Doc tag support",
                 default: false,
             })
             .option("script-target", {
@@ -168,7 +168,7 @@ function generateFromProgram(program: ts.Program, compilerOptions: ts.CompilerOp
             allowEmptyModules: cliOptions.allowEmptyModules,
             allowEmptyOutput: cliOptions.allowEmptyOutput,
             verbose: cliOptions.verbose,
-            experimentalTags: cliOptions.experimentalTags,
+            enableDocTags: !cliOptions.disableTags,
             outputScriptTarget: cliOptions.scriptTarget ? scriptTargets.get(cliOptions.scriptTarget) : compilerOptions.target,
         })
     } catch (e) {

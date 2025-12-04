@@ -38,7 +38,7 @@ export interface KarambitOptions {
     nameMaxLength: number
     allowEmptyModules: boolean
     allowEmptyOutput: boolean
-    experimentalTags: boolean
+    enableDocTags: boolean
     outputScriptTarget: ts.ScriptTarget
     logger?: Logger
     printerOptions?: ts.PrinterOptions
@@ -58,6 +58,6 @@ const defaultOptions: KarambitOptions = {
     nameMaxLength: 30,
     allowEmptyModules: false,
     allowEmptyOutput: false,
-    experimentalTags: false,
+    enableDocTags: false,
     outputScriptTarget: ts.ScriptTarget.Latest,
 }

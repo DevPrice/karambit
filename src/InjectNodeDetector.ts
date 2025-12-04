@@ -110,7 +110,7 @@ export class InjectNodeDetector {
     isComponentAnnotation(annotation: AnnotationLike): boolean {
         return ts.isDecorator(annotation)
             ? this.isKarambitDecorator(annotation, "Component")
-            : this.karambitOptions.experimentalTags && annotation.tagName.getText() === KarambitAnnotationTag.component
+            : this.karambitOptions.enableDocTags && annotation.tagName.getText() === KarambitAnnotationTag.component
     }
 
     @bound
@@ -187,7 +187,7 @@ export class InjectNodeDetector {
     isInjectAnnotation(annotation: AnnotationLike): boolean {
         return ts.isDecorator(annotation)
             ? this.isKarambitDecorator(annotation, "Inject")
-            : this.karambitOptions.experimentalTags && annotation.tagName.getText() === KarambitAnnotationTag.inject
+            : this.karambitOptions.enableDocTags && annotation.tagName.getText() === KarambitAnnotationTag.inject
     }
 
     @bound
@@ -304,7 +304,7 @@ export class InjectNodeDetector {
 
     @bound
     isKarambitAnnotation(annotation: ts.Node): annotation is AnnotationLike {
-        if (this.karambitOptions.experimentalTags && isJSDocTag(annotation) && annotationTagNames.has(annotation.tagName.getText())) {
+        if (this.karambitOptions.enableDocTags && isJSDocTag(annotation) && annotationTagNames.has(annotation.tagName.getText())) {
             return true
         }
         return this.isKarambitDecorator(annotation)
@@ -439,12 +439,12 @@ export class InjectNodeDetector {
     }
 
     getJSDocTag(node: ts.Node, tagName: string): ts.JSDocTag | undefined {
-        if (!this.karambitOptions.experimentalTags) return undefined
+        if (!this.karambitOptions.enableDocTags) return undefined
         return ts.getJSDocTags(node).find(tag => tag.tagName.text.localeCompare(tagName, undefined, {sensitivity: "accent"}) === 0)
     }
 
     getJSDocTags(node: ts.Node, tagName: string): ts.JSDocTag[] {
-        if (!this.karambitOptions.experimentalTags) return []
+        if (!this.karambitOptions.enableDocTags) return []
         return ts.getJSDocTags(node).filter(tag => tag.tagName.text.localeCompare(tagName, undefined, {sensitivity: "accent"}) === 0)
     }
 
