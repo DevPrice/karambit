@@ -1,8 +1,5 @@
-import {Inject, Module, Provides, Component} from "karambit-decorators"
-
-@Inject
+/** @inject */
 export class Greeter {
-
     constructor(private readonly greeting: string) { }
 
     greet(): string {
@@ -10,17 +7,17 @@ export class Greeter {
     }
 }
 
-@Module
 export abstract class HelloWorldModule {
-
-    @Provides
+    /** @provides */
     static provideGreeting(): string {
         return "Hello"
     }
 }
 
-@Component({modules: [HelloWorldModule]})
-export abstract class HelloWorldComponent {
-
-    abstract readonly greeter: Greeter
+/**
+ * @component
+ * @includeModule {@link HelloWorldModule}
+ */
+export interface HelloWorldComponent {
+    readonly greeter: Greeter
 }
