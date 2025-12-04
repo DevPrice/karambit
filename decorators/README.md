@@ -3,10 +3,14 @@
 [![NPM version](https://badge.fury.io/js/karambit-decorators.svg)](https://www.npmjs.com/package/karambit-decorators)
 [![NPM License](https://img.shields.io/npm/l/karambit-inject)](../LICENSE.txt)
 
-## Usage
-
 This is a utility library for use with [karambit-inject](https://www.npmjs.com/package/karambit-inject), as an alternative to JSDoc tags for annotating code.
 These decorators have no logic, it's safe to strip them from runtime code.
+
+## Usage
+
+```
+$ npm install karambit-decorators
+```
 
 Karambit decorators will work regardless of what value is set for the TypeScript [`experimentalDecorators`](https://www.TypeScriptlang.org/tsconfig#experimentalDecorators) compiler flag.
 
@@ -29,6 +33,28 @@ With `karambit-decorators`, you could instead write:
 export abstract class HelloWorldComponent {
     abstract readonly greeter: Greeter
 }
+```
+
+### Scopes
+
+Using decorators, scopes are declared differently than when using JSDoc tags.
+
+To create a scope, call the `Scope()` method. This method returns a decorator you can use to annotate your scoped Components and bindings.
+
+```typescript
+// note: try to use a name that reflects the lifecycle of your component
+const ApplicationScope = Scope()
+
+@Module
+export abstract class MyModule {
+    @Provides
+    @ApplicationScope // this will only be created once in ApplicationComponent; the instance will be shared across all types that depend on MyService
+    static provideGlobalService(): MyService { /* ... */ }
+}
+
+@Component({modules: [MyModule]})
+@ApplicationScope
+export class ApplicationComponent { /* ... */ }
 ```
 
 ## License
