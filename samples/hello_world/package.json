@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Hello world sample",
   "scripts": {
-    "prebuild": "karambit -o src/karambit-generated",
+    "prebuild": "karambit -o src/karambit-generated/karambit.ts",
     "build": "tsc",
     "start": "node build/index.js"
   },

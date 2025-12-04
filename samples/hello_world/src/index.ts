@@ -1,4 +1,4 @@
-import {KarambitHelloWorldComponent} from "./karambit-generated/src/component"
+import {KarambitHelloWorldComponent} from "./karambit-generated/karambit"
 
 const component = new KarambitHelloWorldComponent()
 console.log(component.greeter.greet())
