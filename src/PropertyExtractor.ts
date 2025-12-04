@@ -21,7 +21,7 @@ export class PropertyExtractor {
 
         const declarations = type.getSymbol()?.getDeclarations() ?? []
         return declarations
-            .filter(it => ts.isClassDeclaration(it) || ts.isInterfaceDeclaration(it) || ts.isTypeLiteralNode(it))
+            .filter(it => ts.isClassLike(it) || ts.isInterfaceDeclaration(it) || ts.isTypeLiteralNode(it))
             .flatMap(declaration => declaration.members as ts.NodeArray<ElementLike>)
             .filter((it: ElementLike) => ts.isPropertyDeclaration(it) || ts.isPropertySignature(it))
             .concat(baseProperties)

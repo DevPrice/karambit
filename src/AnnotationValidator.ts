@@ -4,7 +4,7 @@ import {Inject, Reusable} from "karambit-decorators"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound} from "./Util"
 import {findAllChildren} from "./Visitor"
-import {AnnotationLike, ComponentLikeDeclaration, isJSDocTag} from "./TypescriptUtil"
+import {AnnotationLike, ComponentLikeDeclaration, isComponentLikeDeclaration, isJSDocTag} from "./TypescriptUtil"
 
 @Inject
 @Reusable
@@ -57,17 +57,17 @@ export class AnnotationValidator {
 }
 
 function getDeclaration(annotation: AnnotationLike): ComponentLikeDeclaration | undefined {
-    if (ts.isClassLike(annotation) || ts.isInterfaceDeclaration(annotation)) {
+    if (isComponentLikeDeclaration(annotation)) {
         return annotation
     }
-    if (ts.isClassLike(annotation.parent) || ts.isInterfaceDeclaration(annotation.parent)) {
+    if (isComponentLikeDeclaration(annotation.parent)) {
         return annotation.parent
     }
     let current: ts.Node = annotation.parent
     while (ts.isJSDoc(current)) {
         current = current.parent
     }
-    return ts.isClassLike(current) || ts.isInterfaceDeclaration(current) ? current : undefined
+    return isComponentLikeDeclaration(current) ? current : undefined
 }
 
 function getAnnotationName(decorator: AnnotationLike): string {

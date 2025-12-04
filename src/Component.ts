@@ -16,7 +16,7 @@ import {findAllChildren, SourceFileVisitor} from "./Visitor"
 import {ignore, isNotNull, Logger} from "./Util"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import * as Path from "path"
-import {ComponentDeclaration} from "./TypescriptUtil"
+import {ComponentDeclaration, isComponentDeclaration} from "./TypescriptUtil"
 
 declare const generatedQualifier: unique symbol
 type GeneratedSourceFile = ts.SourceFile & Qualified<typeof generatedQualifier>
@@ -127,7 +127,7 @@ export abstract class ProgramModule {
                     visitor(sourceFile)
                 }
                 const components: ComponentDeclaration[] = findAllChildren(sourceFile, (n): n is ComponentDeclaration => {
-                    return (ts.isClassDeclaration(n) || ts.isInterfaceDeclaration(n)) && !!sourceFileComponent.nodeDetector.getComponentAnnotation(n)
+                    return (isComponentDeclaration(n)) && !!sourceFileComponent.nodeDetector.getComponentAnnotation(n)
                 })
                 return components.map(component => {
                     return sourceFileComponent.componentGeneratorDependenciesFactory(component).generatedComponent
