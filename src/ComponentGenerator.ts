@@ -45,7 +45,7 @@ export interface ComponentGeneratorDependencies {
 
 export type ComponentGeneratorDependenciesFactory = (componentDeclaration: ComponentDeclaration) => ComponentGeneratorDependencies
 
-type RootDependency = Dependency & {name: ts.PropertyName, typeNode?: ts.TypeNode}
+type RootDependency = Dependency & {name: ts.PropertyName, getter: boolean}
 
 interface ComponentDefinition extends ModuleProviders {
     declaration: ComponentLikeDeclaration
@@ -78,8 +78,10 @@ export class ComponentGenerator {
 
     private getRootDependencies(componentType: ts.Type): RootDependency[] {
         const unimplementedMethods = this.propertyExtractor.getUnimplementedAbstractMethods(componentType)
-        // TODO: Eventually we can implement some simple methods. For now fail on any unimplemented methods.
-        if (unimplementedMethods.length > 0) this.errorReporter.reportParseFailed("Component has method(s) that Karambit cannot implement! A Component should not have any abstract methods.", unimplementedMethods[0])
+        if (unimplementedMethods.some(method => method.parameters.length > 0)) {
+            // TODO: Maybe consider accepting arguments as dependencies
+            this.errorReporter.reportParseFailed("Component has method(s) that Karambit cannot implement! A Component should not have any abstract methods with arguments.", unimplementedMethods[0])
+        }
         return this.propertyExtractor.getUnimplementedAbstractProperties(componentType)
             .map(property => {
                 if (property.modifiers && !property.modifiers.some(it => it.kind === ts.SyntaxKind.ReadonlyKeyword)) {
@@ -89,9 +91,21 @@ export class ComponentGenerator {
                     type: this.propertyExtractor.typeFromPropertyDeclaration(property),
                     optional: property.questionToken !== undefined,
                     name: property.name,
-                    typeNode: property.type,
+                    getter: true,
                 }
             })
+            .concat(unimplementedMethods.map(method => {
+                const type = this.typeChecker.getSignatureFromDeclaration(method)?.getReturnType()
+                if (!type) {
+                    this.errorReporter.reportParseFailed("Failed to determine return type of method!", method)
+                }
+                return {
+                    type: createQualifiedType({type}),
+                    optional: false,
+                    name: method.name,
+                    getter: false,
+                }
+            }))
     }
 
     generateComponent(): GeneratedComponent {

@@ -81,7 +81,7 @@ describe("Injection", () => {
             assert.strictEqual(includesComponent.qualifiedValue, 5678)
         })
         it("another qualified parameter provides another qualified provider", () => {
-            assert.strictEqual(includesComponent.anotherQualifiedValue, 2222)
+            assert.strictEqual(includesComponent.getAnotherQualifiedValue(), 2222)
         })
     })
     describe("Optionals", () => {

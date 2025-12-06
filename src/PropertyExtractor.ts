@@ -1,11 +1,12 @@
 import * as ts from "typescript"
+import {FunctionBody} from "typescript"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-decorators"
 import {ComponentLikeDeclaration} from "./TypescriptUtil"
 
 export type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
 export type ElementLike = ts.ClassElement | ts.TypeElement
-type MethodLike = ts.Node & {name: ts.PropertyName, body?: ts.BlockLike, modifiers?: ts.NodeArray<ts.ModifierLike>}
+type MethodLike = (ts.MethodDeclaration | ts.MethodSignature) & { body?: FunctionBody }
 
 @Inject
 @Reusable

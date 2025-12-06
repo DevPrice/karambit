@@ -307,7 +307,7 @@ export abstract class IncludesComponent {
 
     abstract readonly qualifiedValue: number & TestQualifier
 
-    abstract readonly anotherQualifiedValue: number & AnotherQualifier
+    abstract getAnotherQualifiedValue(): number & AnotherQualifier
 }
 
 @Subcomponent({modules: [MultibindingSetSubcomponentModule]})

@@ -85,7 +85,7 @@ export class ComponentDeclarationBuilder {
         )
     }
 
-    declareComponentProperty(declaration: ComponentDeclaration, options: {type: QualifiedType, name: ts.PropertyName, optional: boolean}) {
+    declareComponentProperty(declaration: ComponentDeclaration, options: {type: QualifiedType, name: ts.PropertyName, optional: boolean, getter: boolean}) {
         const parentName = declaration.name
         if (!parentName) {
             this.errorReporter.reportParseFailed("Component missing name!", declaration)
@@ -99,13 +99,26 @@ export class ComponentDeclarationBuilder {
             ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral(options.name.text)),
         )
         const resolvedType = this.typeResolver.resolveBoundType(options.type)
-        return ts.factory.createGetAccessorDeclaration(
-            [],
-            options.name,
-            [],
-            options.optional && typeNode ? ts.factory.createUnionTypeNode([typeNode, ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)]) : typeNode,
-            ts.factory.createBlock([ts.factory.createReturnStatement(this.getParamExpression(resolvedType))])
-        )
+        if (options.getter) {
+            return ts.factory.createGetAccessorDeclaration(
+                [],
+                options.name,
+                [],
+                options.optional && typeNode ? ts.factory.createUnionTypeNode([typeNode, ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)]) : typeNode,
+                ts.factory.createBlock([ts.factory.createReturnStatement(this.getParamExpression(resolvedType))]),
+            )
+        } else {
+            return ts.factory.createMethodDeclaration(
+                [],
+                undefined,
+                options.name,
+                undefined,
+                [],
+                [],
+                ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("ReturnType"), [typeNode]),
+                ts.factory.createBlock([ts.factory.createReturnStatement(this.getParamExpression(resolvedType))]),
+            )
+        }
     }
 
     getProviderDeclaration(provider: InstanceProvider, componentScope?: ComponentScope): ts.ClassElement[] {
