@@ -24,7 +24,7 @@ This Component exposes the `Greeter` type through its `greeter` property. Karamb
 
 ### Component dependencies
 
-There are some cases where you may want to provide dependencies into a graph at runtime in a configurable way at construction time. This is possible by declaring an `abstract class` Component and adding arguments to the Component's constructor.
+There are some cases where you may want to provide dependencies into a graph at runtime in a configurable way at construction time. This is possible by declaring an `abstract class` Component and adding arguments to the Component's constructor, or by declaring a factory type and mapping it using the `@factory` tag.
 
 For each argument of the Component's constructor, Karambit will retrieve instances from the declared properties of those arguments.
 
@@ -39,7 +39,18 @@ interface MyComponentDependency {
 /** @component */
 export abstract class MyComponent {
     constructor(dep: MyComponentDependency) { }
+    // ...
 }
+
+/**
+ * Equivalent to the above declaration
+ * @component
+ * @factory {@link MyComponentFactory}
+ */
+export interface MyComponent {
+    // ...
+}
+export type MyComponentFactory = (dep: MyComponentDependency) => MyComponent
 ```
 
 Here, `MyComponent` will have the `number` and `string` types bound to its graph, and they will be available as dependencies of other types within the graph. Whenever a `number` or `string` instance is needed, then they will be provided by accessing these respective properties.
