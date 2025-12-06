@@ -1,5 +1,5 @@
 import * as ts from "typescript"
-import {InjectNodeDetector} from "./InjectNodeDetector"
+import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
 import {Inject, Reusable} from "karambit-decorators"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound} from "./Util"
@@ -23,6 +23,7 @@ export class AnnotationValidator {
         const injectAnnotations = annotations.filter(this.nodeDetector.isInjectAnnotation)
         const assistedInjectAnnotations = annotations.filter(this.nodeDetector.isAssistedInjectAnnotation)
         const assistedAnnotations = annotations.filter(this.nodeDetector.isAssistedAnnotation)
+        const factoryTags = annotations.filter(tag => this.nodeDetector.isKarambitDocTag(tag, KarambitAnnotationTag.factory))
         const moduleDecorators = annotations.filter(this.nodeDetector.isModuleDecorator)
 
         componentAnnotations.forEach(this.requireDeclarationExported)
@@ -44,6 +45,13 @@ export class AnnotationValidator {
             const classAncestor = findAncestor(tag, ts.isClassLike)
             if (!classAncestor || !this.nodeDetector.getAssistedInjectAnnotation(classAncestor)) {
                 this.errorReporter.reportParseFailed(`${getAnnotationName(tag)} must be used in the constructor an @assistedInject class!`, getAnnotationParent(tag))
+            }
+        })
+
+        factoryTags.map(tag => {
+            const declaration = getDeclaration(tag)
+            if (!declaration || !this.nodeDetector.getComponentAnnotation(declaration) && !this.nodeDetector.getSubcomponentAnnotation(declaration)) {
+                this.errorReporter.reportParseFailed(`${getAnnotationName(tag)} must be used with @component or @subcomponent!`, getAnnotationParent(tag))
             }
         })
 
