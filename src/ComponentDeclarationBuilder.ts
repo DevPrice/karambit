@@ -37,7 +37,7 @@ export class ComponentDeclarationBuilder {
         @Assisted private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
     ) { }
 
-    declareComponent(options: {declaration: ComponentDeclaration, constructorParams: ConstructorParameter[], members: ts.ClassElement[], identifier: ts.Identifier}): ts.ClassDeclaration {
+    declareComponent(options: {declaration: ComponentDeclaration, factorySymbol?: ts.Symbol, factoryParams: ConstructorParameter[], members: ts.ClassElement[], identifier: ts.Identifier}): ts.ClassDeclaration {
         const parentName = options.declaration.name
         if (!parentName) {
             this.errorReporter.reportParseFailed("Component missing name!", options.declaration)
@@ -57,13 +57,18 @@ export class ComponentDeclarationBuilder {
             [
                 ts.factory.createConstructorDeclaration(
                     undefined,
-                    options.constructorParams.map(param =>
+                    options.factoryParams.map(param =>
                         ts.factory.createParameterDeclaration(
                             [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword), ts.factory.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
                             undefined,
                             this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                             undefined,
-                            this.constructorParamTypeNode(ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(parentSymbol)), param.index, parentSymbol),
+                            options.factorySymbol
+                                ? paramType(
+                                    ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(options.factorySymbol)),
+                                    param.index,
+                                )
+                                : this.constructorParamTypeNode(ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(parentSymbol)), param.index, parentSymbol),
                             undefined,
                         )
                     ),
@@ -73,7 +78,7 @@ export class ComponentDeclarationBuilder {
                                 ? ts.factory.createExpressionStatement(ts.factory.createCallExpression(
                                     ts.factory.createSuper(),
                                     undefined,
-                                    options.constructorParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)),
+                                    options.factoryParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)),
                                 ))
                                 : undefined
                         ].filter(isNotNull),
@@ -171,13 +176,15 @@ export class ComponentDeclarationBuilder {
                             undefined,
                             ts.factory.createTypeReferenceNode(parentType, undefined),
                             undefined,
-                        ), ...factory.constructorParams.map(param =>
+                        ), ...factory.factoryParams.map(param =>
                             ts.factory.createParameterDeclaration(
                                 [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword), ts.factory.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
                                 undefined,
                                 this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                                 undefined,
-                                this.constructorParamTypeNode(ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(symbol)), param.index, symbol),
+                                factory.factorySymbol
+                                    ? paramType(ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(factory.factorySymbol)), param.index)
+                                    : this.constructorParamTypeNode(ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(symbol)), param.index, symbol),
                                 undefined
                             )
                         )],
@@ -187,7 +194,7 @@ export class ComponentDeclarationBuilder {
                                     ? ts.factory.createExpressionStatement(ts.factory.createCallExpression(
                                         ts.factory.createSuper(),
                                         undefined,
-                                        factory.constructorParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration))
+                                        factory.factoryParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration))
                                     ))
                                     : undefined
                             ].filter(isNotNull),
@@ -245,28 +252,30 @@ export class ComponentDeclarationBuilder {
                         ts.factory.createArrowFunction(
                             undefined,
                             undefined,
-                            factory.constructorParams.map(it =>
+                            factory.factoryParams.map(it =>
                                 ts.factory.createParameterDeclaration(
                                     undefined,
                                     undefined,
                                     it.name,
                                     undefined,
-                                    this.constructorParamTypeNode(
-                                        ts.factory.createTypeQueryNode(
-                                            ts.factory.createQualifiedName(
-                                                ts.factory.createIdentifier("this"),
-                                                this.nameGenerator.getPropertyIdentifier(factory.subcomponentType),
-                                            )
+                                    factory.factorySymbol
+                                        ? paramType(ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(factory.factorySymbol)), it.index)
+                                        : this.constructorParamTypeNode(
+                                            ts.factory.createTypeQueryNode(
+                                                ts.factory.createQualifiedName(
+                                                    ts.factory.createIdentifier("this"),
+                                                    this.nameGenerator.getPropertyIdentifier(factory.subcomponentType),
+                                                )
+                                            ),
+                                            it.index + 1,
+                                            factory.subcomponentType.type.symbol,
                                         ),
-                                        it.index + 1,
-                                        factory.subcomponentType.type.symbol,
-                                    ),
                                     undefined
                                 )
                             ),
                             undefined,
                             ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-                            this.createSubcomponentExpression(factory, factory.constructorParams.map(it => ts.factory.createIdentifier(it.name))),
+                            this.createSubcomponentExpression(factory, factory.factoryParams.map(it => ts.factory.createIdentifier(it.name))),
                         )
                     )
                 ],

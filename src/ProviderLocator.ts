@@ -32,7 +32,7 @@ export class ProviderLocator {
     ) { }
 
     findPropertyProviders(component: ComponentLikeDeclaration): ReadonlyMap<QualifiedType, PropertyProvider> {
-        const dependencyParams = ts.isClassLike(component) ? this.constructorHelper.getConstructorParamsForDeclaration(component) : []
+        const dependencyParams = this.constructorHelper.getFactoryParamsForComponent(component).parameters
         const dependencyMap = new Map<QualifiedType, PropertyProvider>()
         dependencyParams.forEach(param => {
             const name = this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)

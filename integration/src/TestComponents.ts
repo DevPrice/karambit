@@ -93,7 +93,7 @@ export class ChildClass { }
 
 @Inject
 export class ParentClass implements ParentClassInterface {
-    constructor(readonly child: ChildClass, readonly subcomponentFactory: SubcomponentFactory<typeof ChildSubcomponent>) { }
+    constructor(readonly child: ChildClass, readonly subcomponentFactory: ChildSubcomponentFactory) { }
 }
 
 export const childInstance = new ChildClass()
@@ -151,23 +151,19 @@ export abstract class GrandChildSubcomponent {
     abstract readonly newClass: NestedWithParentProvidedArg
 }
 
-export interface ChildSubcomponentInterface {
+/**
+ * @subcomponent
+ * @scope {@link ChildScope}
+ * @includeModule {@link SubcomponentModule}
+ * @includeSubcomponent {@link GrandChildSubcomponent}
+ * @factory {@link ChildSubcomponentFactory}
+ */
+export interface ChildSubcomponent {
     readonly sum: number
     readonly parentClass: ParentClass
     readonly grandChildSubcomponentFactory: (dep: GrandChildDependency) => GrandChildSubcomponent
 }
-
-@ChildScope
-@Subcomponent({modules: [SubcomponentModule], subcomponents: [GrandChildSubcomponent]})
-export abstract class ChildSubcomponent implements ChildSubcomponentInterface {
-
-    constructor(@k.BindsInstance values: number[]) { }
-
-    abstract readonly sum: number
-    abstract readonly parentClass: ParentClass
-    abstract readonly grandChildSubcomponentFactory: (dep: GrandChildDependency) => GrandChildSubcomponent
-}
-export type ChildSubcomponentFactory = (values: number[]) => ChildSubcomponentInterface
+export type ChildSubcomponentFactory = (/** @bindsInstance */ values: number[]) => ChildSubcomponent
 
 /** @inject */
 @TestSubcomponentScope
@@ -242,7 +238,7 @@ export abstract class ParentComponent extends InheritedClass {
     abstract readonly subcomponentFactory: (values: number[]) => ChildSubcomponent
     abstract readonly scopedSubcomponentFactory: () => ScopedSubcomponent
     abstract readonly aliasedSubcomponentFactory: ChildSubcomponentFactory
-    abstract readonly builtInTypeSubcomponentFactory: SubcomponentFactory<typeof ChildSubcomponent>
+    abstract readonly builtInTypeSubcomponentFactory: ChildSubcomponentFactory
 
     override readonly implementedProperty = true
 }

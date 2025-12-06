@@ -24,6 +24,7 @@ export const KarambitAnnotationTag = {
     reusable: "reusable",
     includeModule: "includeModule",
     includeSubcomponent: "includeSubcomponent",
+    factory: "factory",
 } as const
 
 const annotationTagNames = new Set<string>(Object.values(KarambitAnnotationTag).map(it => it.toLowerCase()))

@@ -90,7 +90,6 @@ export class AnnotationValidator {
     private requireConstructorParameter(annotation: AnnotationLike): void {
         const parent = getAnnotationParent(annotation)
         if (!parent || !ts.isParameter(parent) || !ts.isConstructorDeclaration(parent.parent)) {
-            console.log(ts.SyntaxKind[parent.parent.kind])
             this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} must be applied to a constructor parameter!`, parent)
         }
     }

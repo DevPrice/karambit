@@ -1,5 +1,5 @@
 import * as ts from "typescript"
-import {InjectNodeDetector} from "./InjectNodeDetector"
+import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {Inject, Reusable} from "karambit-decorators"
 import {ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
@@ -45,7 +45,7 @@ export class ModuleLocator {
     }
 
     private getInstalledFromTags(declaration: ComponentLikeDeclaration): ts.Symbol[] {
-        const tags = this.nodeDetector.getJSDocTags(declaration, "includeModule")
+        const tags = this.nodeDetector.getJSDocTags(declaration, KarambitAnnotationTag.includeModule)
         return tags
             .flatMap(tag => {
                 const linkTags = tag.getChildren().filter(ts.isJSDocLink)
@@ -77,7 +77,7 @@ export class ModuleLocator {
     }
 
     getInstalledSubcomponents(declaration: ComponentLikeDeclaration, decorator: ts.Decorator | undefined): ts.Symbol[] {
-        const tags = this.nodeDetector.getJSDocTags(declaration, "includeSubcomponent")
+        const tags = this.nodeDetector.getJSDocTags(declaration, KarambitAnnotationTag.includeSubcomponent)
         if (tags.length > 0) {
             const linkTags = tags
                 .flatMap(tag => {
@@ -124,11 +124,11 @@ export class ModuleLocator {
             this.errorReporter.reportParseFailed(`No declarations found for symbol '${symbol.name}'!`)
         }
         const includes = declarations.flatMap(declaration => {
-            const moduleAnnotation = this.nodeDetector.getModuleAnnotation(declaration)
             const tagIncludes = this.getInstalledFromTags(declaration)
             if (tagIncludes.length > 0) {
                 return tagIncludes
             }
+            const moduleAnnotation = this.nodeDetector.getModuleAnnotation(declaration)
             return moduleAnnotation && ts.isDecorator(moduleAnnotation) ? this.getSymbolList(moduleAnnotation, "includes") : []
         })
         const {factories, bindings} = declarations.reduce<{factories: ProvidesMethod[], bindings: Binding[]}>((prev, declaration) => {

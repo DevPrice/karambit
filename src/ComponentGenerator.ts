@@ -194,10 +194,12 @@ export class ComponentGenerator {
                 ([type, provider]) => isSubcomponentFactory(provider) ? provider.subcomponentType : type
             )
         )
+        const componentFactory = this.constructorHelper.getFactoryParamsForComponent(component)
         const classDeclaration = builder.declareComponent({
             identifier: componentIdentifier,
             declaration: component,
-            constructorParams: ts.isClassLike(component) ? this.constructorHelper.getConstructorParamsForDeclaration(component) : [],
+            factorySymbol: componentFactory.symbol,
+            factoryParams: componentFactory.parameters,
             members: [
                 ...definition.exposedProperties.map(it => builder.declareComponentProperty(component, it)),
                 ...Array.from(generatedDeps.values()).flatMap(it => builder.getProviderDeclaration(it, definition.scope)),

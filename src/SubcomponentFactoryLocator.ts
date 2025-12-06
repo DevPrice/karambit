@@ -42,20 +42,20 @@ export class SubcomponentFactoryLocator {
         const annotation = declaration && this.nodeDetector.getSubcomponentAnnotation(declaration)
         if (!annotation) return undefined
 
-        const constructorParams = ts.isClassLike(declaration) ? this.constructorHelper.getConstructorParamsForDeclaration(declaration) : []
-        if (!constructorParams) return undefined
+        const componentFactory = this.constructorHelper.getFactoryParamsForComponent(declaration)
 
         const factoryParamTypes = signatureDeclaration.parameters
             .map(it => this.typeChecker.getTypeAtLocation(it.type ?? it))
-        if (factoryParamTypes.length != constructorParams.length) return undefined
+        if (factoryParamTypes.length != componentFactory.parameters.length) return undefined
 
-        if (!constructorParams.map(it => it.type.type).every((it, index) => it === factoryParamTypes[index])) return undefined
+        if (!componentFactory.parameters.map(it => it.type.type).every((it, index) => it === factoryParamTypes[index])) return undefined
 
         return {
             providerType: ProviderType.SUBCOMPONENT_FACTORY,
             subcomponentType: createQualifiedType({type: returnType, qualifier: internalQualifier}),
             type: createQualifiedType({type}),
-            constructorParams,
+            factorySymbol: componentFactory.symbol,
+            factoryParams: componentFactory.parameters,
             declaration,
             decorator: ts.isDecorator(annotation) ? annotation : undefined,
         }
@@ -74,8 +74,7 @@ export class SubcomponentFactoryLocator {
         const annotation = this.nodeDetector.getSubcomponentAnnotation(declaration)
         if (!annotation) return undefined
 
-        const constructorParams = ts.isClassLike(declaration) ? this.constructorHelper.getConstructorParamsForDeclaration(declaration) : []
-        if (!constructorParams) return undefined
+        const componentFactory = this.constructorHelper.getFactoryParamsForComponent(declaration)
 
         const subcomponentType = this.typeChecker.getTypeAtLocation(declaration)
 
@@ -83,7 +82,8 @@ export class SubcomponentFactoryLocator {
             providerType: ProviderType.SUBCOMPONENT_FACTORY,
             subcomponentType: createQualifiedType({type: subcomponentType, qualifier: internalQualifier}),
             type: createQualifiedType({type}),
-            constructorParams,
+            factorySymbol: componentFactory.symbol,
+            factoryParams: componentFactory.parameters,
             declaration,
             decorator: ts.isDecorator(annotation) ? annotation : undefined,
         }

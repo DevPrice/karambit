@@ -81,13 +81,19 @@ export interface ConstructorParameter {
     readonly optional: boolean
 }
 
+export interface ComponentFactory {
+    readonly symbol?: ts.Symbol // use constructor, if null
+    readonly parameters: ConstructorParameter[]
+}
+
 export interface SubcomponentFactory {
     readonly providerType: ProviderType.SUBCOMPONENT_FACTORY
     readonly declaration: ComponentDeclaration
     readonly decorator?: ts.Decorator
     readonly type: QualifiedType
     readonly subcomponentType: QualifiedType
-    readonly constructorParams: ConstructorParameter[]
+    readonly factoryParams: ConstructorParameter[]
+    readonly factorySymbol?: ts.Symbol
     readonly scope?: undefined
 }
 
