@@ -20,9 +20,13 @@ export const KarambitAnnotationTag = {
     intoMap: "intoMap",
     elementsIntoSet: "elementsIntoSet",
     elementsIntoMap: "elementsIntoMap",
+    scope: "scope",
+    reusable: "reusable",
+    includeModule: "includeModule",
+    includeSubcomponent: "includeSubcomponent",
 } as const
 
-const annotationTagNames = new Set<string>(Object.values(KarambitAnnotationTag))
+const annotationTagNames = new Set<string>(Object.values(KarambitAnnotationTag).map(it => it.toLowerCase()))
 
 @Inject
 @Reusable
@@ -60,10 +64,10 @@ export class InjectNodeDetector {
     }
 
     private getTagScope(item: Annotated): ComponentScope | undefined {
-        const reusableTag = this.getJSDocTag(item, "reusable")
+        const reusableTag = this.getJSDocTag(item, KarambitAnnotationTag.reusable)
         if (reusableTag) return reusableScope
 
-        const scopeTag = this.getJSDocTag(item, "scope")
+        const scopeTag = this.getJSDocTag(item, KarambitAnnotationTag.scope)
         if (scopeTag) {
             const children = scopeTag.getChildren()
             const linkTags = children.filter(ts.isJSDocLink)
@@ -103,7 +107,7 @@ export class InjectNodeDetector {
 
     @bound
     getComponentAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isComponentDecorator) ?? this.getJSDocTag(node, "component")
+        return node.modifiers?.find(this.isComponentDecorator) ?? this.getJSDocTag(node, KarambitAnnotationTag.component)
     }
 
     @bound
@@ -119,6 +123,13 @@ export class InjectNodeDetector {
     }
 
     @bound
+    isSubcomponentAnnotation(annotation: AnnotationLike): boolean {
+        return ts.isDecorator(annotation)
+            ? this.isKarambitDecorator(annotation, "Subcomponent")
+            : this.karambitOptions.enableDocTags && annotation.tagName.getText() === KarambitAnnotationTag.subcomponent
+    }
+
+    @bound
     getSubcomponentAnnotation(node: Annotated): AnnotationLike | undefined {
         return node.modifiers?.find(this.isSubcomponentDecorator) ?? this.getJSDocTag(node, "subcomponent")
     }
@@ -129,18 +140,18 @@ export class InjectNodeDetector {
     }
 
     @bound
+    getAssistedInjectAnnotation(node: Annotated): AnnotationLike | undefined {
+        return node.modifiers?.find(this.isAssistedInjectDecorator) ?? this.getJSDocTag(node, KarambitAnnotationTag.assistedInject)
+    }
+
+    @bound
     getAssistedAnnotation(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isAssistedDecorator) ?? this.getJSDocTag(node, "assisted")
+        return node.modifiers?.find(this.isAssistedDecorator) ?? this.getJSDocTag(node, KarambitAnnotationTag.assisted)
     }
 
     @bound
     private isAssistedDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Assisted")
-    }
-
-    @bound
-    getAssistedInjectDecorator(node: Annotated): AnnotationLike | undefined {
-        return node.modifiers?.find(this.isAssistedInjectDecorator) ?? this.getJSDocTag(node, "assistedInject")
     }
 
     @bound
@@ -187,12 +198,26 @@ export class InjectNodeDetector {
     isInjectAnnotation(annotation: AnnotationLike): boolean {
         return ts.isDecorator(annotation)
             ? this.isKarambitDecorator(annotation, "Inject")
-            : this.karambitOptions.enableDocTags && annotation.tagName.getText() === KarambitAnnotationTag.inject
+            : this.isKarambitDocTag(annotation, KarambitAnnotationTag.inject)
     }
 
     @bound
     isInjectDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Inject")
+    }
+
+    @bound
+    isAssistedInjectAnnotation(annotation: AnnotationLike): boolean {
+        return ts.isDecorator(annotation)
+            ? this.isKarambitDecorator(annotation, "AssistedInject")
+            : this.isKarambitDocTag(annotation, KarambitAnnotationTag.assistedInject)
+    }
+
+    @bound
+    isAssistedAnnotation(annotation: AnnotationLike): boolean {
+        return ts.isDecorator(annotation)
+            ? this.isKarambitDecorator(annotation, "Assisted")
+            : this.isKarambitDocTag(annotation, KarambitAnnotationTag.assisted)
     }
 
     @bound
@@ -304,10 +329,17 @@ export class InjectNodeDetector {
 
     @bound
     isKarambitAnnotation(annotation: ts.Node): annotation is AnnotationLike {
-        if (this.karambitOptions.enableDocTags && isJSDocTag(annotation) && annotationTagNames.has(annotation.tagName.getText())) {
-            return true
+        return this.isKarambitDocTag(annotation) || this.isKarambitDecorator(annotation)
+    }
+
+    @bound
+    isKarambitDocTag(node: ts.Node, name?: string): node is ts.JSDocTag {
+        if (this.karambitOptions.enableDocTags && isJSDocTag(node)) {
+            return name
+                ? name.localeCompare(node.tagName.getText(), undefined, {sensitivity: "base"}) === 0
+                : annotationTagNames.has(node.tagName.getText().toLowerCase())
         }
-        return this.isKarambitDecorator(annotation)
+        return false
     }
 
     @bound

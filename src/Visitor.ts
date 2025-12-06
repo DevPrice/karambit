@@ -16,3 +16,11 @@ export function findAllChildren<T extends ts.Node>(node: ts.Node | ReadonlyArray
     }
     return matchingNodes
 }
+
+export function findAncestor<T extends ts.Node>(node: ts.Node, predicate: (node: ts.Node) => node is T): T {
+    let current: ts.Node | undefined = node.parent
+    while (current && !predicate(current)) {
+        current = current.parent
+    }
+    return current
+}
