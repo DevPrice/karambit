@@ -62,7 +62,7 @@ The Component is what ultimately hosts a dependency graph, and how you expose th
 ```typescript
 /**
  * @component
- * @includesModule {@link HelloWorldModule}
+ * @includeModule {@link HelloWorldModule}
  */
 export interface HelloWorldComponent {
     readonly greeter: Greeter

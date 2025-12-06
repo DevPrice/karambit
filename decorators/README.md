@@ -19,7 +19,7 @@ For example, with JSDocs you might write:
 ```typescript
 /**
  * @component
- * @includesModule {@link HelloWorldModule}
+ * @includeModule {@link HelloWorldModule}
  */
 export interface HelloWorldComponent {
     readonly greeter: Greeter
