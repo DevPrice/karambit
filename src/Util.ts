@@ -13,6 +13,10 @@ export function isNotNull<T>(value: T): value is NonNullable<T> {
     return value !== null && value !== undefined
 }
 
+export function isNullish(value: unknown): value is undefined | null {
+    return value === null || value === undefined
+}
+
 export function memoize<This, Args extends Array<unknown>, T>(f: (this: This, ...args: Args) => T): (this: This, ...args: Args) => T {
     const cache: TupleMap<unknown[], {value: T}> = new TupleMap()
     return function (this: This, ...args: Args) {

@@ -2,6 +2,19 @@ import * as ts from "typescript"
 
 export type SourceFileVisitor = (sourceFile: ts.SourceFile) => void
 
+export function findChild(node: ts.Node, predicate: (node: ts.Node) => boolean): ts.Node | undefined
+export function findChild<T extends ts.Node>(node: ts.Node, predicate: (node: ts.Node) => node is T): T | undefined {
+    const nodes: ts.Node[] = Array.isArray(node) ? Array.from(node) : [node]
+    let current: ts.Node | undefined
+    while (current = nodes.shift()) { // eslint-disable-line
+        if (predicate(current)) {
+            return current
+        }
+        nodes.push(...current.getChildren())
+    }
+    return undefined
+}
+
 export function findAllChildren<T extends ts.Node>(node: ts.Node | ReadonlyArray<ts.Node>, predicate: (node: ts.Node) => node is T): T[]
 export function findAllChildren(node: ts.Node | ReadonlyArray<ts.Node>, predicate: (node: ts.Node) => boolean): ts.Node[]
 export function findAllChildren<T extends ts.Node>(node: ts.Node | ReadonlyArray<ts.Node>, predicate: (node: ts.Node) => node is T): T[] {

@@ -21,6 +21,7 @@ import {Assisted, AssistedInject} from "karambit-decorators"
 import {bound, isNotNull} from "./Util"
 import {ComponentDeclaration, ComponentScope, isTypeNullable} from "./TypescriptUtil"
 import {findAllChildren} from "./Visitor"
+import {ConstructorHelper} from "./ConstructorHelper"
 
 export type ComponentDeclarationBuilderFactory = (typeResolver: TypeResolver, instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>) => ComponentDeclarationBuilder
 
@@ -30,6 +31,7 @@ export class ComponentDeclarationBuilder {
     constructor(
         private readonly typeChecker: ts.TypeChecker,
         private readonly nodeDetector: InjectNodeDetector,
+        private readonly constructorHelper: ConstructorHelper,
         private readonly nameGenerator: NameGenerator,
         private readonly importer: Importer,
         private readonly errorReporter: ErrorReporter,
@@ -75,11 +77,7 @@ export class ComponentDeclarationBuilder {
                     ts.factory.createBlock(
                         [
                             ts.isClassLike(options.declaration)
-                                ? ts.factory.createExpressionStatement(ts.factory.createCallExpression(
-                                    ts.factory.createSuper(),
-                                    undefined,
-                                    options.factoryParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)),
-                                ))
+                                ? this.componentSuperCall(options.declaration, options.factoryParams)
                                 : undefined
                         ].filter(isNotNull),
                         true
@@ -88,6 +86,26 @@ export class ComponentDeclarationBuilder {
                 ...options.members,
             ]
         )
+    }
+
+    private componentSuperCall(declaration: ts.ClassLikeDeclaration, factoryParameters: ConstructorParameter[]): ts.Statement {
+        const superParams = this.constructorHelper.getConstructorParamsForDeclaration(declaration)
+        const mappedParams = superParams
+            .map(superParam => {
+                const match = factoryParameters.find(factoryParam => superParam.type === factoryParam.type)
+                if (!match) {
+                    // TODO: These should be part of the dependency graph and report a missing dependency error
+                    this.errorReporter.reportParseFailed(`No factory param matches constructor param: ${superParam.name}`, declaration)
+                }
+                return match
+            })
+        return ts.factory.createExpressionStatement(ts.factory.createCallExpression(
+            ts.factory.createSuper(),
+            undefined,
+            mappedParams.map(param => {
+                return this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)
+            }),
+        ))
     }
 
     declareComponentProperty(declaration: ComponentDeclaration, options: {type: QualifiedType, name: ts.PropertyName, optional: boolean, getter: boolean}) {
@@ -191,11 +209,7 @@ export class ComponentDeclarationBuilder {
                         ts.factory.createBlock(
                             [
                                 ts.isClassLike(declaration)
-                                    ? ts.factory.createExpressionStatement(ts.factory.createCallExpression(
-                                        ts.factory.createSuper(),
-                                        undefined,
-                                        factory.factoryParams.map(param => this.nameGenerator.getPropertyIdentifierForParameter(param.declaration))
-                                    ))
+                                    ? this.componentSuperCall(declaration, factory.factoryParams)
                                     : undefined
                             ].filter(isNotNull),
                             true

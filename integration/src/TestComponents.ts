@@ -222,12 +222,15 @@ export abstract class InheritedClass {
 }
 
 /**
+ * @component
+ * @includeModule {@link ParentModule}
  * @includeSubcomponent {@link ChildSubcomponent} {@link ScopedSubcomponent}
+ * @factory {@link ParentComponentInterface}
+ * @generatedName CustomComponentName
  */
-@Component({generatedClassName: "CustomComponentName", modules: [ParentModule]})
 export abstract class ParentComponent extends InheritedClass {
 
-    protected constructor(child: ChildComponent, typeLiteralChild: {value: symbol}, /** @bindsInstance */ public boundString: string) {
+    protected constructor(public boundString: string) {
         super()
     }
 
@@ -242,6 +245,7 @@ export abstract class ParentComponent extends InheritedClass {
 
     override readonly implementedProperty = true
 }
+export type ParentComponentInterface = (child: ChildComponent, typeLiteralChild: {value: symbol}, /** @bindsInstance */ boundString: string) => ParentComponent
 
 @Module
 export abstract class ProviderModule {
