@@ -1,5 +1,5 @@
 import * as ts from "typescript"
-import {Provider, Qualified, SubcomponentFactory} from "karambit-inject"
+import {Provider, Qualified} from "karambit-inject"
 import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
 import type {SourceFileGenerator} from "./SourceFileGenerator"
 import {
@@ -35,19 +35,16 @@ export abstract class ComponentGenerationModule {
  * @subcomponent
  * @includeModule {@link ComponentGenerationModule}
  * @scope {@link ComponentGenerationScope}
+ * @factory {@link ComponentGenerationSubcomponentFactory}
  */
-export abstract class ComponentGenerationSubcomponent implements ComponentGeneratorDependencies {
-
-    constructor(/** @bindsInstance */ componentDeclaration: ComponentDeclaration) { }
-
-    abstract readonly generatedComponent: GeneratedComponent
-}
+export interface ComponentGenerationSubcomponent extends ComponentGeneratorDependencies { }
+export type ComponentGenerationSubcomponentFactory = (/** @bindsInstance */ componentDeclaration: ComponentDeclaration) => ComponentGenerationSubcomponent
 
 export abstract class SourceFileModule {
 
     /** @binds */
     abstract bindComponentGeneratorDependenciesFactory: (
-        factory: SubcomponentFactory<typeof ComponentGenerationSubcomponent>
+        factory: ComponentGenerationSubcomponentFactory
     ) => ComponentGeneratorDependenciesFactory
 
     /**
