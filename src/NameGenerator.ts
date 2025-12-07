@@ -1,12 +1,13 @@
 import * as ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
-import {Inject} from "karambit-decorators"
 import {ProgramScope} from "./Scopes"
 import {memoized} from "./Util"
 import {KarambitOptions} from "./karambit"
 
-@Inject
-@ProgramScope
+/**
+ * @inject
+ * @scope {@link ProgramScope}
+ */
 export class NameGenerator {
 
     constructor(

@@ -1,7 +1,6 @@
 import * as ts from "typescript"
 import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
-import {Inject, Reusable} from "karambit-decorators"
 import {ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {findAllChildren} from "./Visitor"
@@ -21,8 +20,10 @@ export interface Module {
     bindings: readonly Binding[]
 }
 
-@Inject
-@Reusable
+/**
+ * @inject
+ * @reusable
+ */
 export class ModuleLocator {
 
     constructor(

@@ -1,4 +1,3 @@
-import {Inject, Reusable} from "karambit-decorators"
 import * as ts from "typescript"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {MapMultibinding, PropertyProvider, ProviderType, ProvidesMethod, SetMultibinding} from "./Providers"
@@ -18,8 +17,10 @@ export interface ModuleProviders {
     mapMultibindings: ReadonlyMap<[QualifiedType, ts.Type], MapMultibinding>
 }
 
-@Inject
-@Reusable
+/**
+ * @inject
+ * @reusable
+ */
 export class ProviderLocator {
 
     constructor(

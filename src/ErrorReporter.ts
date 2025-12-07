@@ -1,6 +1,5 @@
 import * as ts from "typescript"
 import * as Path from "path"
-import {Inject, Reusable} from "karambit-decorators"
 import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {
     InjectableConstructor,
@@ -23,8 +22,10 @@ const chalk: Chalk = require("chalk")
 
 type ErrorContext = ts.Node | ts.Node[]
 
-@Inject
-@Reusable
+/**
+ * @inject
+ * @reusable
+ */
 export class ErrorReporter {
 
     constructor(

@@ -4,18 +4,19 @@ import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {bound, Container, memoized} from "./Util"
 import {ProviderType, SubcomponentFactory} from "./Providers"
-import {Assisted, AssistedInject} from "karambit-decorators"
 
 export type SubcomponentFactoryLocatorFactory = (installedSubcomponents: Container<ts.Symbol>) => SubcomponentFactoryLocator
 
-@AssistedInject
+/**
+ * @assistedInject
+ */
 export class SubcomponentFactoryLocator {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly constructorHelper: ConstructorHelper,
-        @Assisted private readonly installedSubcomponents: Container<ts.Symbol>,
+        /** @assisted */ private readonly installedSubcomponents: Container<ts.Symbol>,
     ) { }
 
     @bound

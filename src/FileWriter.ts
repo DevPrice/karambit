@@ -1,4 +1,3 @@
-import {Inject} from "karambit-decorators"
 import * as ts from "typescript"
 import * as Path from "path"
 import * as fs from "fs"
@@ -8,7 +7,9 @@ export interface ComponentWriter {
     writeComponentFile(sourceFile: ts.SourceFile, outputFilename: string): void
 }
 
-@Inject
+/**
+ * @inject
+ */
 export class FileWriter implements ComponentWriter {
 
     constructor(
@@ -27,7 +28,9 @@ export class FileWriter implements ComponentWriter {
     }
 }
 
-@Inject
+/**
+ * @inject
+ */
 export class DryRunWriter implements ComponentWriter {
 
     constructor(

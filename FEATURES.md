@@ -482,7 +482,7 @@ Karambit provides a utility for this pattern via assisted injection, where some 
 export class MyRepository {
     constructor(
         private readonly localDatabase: Database,
-        /** @assisted */ private readonly remoteUrl: string,
+        /** /** @assisted */ */ private readonly remoteUrl: string,
     ) { }
 }
 ```

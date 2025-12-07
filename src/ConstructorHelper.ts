@@ -1,14 +1,15 @@
 import * as ts from "typescript"
 import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
 import {createQualifiedType} from "./QualifiedType"
-import {Inject, Reusable} from "karambit-decorators"
 import {ComponentFactory, ConstructorParameter} from "./Providers"
 import {findAllChildren} from "./Visitor"
 import {ComponentLikeDeclaration} from "./TypescriptUtil"
 import {ErrorReporter} from "./ErrorReporter"
 
-@Inject
-@Reusable
+/**
+ * @inject
+ * @reusable
+ */
 export class ConstructorHelper {
 
     constructor(

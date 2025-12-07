@@ -1,5 +1,4 @@
 import * as ts from "typescript"
-import {Inject, Reusable} from "karambit-decorators"
 import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound, isNotNull} from "./Util"
@@ -29,8 +28,10 @@ export const KarambitAnnotationTag = {
 
 const annotationTagNames = new Set<string>(Object.values(KarambitAnnotationTag).map(it => it.toLowerCase()))
 
-@Inject
-@Reusable
+/**
+ * @inject
+ * @reusable
+ */
 export class InjectNodeDetector {
 
     constructor(

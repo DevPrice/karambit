@@ -3,12 +3,13 @@ import {createQualifiedType, internalQualifier} from "./QualifiedType"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {AssistedFactory, ProviderType} from "./Providers"
-import {Inject, Reusable} from "karambit-decorators"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound, memoized} from "./Util"
 
-@Inject
-@Reusable
+/**
+ * @inject
+ * @reusable
+ */
 export class AssistedFactoryLocator {
 
     constructor(

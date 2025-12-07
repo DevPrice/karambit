@@ -2,18 +2,19 @@ import {bound, findCycles, isNotNull} from "./Util"
 import {ErrorReporter} from "./ErrorReporter"
 import {QualifiedType} from "./QualifiedType"
 import {Binding} from "./ModuleLocator"
-import {Assisted, AssistedInject} from "karambit-decorators"
 
 export type TypeResolverFactory = (bindings: Iterable<Binding>) => TypeResolver
 
-@AssistedInject
+/**
+ * @assistedInject
+ */
 export class TypeResolver {
 
     #bindingMap: Map<QualifiedType, QualifiedType>
 
     constructor(
         private readonly errorReporter: ErrorReporter,
-        @Assisted private readonly bindings: Iterable<Binding>,
+        /** @assisted */ private readonly bindings: Iterable<Binding>,
     ) {
         const bindingMap = new Map<QualifiedType, Binding>()
         for (const binding of bindings) {

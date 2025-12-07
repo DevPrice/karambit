@@ -1,15 +1,16 @@
 import * as ts from "typescript"
 import {FunctionBody} from "typescript"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
-import {Inject, Reusable} from "karambit-decorators"
 import {ComponentLikeDeclaration} from "./TypescriptUtil"
 
 export type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
 export type ElementLike = ts.ClassElement | ts.TypeElement
 type MethodLike = (ts.MethodDeclaration | ts.MethodSignature) & { body?: FunctionBody }
 
-@Inject
-@Reusable
+/**
+ * @inject
+ * @reusable
+ */
 export class PropertyExtractor {
 
     constructor(

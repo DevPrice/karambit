@@ -1,5 +1,3 @@
-import {Scope} from "karambit-decorators"
-
-export const ProgramScope = Scope()
-export const SourceFileScope = Scope()
-export const ComponentGenerationScope = Scope()
+export declare const ProgramScope: unique symbol
+export declare const SourceFileScope: unique symbol
+export declare const ComponentGenerationScope: unique symbol

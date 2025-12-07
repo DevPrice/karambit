@@ -17,7 +17,6 @@ import {
     SubcomponentFactory,
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
-import {Assisted, AssistedInject} from "karambit-decorators"
 import {bound, isNotNull} from "./Util"
 import {ComponentDeclaration, ComponentScope, isTypeNullable} from "./TypescriptUtil"
 import {findAllChildren} from "./Visitor"
@@ -25,7 +24,9 @@ import {ConstructorHelper} from "./ConstructorHelper"
 
 export type ComponentDeclarationBuilderFactory = (typeResolver: TypeResolver, instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>) => ComponentDeclarationBuilder
 
-@AssistedInject
+/**
+ * @assistedInject
+ */
 export class ComponentDeclarationBuilder {
 
     constructor(
@@ -35,8 +36,8 @@ export class ComponentDeclarationBuilder {
         private readonly nameGenerator: NameGenerator,
         private readonly importer: Importer,
         private readonly errorReporter: ErrorReporter,
-        @Assisted private readonly typeResolver: TypeResolver,
-        @Assisted private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
+        /** @assisted */ private readonly typeResolver: TypeResolver,
+        /** @assisted */ private readonly instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>,
     ) { }
 
     declareComponent(options: {declaration: ComponentDeclaration, factorySymbol?: ts.Symbol, factoryParams: ConstructorParameter[], members: ts.ClassElement[], identifier: ts.Identifier}): ts.ClassDeclaration {

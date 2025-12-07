@@ -1,11 +1,10 @@
-import {Inject, Reusable} from "karambit-decorators"
 import * as ts from "typescript"
 
 /**
- * Wraps hacky calls to non-public Typescript APIs.
+ * Wraps hacky calls to non-public TypeScript APIs.
+ * @inject
+ * @reusable
  */
-@Inject
-@Reusable
 export class Hacks {
 
     constructor(

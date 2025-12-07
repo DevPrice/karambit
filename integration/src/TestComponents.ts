@@ -362,7 +362,7 @@ export class AssistedInjectClass {
 
     constructor(
         readonly string: string,
-        @Assisted readonly assistedNumber: number,
+        /** @assisted */ readonly assistedNumber: number,
     ) { }
 }
 

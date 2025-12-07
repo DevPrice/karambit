@@ -1,12 +1,13 @@
 import * as ts from "typescript"
 import * as Path from "path"
-import {Inject} from "karambit-decorators"
 import {ProgramScope} from "./Scopes"
 import {KarambitOptions} from "./karambit"
 import {bound, memoized} from "./Util"
 
-@Inject
-@ProgramScope
+/**
+ * @inject
+ * @scope {@link ProgramScope}
+ */
 export class Importer {
 
     private newImports = new Map<string, ts.ImportDeclaration>()

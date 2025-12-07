@@ -1,5 +1,4 @@
 import * as ts from "typescript"
-import {Inject, Reusable} from "karambit-decorators"
 import {GeneratedComponent} from "./ComponentGenerator"
 import {NameGenerator} from "./NameGenerator"
 import {isNotNull} from "./Util"
@@ -7,8 +6,10 @@ import {Importer} from "./Importer"
 import {KarambitOptions} from "./karambit"
 import {ErrorReporter} from "./ErrorReporter"
 
-@Inject
-@Reusable
+/**
+ * @inject
+ * @reusable
+ */
 export class SourceFileGenerator {
 
     constructor(

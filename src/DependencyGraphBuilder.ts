@@ -16,7 +16,6 @@ import {
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {AssistedFactoryLocator} from "./AssistedFactoryLocator"
-import {Assisted, AssistedInject} from "karambit-decorators"
 import {ComponentScope} from "./TypescriptUtil"
 
 export interface Dependency {
@@ -48,22 +47,24 @@ export type DependencyGraphBuilderFactory = (
     parentGraph?: CanBind,
 ) => DependencyGraphBuilder
 
-@AssistedInject
+/**
+ * @assistedInject
+ */
 export class DependencyGraphBuilder {
 
     constructor(
-        @Assisted private readonly typeResolver: TypeResolver,
+        /** @assisted */ private readonly typeResolver: TypeResolver,
         private readonly nodeDetector: InjectNodeDetector,
-        @Assisted private readonly dependencyMap:  ReadonlyMap<QualifiedType, PropertyProvider>,
-        @Assisted private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
-        @Assisted private readonly setMultibindings: ReadonlyMap<QualifiedType, SetMultibinding>,
-        @Assisted private readonly mapMultibindings: ReadonlyMap<[QualifiedType, ts.Type], MapMultibinding>,
-        @Assisted private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
+        /** @assisted */ private readonly dependencyMap:  ReadonlyMap<QualifiedType, PropertyProvider>,
+        /** @assisted */ private readonly factoryMap: ReadonlyMap<QualifiedType, ProvidesMethod>,
+        /** @assisted */ private readonly setMultibindings: ReadonlyMap<QualifiedType, SetMultibinding>,
+        /** @assisted */ private readonly mapMultibindings: ReadonlyMap<[QualifiedType, ts.Type], MapMultibinding>,
+        /** @assisted */ private readonly subcomponentFactoryLocator: SubcomponentFactoryLocator,
         private readonly assistedFactoryLocator: AssistedFactoryLocator,
         private readonly constructorHelper: ConstructorHelper,
         private readonly errorReporter: ErrorReporter,
-        @Assisted private readonly scopeFilter?: ScopeFilter,
-        @Assisted private readonly parentGraph?: CanBind,
+        /** @assisted */ private readonly scopeFilter?: ScopeFilter,
+        /** @assisted */ private readonly parentGraph?: CanBind,
     ) {
         this.assertNoDuplicateBindings()
     }

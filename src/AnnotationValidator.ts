@@ -1,13 +1,14 @@
 import * as ts from "typescript"
 import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
-import {Inject, Reusable} from "karambit-decorators"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound} from "./Util"
 import {findAllChildren, findAncestor} from "./Visitor"
 import {AnnotationLike, ComponentLikeDeclaration, isComponentLikeDeclaration, isJSDocTag} from "./TypescriptUtil"
 
-@Inject
-@Reusable
+/**
+ * @inject
+ * @reusable
+ */
 export class AnnotationValidator {
 
     constructor(

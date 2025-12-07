@@ -1,5 +1,4 @@
 import * as ts from "typescript"
-import {Binds, BindsInstance, Component, IntoSet, Module, Provides, Reusable, Subcomponent} from "karambit-decorators"
 import {Provider, Qualified, SubcomponentFactory} from "karambit-inject"
 import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
 import type {SourceFileGenerator} from "./SourceFileGenerator"
@@ -21,68 +20,81 @@ import {ComponentDeclaration, isComponentDeclaration} from "./TypescriptUtil"
 declare const generatedQualifier: unique symbol
 type GeneratedSourceFile = ts.SourceFile & Qualified<typeof generatedQualifier>
 
-@Module
 export abstract class ComponentGenerationModule {
 
-    @Provides
-    @Reusable
+    /**
+     * @provides
+     * @reusable
+     */
     static provideGeneratedComponent(generator: ComponentGenerator): GeneratedComponent {
         return generator.generateComponent()
     }
 }
 
-@Subcomponent({modules: [ComponentGenerationModule]})
-@ComponentGenerationScope
+/**
+ * @subcomponent
+ * @includeModule {@link ComponentGenerationModule}
+ * @scope {@link ComponentGenerationScope}
+ */
 export abstract class ComponentGenerationSubcomponent implements ComponentGeneratorDependencies {
 
-    constructor(@BindsInstance componentDeclaration: ComponentDeclaration) { }
+    constructor(/** @bindsInstance */ componentDeclaration: ComponentDeclaration) { }
 
     abstract readonly generatedComponent: GeneratedComponent
 }
 
-@Module
 export abstract class SourceFileModule {
 
-    @Binds
+    /** @binds */
     abstract bindComponentGeneratorDependenciesFactory: (
         factory: SubcomponentFactory<typeof ComponentGenerationSubcomponent>
     ) => ComponentGeneratorDependenciesFactory
 
-    @Provides
-    @IntoSet
+    /**
+     * @provides
+     * @intoSet
+     */
     static provideAnnotationValidationVisitor(annotationValidator: AnnotationValidator): SourceFileVisitor {
         return annotationValidator.validateAnnotations
     }
 }
 
-@Subcomponent({modules: [SourceFileModule], subcomponents: [ComponentGenerationSubcomponent]})
-@SourceFileScope
-export abstract class SourceFileSubcomponent {
-
-    constructor(@BindsInstance sourceFile: ts.SourceFile) { }
-
-    abstract readonly sourceFileVisitors: ReadonlySet<SourceFileVisitor>
-    abstract readonly componentGeneratorDependenciesFactory: ComponentGeneratorDependenciesFactory
-    abstract readonly nodeDetector: InjectNodeDetector
+/**
+ * @subcomponent
+ * @includeModule {@link SourceFileModule}
+ * @includeSubcomponent {@link ComponentGenerationSubcomponent}
+ * @scope {@link SourceFileScope}
+ * @factory {@link SourceFileSubcomponentFactory}
+ */
+export interface SourceFileSubcomponent {
+    readonly sourceFileVisitors: ReadonlySet<SourceFileVisitor>
+    readonly componentGeneratorDependenciesFactory: ComponentGeneratorDependenciesFactory
+    readonly nodeDetector: InjectNodeDetector
 }
+export type SourceFileSubcomponentFactory = (/** @bindsInstance */ sourceFile: ts.SourceFile) => SourceFileSubcomponent
 
-@Module
 export abstract class ProgramModule {
 
-    @Provides
-    @Reusable
+    /**
+     * @provides
+     * @reusable
+     */
     static provideTypeChecker(program: ts.Program): ts.TypeChecker {
         return program.getTypeChecker()
     }
 
-    @Provides
-    @Reusable
+    /**
+     * @provides
+     * @reusable
+     */
     static providePrinter(options: KarambitOptions): ts.Printer {
         return ts.createPrinter(options.printerOptions)
     }
 
-    @Provides
-    @Reusable
+    /**
+     * @provides
+     * @reusable
+     */
     static provideDefaultLogger(options: KarambitOptions): Logger {
         const logger = options.logger ?? console
         if (options.verbose) {
@@ -97,8 +109,10 @@ export abstract class ProgramModule {
         }
     }
 
-    @Provides
-    @Reusable
+    /**
+     * @provides
+     * @reusable
+     */
     static provideComponentWriter(
         options: KarambitOptions,
         fileWriterProvider: Provider<FileWriter>,
@@ -110,12 +124,14 @@ export abstract class ProgramModule {
         return fileWriterProvider()
     }
 
-    @Provides
-    @Reusable
+    /**
+     * @provides
+     * @reusable
+     */
     static provideGeneratedComponents(
         program: ts.Program,
         logger: Logger,
-        sourceFileSubcomponentFactory: SubcomponentFactory<typeof SourceFileSubcomponent>,
+        sourceFileSubcomponentFactory: SourceFileSubcomponentFactory,
     ) {
         // TODO: Avoid business logic in the module
         return program.getSourceFiles()
@@ -136,8 +152,10 @@ export abstract class ProgramModule {
             .filter(isNotNull)
     }
 
-    @Provides
-    @Reusable
+    /**
+     * @provides
+     * @reusable
+     */
     static provideGeneratedSource(
         sourceFileGenerator: SourceFileGenerator,
         generatedComponents: GeneratedComponent[],
@@ -146,11 +164,15 @@ export abstract class ProgramModule {
     }
 }
 
-@Component({modules: [ProgramModule], subcomponents: [SourceFileSubcomponent]})
-@ProgramScope
+/**
+ * @component
+ * @includeModule {@link ProgramModule}
+ * @includeSubcomponent {@link SourceFileSubcomponent}
+ * @scope {@link ProgramScope}
+ */
 export abstract class ProgramComponent {
 
-    protected constructor(@BindsInstance program: ts.Program, @BindsInstance private readonly options: KarambitOptions) { }
+    protected constructor(/** @bindsInstance */ program: ts.Program, /** @bindsInstance */ private readonly options: KarambitOptions) { }
 
     protected abstract readonly fileWriter: ComponentWriter
     protected abstract readonly generatedFile: GeneratedSourceFile

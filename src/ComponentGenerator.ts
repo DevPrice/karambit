@@ -19,7 +19,6 @@ import {
     UndefinedProvider,
 } from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
-import {Inject, Reusable} from "karambit-decorators"
 import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"
 import {ComponentDeclaration, ComponentLikeDeclaration, ComponentScope, isTypeNullable} from "./TypescriptUtil"
 import {ModuleProviders, ProviderLocator} from "./ProviderLocator"
@@ -56,8 +55,10 @@ interface ComponentDefinition extends ModuleProviders {
     subcomponents: ts.Symbol[]
 }
 
-@Inject
-@Reusable
+/**
+ * @inject
+ * @reusable
+ */
 export class ComponentGenerator {
 
     constructor(
