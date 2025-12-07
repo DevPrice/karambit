@@ -1,6 +1,5 @@
 import * as k from "karambit-decorators"
 import {
-    Assisted,
     AssistedInject,
     Binds,
     BindsInstance,
@@ -342,14 +341,16 @@ export abstract class MultibindingsComponent {
     abstract readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
 }
 
+export interface NotExposedMultibindingsInterface {
+    readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
+}
+
 /**
  * @component
  * @includeModule {@link MultibindingSetModule} {@link MultibindingMapModule}
  * @includeSubcomponent {@link MultibindingSetSubcomponent}
  */
-export interface NotExposedMultibindingsComponent {
-    readonly subcomponentFactory: SubcomponentFactory<typeof MultibindingSetSubcomponent>
-}
+export type NotExposedMultibindingsComponent = NotExposedMultibindingsInterface
 
 @k.Component({modules: [], subcomponents: [MultibindingSetSubcomponent]})
 export abstract class EmptyRootMultibindingsComponent {

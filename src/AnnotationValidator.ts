@@ -62,7 +62,7 @@ export class AnnotationValidator {
     @bound
     private requireDeclarationExported(annotation: AnnotationLike): void {
         const declaration = getDeclaration(annotation)
-        if (!declaration || !declaration.modifiers?.some(it => it.kind === ts.SyntaxKind.ExportKeyword)) {
+        if (declaration && !declaration.modifiers?.some(it => it.kind === ts.SyntaxKind.ExportKeyword)) {
             this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} annotated declaration must be exported!`, getAnnotationParent(annotation))
         }
     }
@@ -70,7 +70,7 @@ export class AnnotationValidator {
     @bound
     private requireAbstractClassOrInterface(annotation: AnnotationLike): void {
         const declaration = getDeclaration(annotation)
-        if (!declaration || !(ts.isInterfaceDeclaration(declaration) || declaration.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword))) {
+        if (!declaration || !(ts.isInterfaceDeclaration(declaration) || ts.isTypeAliasDeclaration(declaration) || declaration.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword))) {
             this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} annotated must be applied to an interface or abstract class!`, getAnnotationParent(annotation))
         }
     }

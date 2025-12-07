@@ -1,11 +1,14 @@
 import * as ts from "typescript"
-import {FunctionBody} from "typescript"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
-import {ComponentLikeDeclaration} from "./TypescriptUtil"
 
 export type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
 export type ElementLike = ts.ClassElement | ts.TypeElement
-type MethodLike = (ts.MethodDeclaration | ts.MethodSignature) & { body?: FunctionBody }
+export interface ComponentProperty {
+    symbol: ts.Symbol
+    parameters?: ts.Symbol[]
+    optional: boolean
+    returnType: ts.Type
+}
 
 /**
  * @inject
@@ -29,44 +32,34 @@ export class PropertyExtractor {
             .concat(baseProperties)
     }
 
-    getUnimplementedAbstractProperties(type: ts.Type): PropertyLike[] {
-        const declarations = type.getSymbol()?.getDeclarations() ?? []
-        const properties = declarations
-            .filter(it => ts.isClassLike(it) || ts.isInterfaceDeclaration(it))
-            .map(declaration => declaration.members)
-            .flat()
-            .filter(it => ts.isPropertyDeclaration(it) || ts.isPropertySignature(it))
-            .map(it => it as PropertyLike)
-
-        const implementedProperties = properties.filter(it => ts.isPropertyDeclaration(it) && it.initializer !== undefined)
-            .map(it => it.name.getText())
-        const baseTypes = type.getBaseTypes() ?? []
-        const baseProperties = baseTypes.flatMap(it => this.getUnimplementedAbstractProperties(it))
-            .filter(it => !implementedProperties.includes(it.name.getText()))
-
-        return properties
-            .filter(it => ts.isTypeElement(it) || it.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.AbstractKeyword))
-            .concat(baseProperties)
-    }
-
-    getUnimplementedAbstractMethods(type: ts.Type): MethodLike[] {
-        const declarations = type.getSymbol()?.getDeclarations() ?? []
-        const methods = declarations
-            .filter((it): it is ComponentLikeDeclaration => ts.isClassLike(it) || ts.isInterfaceDeclaration(it))
-            .map(declaration => declaration.members)
-            .flat()
-            .filter(it => ts.isMethodDeclaration(it) || ts.isMethodSignature(it))
-            .map(it => it as MethodLike)
-
-        const implementedMethods = methods.filter(it => it.body !== undefined)
-            .map(it => it.name.getText())
-        const baseTypes = type.getBaseTypes() ?? []
-        const baseMethods = baseTypes.flatMap(it => this.getUnimplementedAbstractMethods(it))
-            .filter(it => !implementedMethods.includes(it.name.getText()))
-
-        return methods
-            .filter(it => ts.isTypeElement(it) || it.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.AbstractKeyword))
-            .concat(baseMethods)
+    getUnimplementedProperties(type: ts.Type): ComponentProperty[] {
+        return type.getApparentProperties()
+            .filter(symbol => symbol.declarations?.every(needsImplementation))
+            .map(symbol => {
+                const symbolType = this.typeChecker.getTypeOfSymbol(symbol)
+                if (symbol.flags & ts.SymbolFlags.Method) {
+                    const callSignatures = symbolType.getCallSignatures()
+                    if (callSignatures.length !== 1) {
+                        throw Error("TODO")
+                    }
+                    const callSignature = callSignatures[0]
+                    return {
+                        symbol,
+                        returnType: callSignature.getReturnType(),
+                        parameters: callSignature.getParameters(),
+                        optional: false,
+                    }
+                }
+                const optional = !!(symbol.flags & ts.SymbolFlags.Optional)
+                const returnType = symbol.valueDeclaration && ts.isPropertyDeclaration(symbol.valueDeclaration)
+                    ? this.typeChecker.getTypeAtLocation(symbol.valueDeclaration.type ?? symbol.valueDeclaration)
+                    : symbolType
+                return {
+                    symbol,
+                    returnType,
+                    optional,
+                }
+            })
     }
 
     typeFromPropertyDeclaration(property: PropertyLike): QualifiedType {
@@ -74,4 +67,14 @@ export class PropertyExtractor {
             type: this.typeChecker.getTypeAtLocation(property.type ?? property)!,
         })
     }
+}
+
+function needsImplementation(declaration: ts.Declaration): boolean {
+    if (ts.isPropertyDeclaration(declaration) || ts.isAutoAccessorPropertyDeclaration(declaration)) {
+        return declaration.initializer === undefined
+    }
+    if (ts.isMethodDeclaration(declaration) || ts.isGetAccessorDeclaration(declaration) || ts.isSetAccessorDeclaration(declaration)) {
+        return declaration.body === undefined
+    }
+    return !ts.isParameterPropertyDeclaration(declaration, declaration.parent)
 }

@@ -9,8 +9,8 @@ export const reusableScope: unique symbol = Symbol()
 
 export type AnnotationLike = ts.Decorator | ts.JSDocTag
 export type ComponentScope = ts.Symbol | typeof reusableScope | string
-export type ComponentDeclaration = ts.ClassDeclaration | ts.InterfaceDeclaration
-export type ComponentLikeDeclaration = ts.ClassLikeDeclaration | ts.InterfaceDeclaration
+export type ComponentDeclaration = ts.ClassDeclaration | ts.InterfaceDeclaration | ts.TypeAliasDeclaration
+export type ComponentLikeDeclaration = ComponentDeclaration | ts.ClassLikeDeclaration
 
 export function scopeToString(scope: ComponentScope): string {
     if (scope === reusableScope) {
@@ -32,11 +32,11 @@ export function isValidIdentifier(identifier: string): boolean {
 }
 
 export function isComponentDeclaration(node: ts.Node): node is ComponentDeclaration {
-    return ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node)
+    return ts.isClassDeclaration(node) || ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)
 }
 
 export function isComponentLikeDeclaration(node: ts.Node): node is ComponentLikeDeclaration {
-    return ts.isClassLike(node) || ts.isInterfaceDeclaration(node)
+    return ts.isClassLike(node) || ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)
 }
 
 export function isJSDocTag(node: ts.Node): node is ts.JSDocTag {

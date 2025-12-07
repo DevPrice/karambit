@@ -4,6 +4,7 @@ import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {bound, Container, memoized} from "./Util"
 import {ProviderType, SubcomponentFactory} from "./Providers"
+import {isComponentDeclaration} from "./TypescriptUtil"
 
 export type SubcomponentFactoryLocatorFactory = (installedSubcomponents: Container<ts.Symbol>) => SubcomponentFactoryLocator
 
@@ -38,7 +39,7 @@ export class SubcomponentFactoryLocator {
         if (!declarations || declarations.length === 0) return undefined
 
         const declaration = declarations[0]
-        if (!ts.isClassDeclaration(declaration) && !ts.isInterfaceDeclaration(declaration)) return undefined
+        if (!isComponentDeclaration(declaration)) return undefined
 
         const annotation = declaration && this.nodeDetector.getSubcomponentAnnotation(declaration)
         if (!annotation) return undefined
@@ -70,7 +71,7 @@ export class SubcomponentFactoryLocator {
         if (!declarations || declarations.length === 0) return undefined
 
         const declaration = declarations[0]
-        if (!ts.isClassDeclaration(declaration) && !ts.isInterfaceDeclaration(declaration)) return undefined
+        if (!isComponentDeclaration(declaration)) return undefined
 
         const annotation = this.nodeDetector.getSubcomponentAnnotation(declaration)
         if (!annotation) return undefined
