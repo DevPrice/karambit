@@ -19,6 +19,10 @@ export class Hacks {
         return this.typeChecker.isTupleType(type)
     }
 
+    isObjectType(type: ts.Type): type is ts.ObjectType {
+        return !!(type.flags & ts.TypeFlags.Object)
+    }
+
     getResolvedTypeArguments(type: ts.Type): ts.Type[] | undefined {
         return (type as any).resolvedTypeArguments
     }
