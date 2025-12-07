@@ -79,11 +79,20 @@ export class InjectNodeDetector {
                 }
                 const linkTag = linkTags[0]
                 const symbol = linkTag.name && this.typeChecker.getSymbolAtLocation(linkTag.name)
-                const symbolType = symbol && this.typeChecker.getTypeOfSymbol(symbol)
-                if (!symbolType || !this.isValidTagScope(symbolType)) {
-                    this.errorReporter.reportParseFailed("Invalid scope reference, should reference a `unique symbol` declaration!", linkTag)
+                const originalSymbol = symbol && this.getOriginalSymbol(symbol)
+                const symbolType = originalSymbol && this.typeChecker.getTypeOfSymbol(originalSymbol)
+                if (originalSymbol && originalSymbol.flags & ts.SymbolFlags.TypeAlias) {
+                    const declarations = originalSymbol?.declarations ?? []
+                    const declaration = declarations && declarations.length === 1 && declarations[0]
+                    const declarationType = declaration && this.typeChecker.getTypeAtLocation(declaration)
+                    if (declarationType) {
+                        return this.getOriginalSymbol(declarationType.symbol)
+                    }
+                } else if (symbolType && this.isValidTagScope(symbolType)) {
+                    return originalSymbol
                 }
-                return this.getOriginalSymbol(symbol)
+
+                this.errorReporter.reportParseFailed("Invalid scope reference, should reference a `unique symbol` declaration or type alias!", linkTag)
             }
             if (scopeTag && typeof scopeTag.comment === "string") {
                 if (!isValidIdentifier(scopeTag.comment)) {
