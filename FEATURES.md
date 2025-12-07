@@ -309,9 +309,7 @@ The main use-case of a Subcomponent is to break up the scope of some Component.
 
 ### Declaring a Subcomponent
 
-The declaration of a Subcomponent is almost identical to any other Component, except:
-* It must be abstract (it can only be constructed within a parent Component or Subcomponent)
-* It may not share the scope of any ancestor Component or Subcomponent
+The declaration of a Subcomponent is almost identical to any other Component, except that it may not share the scope of any ancestor Component or Subcomponent.
 
 A Subcomponent can itself have its own Subcomponents, as well as its own [component dependencies](#Component-dependencies).
 
