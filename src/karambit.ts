@@ -1,5 +1,5 @@
 import * as ts from "typescript"
-import {KarambitProgramComponent} from "./karambit-generated/src/Component"
+import {KarambitProgramComponent} from "./karambit-generated/karambit"
 import type {Logger} from "./Util"
 
 export {Logger}

@@ -23,7 +23,7 @@
   "scripts": {
     "prepare": "husky install",
     "clean": "rm -rf build && rm -rf src/karambit-generated",
-    "karambit": "karambit -o src/karambit-generated",
+    "karambit": "karambit -o src/karambit-generated/karambit.ts",
     "prebuild": "npm run karambit",
     "build": "tsc",
     "test": "jest && npm run --prefix integration build && npm run --prefix integration test",
@@ -53,7 +53,7 @@
     "globals": "^15.11.0",
     "husky": "^8.0.1",
     "jest": "^29.7.0",
-    "karambit-inject": "^3.2.0",
+    "karambit-inject": "^4.0.3",
     "lint-staged": "^15.2.10",
     "ts-jest": "^29.2.5",
     "typescript": "^5.9.3",
