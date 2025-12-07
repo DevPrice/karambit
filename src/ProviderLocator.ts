@@ -56,16 +56,15 @@ export class ProviderLocator {
                 // TODO: Maybe treat this as a bag of optional types instead of failing
                 if (param.optional) this.errorReporter.reportComponentDependencyMayNotBeOptional(param.declaration)
 
-                this.propertyExtractor.getDeclaredPropertiesForType(type.type).forEach(property => {
-                    const propertyType = this.propertyExtractor.typeFromPropertyDeclaration(property)
-                    const propertyName = property.name.getText()
+                this.propertyExtractor.extractProperties(type.type).forEach(property => {
+                    const propertyType = createQualifiedType({type: property.returnType})
                     const provider: PropertyProvider = {
                         providerType: ProviderType.PROPERTY,
                         declaration: param.declaration,
                         type: propertyType,
-                        optional: property.questionToken !== undefined,
+                        optional: property.optional,
                         name,
-                        propertyName,
+                        propertyName: property.symbol.name,
                     }
                     const existing = dependencyMap.get(type)
                     if (existing) throw this.errorReporter.reportDuplicateProviders(type, [existing, provider])

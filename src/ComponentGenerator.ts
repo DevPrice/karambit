@@ -7,7 +7,7 @@ import {ConstructorHelper} from "./ConstructorHelper"
 import {TypeResolver, TypeResolverFactory} from "./TypeResolver"
 import {createQualifiedType, internalQualifier, QualifiedType} from "./QualifiedType"
 import {SubcomponentFactoryLocatorFactory} from "./SubcomponentFactoryLocator"
-import {PropertyExtractor} from "./PropertyExtractor"
+import {needsImplementation, PropertyExtractor} from "./PropertyExtractor"
 import {
     InstanceProvider,
     isSubcomponentFactory,
@@ -78,11 +78,12 @@ export class ComponentGenerator {
     ) { }
 
     private getRootDependencies(componentType: ts.Type): RootDependency[] {
-        const unimplementedProperties = this.propertyExtractor.getUnimplementedProperties(componentType)
+        const unimplementedProperties = this.propertyExtractor.extractProperties(componentType)
+            .filter(property => property.symbol.declarations?.every(needsImplementation))
         unimplementedProperties.forEach(method => {
             if (method.parameters && method.parameters.length > 0) {
                 // TODO: Maybe consider accepting arguments as dependencies
-                this.errorReporter.reportParseFailed("Component has method(s) that Karambit cannot implement! A Component should not have any unimplemented methods with arguments.", method.symbol.declarations && method.symbol.declarations[0])
+                this.errorReporter.reportParseFailed("Component has method(s) that Karambit cannot implement! A Component should not have any unimplemented methods with arguments.", method.symbol.valueDeclaration)
             }
         })
         return unimplementedProperties.map(property => {

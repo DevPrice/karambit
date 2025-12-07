@@ -1,11 +1,11 @@
 import * as ts from "typescript"
-import {createQualifiedType, QualifiedType} from "./QualifiedType"
+import {ErrorReporter} from "./ErrorReporter"
 
 export type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
 export type ElementLike = ts.ClassElement | ts.TypeElement
 export interface ComponentProperty {
     symbol: ts.Symbol
-    parameters?: ts.Symbol[]
+    parameters?: readonly unknown[]
     optional: boolean
     returnType: ts.Type
 }
@@ -18,36 +18,24 @@ export class PropertyExtractor {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
+        private readonly errorReporter: ErrorReporter,
     ) { }
 
-    getDeclaredPropertiesForType(type: ts.Type): PropertyLike[] {
-        const baseTypes = type.getBaseTypes() ?? []
-        const baseProperties = baseTypes.flatMap(it => this.getDeclaredPropertiesForType(it))
-
-        const declarations = type.getSymbol()?.getDeclarations() ?? []
-        return declarations
-            .filter(it => ts.isClassLike(it) || ts.isInterfaceDeclaration(it) || ts.isTypeLiteralNode(it))
-            .flatMap(declaration => declaration.members as ts.NodeArray<ElementLike>)
-            .filter((it: ElementLike) => ts.isPropertyDeclaration(it) || ts.isPropertySignature(it))
-            .concat(baseProperties)
-    }
-
-    getUnimplementedProperties(type: ts.Type): ComponentProperty[] {
+    extractProperties(type: ts.Type): ComponentProperty[] {
         return type.getApparentProperties()
-            .filter(symbol => symbol.declarations?.every(needsImplementation))
             .map(symbol => {
                 const symbolType = this.typeChecker.getTypeOfSymbol(symbol)
                 if (symbol.flags & ts.SymbolFlags.Method) {
-                    const callSignatures = symbolType.getCallSignatures()
-                    if (callSignatures.length !== 1) {
-                        throw Error("TODO")
-                    }
-                    const callSignature = callSignatures[0]
-                    return {
-                        symbol,
-                        returnType: callSignature.getReturnType(),
-                        parameters: callSignature.getParameters(),
-                        optional: false,
+                    const declaration = symbol.valueDeclaration
+                    if (declaration && ts.isMethodDeclaration(declaration)) {
+                        return {
+                            symbol,
+                            returnType: this.typeChecker.getTypeAtLocation(declaration.type ?? declaration),
+                            parameters: declaration.parameters,
+                            optional: false,
+                        }
+                    } else {
+                        this.errorReporter.reportParseFailed(`Failed to get method declaration for property '${symbol.name}'!`, symbol.valueDeclaration)
                     }
                 }
                 const optional = !!(symbol.flags & ts.SymbolFlags.Optional)
@@ -61,15 +49,9 @@ export class PropertyExtractor {
                 }
             })
     }
-
-    typeFromPropertyDeclaration(property: PropertyLike): QualifiedType {
-        return createQualifiedType({
-            type: this.typeChecker.getTypeAtLocation(property.type ?? property)!,
-        })
-    }
 }
 
-function needsImplementation(declaration: ts.Declaration): boolean {
+export function needsImplementation(declaration: ts.Declaration): boolean {
     if (ts.isPropertyDeclaration(declaration) || ts.isAutoAccessorPropertyDeclaration(declaration)) {
         return declaration.initializer === undefined
     }

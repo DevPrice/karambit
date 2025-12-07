@@ -37,7 +37,7 @@ For a minimal example project, check out the [Hello World sample](samples/hello_
 The CLI has a simple command to run code generation.
 
 ```
-$ karambit path/to/your/tsconfig.json -o output-dir
+$ karambit path/to/your/tsconfig.json -o output-file.ts
 ```
 
 A simple build script would look like:
