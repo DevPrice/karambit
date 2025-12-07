@@ -1,8 +1,8 @@
 import * as ts from "typescript"
 import {KarambitProgramComponent} from "./karambit-generated/src/Component"
-import type {Logger} from "./Util"
+import type {Logger} from "./public-types"
 
-export {KarambitError, KarambitErrorScope} from "./KarambitError"
+export * from "./public-types"
 
 type ConstructorType<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> = abstract new (...args: ConstructorParameters<T>) => InstanceType<T>
 

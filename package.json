@@ -18,6 +18,7 @@
     "LICENSE.txt",
     "build/karambit.d.ts",
     "build/KarambitError.d.ts",
+    "build/public-types.d.ts",
     "bin/**/*.js",
     "build/**/*.js"
   ],

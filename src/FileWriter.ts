@@ -2,7 +2,7 @@ import {Inject} from "karambit-decorators"
 import * as ts from "typescript"
 import * as Path from "path"
 import * as fs from "fs"
-import {Logger} from "./Util"
+import {Logger} from "./public-types"
 
 export interface ComponentWriter {
     writeComponentFile(sourceFile: ts.SourceFile, outputFilename: string): void
