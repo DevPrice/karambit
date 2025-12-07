@@ -13,12 +13,18 @@ export type SubcomponentFactoryLocatorFactory = (installedSubcomponents: Contain
  */
 export class SubcomponentFactoryLocator {
 
+    private aliasMap: Map<ts.Symbol, ts.Symbol> = new Map()
+
     constructor(
         private readonly typeChecker: ts.TypeChecker,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly constructorHelper: ConstructorHelper,
-        /** @assisted */ private readonly installedSubcomponents: Container<ts.Symbol>,
-    ) { }
+        /** @assisted */ installedSubcomponents: Container<ts.Symbol>,
+    ) {
+        for (const subcomponent of installedSubcomponents.keys()) {
+            this.aliasMap.set(nodeDetector.getAliasedTypeSymbol(subcomponent), subcomponent)
+        }
+    }
 
     @bound
     @memoized
@@ -34,8 +40,9 @@ export class SubcomponentFactoryLocator {
         if (!signatureDeclaration || ts.isJSDocSignature(signatureDeclaration)) return undefined
 
         const returnType = signature.getReturnType()
-        if (!this.installedSubcomponents.has(returnType.symbol)) return undefined
-        const declarations = returnType.getSymbol()?.declarations
+        const subcomponentType = returnType.symbol && this.aliasMap.get(returnType.symbol)
+        if (!subcomponentType) return undefined
+        const declarations = subcomponentType.declarations
         if (!declarations || declarations.length === 0) return undefined
 
         const declaration = declarations[0]

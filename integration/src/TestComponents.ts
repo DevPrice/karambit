@@ -150,6 +150,12 @@ export abstract class GrandChildSubcomponent {
     abstract readonly newClass: NestedWithParentProvidedArg
 }
 
+export interface ChildSubcomponentInterface {
+    readonly sum: number
+    readonly parentClass: ParentClass
+    readonly grandChildSubcomponentFactory: (dep: GrandChildDependency) => GrandChildSubcomponent
+}
+
 /**
  * @subcomponent
  * @scope {@link ChildScope}
@@ -157,11 +163,7 @@ export abstract class GrandChildSubcomponent {
  * @includeSubcomponent {@link GrandChildSubcomponent}
  * @factory {@link ChildSubcomponentFactory}
  */
-export interface ChildSubcomponent {
-    readonly sum: number
-    readonly parentClass: ParentClass
-    readonly grandChildSubcomponentFactory: (dep: GrandChildDependency) => GrandChildSubcomponent
-}
+export type ChildSubcomponent = ChildSubcomponentInterface
 export type ChildSubcomponentFactory = (/** @bindsInstance */ values: number[]) => ChildSubcomponent
 
 /** @inject */

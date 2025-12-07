@@ -80,19 +80,13 @@ export class InjectNodeDetector {
                 const linkTag = linkTags[0]
                 const symbol = linkTag.name && this.typeChecker.getSymbolAtLocation(linkTag.name)
                 const originalSymbol = symbol && this.getOriginalSymbol(symbol)
-                const symbolType = originalSymbol && this.typeChecker.getTypeOfSymbol(originalSymbol)
-                if (originalSymbol && originalSymbol.flags & ts.SymbolFlags.TypeAlias) {
-                    const declarations = originalSymbol?.declarations ?? []
-                    const declaration = declarations && declarations.length === 1 && declarations[0]
-                    const declarationType = declaration && this.typeChecker.getTypeAtLocation(declaration)
-                    if (declarationType) {
-                        return this.getOriginalSymbol(declarationType.symbol)
-                    }
-                } else if (symbolType && this.isValidTagScope(symbolType)) {
-                    return originalSymbol
+                const aliasedSymbol = originalSymbol && this.getAliasedTypeSymbol(originalSymbol)
+
+                if (!aliasedSymbol || !this.isValidTagScope(this.typeChecker.getTypeOfSymbol(aliasedSymbol))) {
+                    this.errorReporter.reportParseFailed("Invalid scope reference, should reference a `unique symbol` declaration or type alias!", linkTag)
                 }
 
-                this.errorReporter.reportParseFailed("Invalid scope reference, should reference a `unique symbol` declaration or type alias!", linkTag)
+                return aliasedSymbol
             }
             if (scopeTag && typeof scopeTag.comment === "string") {
                 if (!isValidIdentifier(scopeTag.comment)) {
@@ -101,6 +95,20 @@ export class InjectNodeDetector {
                 return scopeTag.comment
             }
         }
+    }
+
+    @bound
+    getAliasedTypeSymbol(symbol: ts.Symbol): ts.Symbol {
+        const originalSymbol = this.getOriginalSymbol(symbol)
+        if (originalSymbol.flags & ts.SymbolFlags.TypeAlias) {
+            const declarations = originalSymbol.declarations ?? []
+            const declaration = declarations && declarations.length === 1 && declarations[0]
+            const declarationType = declaration && this.typeChecker.getTypeAtLocation(declaration)
+            if (declarationType) {
+                return this.getOriginalSymbol(declarationType.symbol)
+            }
+        }
+        return originalSymbol
     }
 
     private isValidTagScope(type: ts.Type): boolean {
