@@ -60,6 +60,10 @@ export class ModuleLocator {
                 if (!symbol) {
                     this.errorReporter.reportParseFailed("Expected valid symbol!", tag)
                 }
+                const declarations = symbol?.declarations ?? []
+                if (declarations.some(this.nodeDetector.getComponentAnnotation) || declarations.some(this.nodeDetector.getSubcomponentAnnotation)) {
+                    this.errorReporter.reportParseFailed("@includeModule should NOT reference a Component or Subcomponent!", tag)
+                }
                 return symbol
             })
             .map(this.nodeDetector.getOriginalSymbol)
@@ -96,6 +100,10 @@ export class ModuleLocator {
                     const symbol = tag.name && this.typeChecker.getSymbolAtLocation(tag.name)
                     if (!symbol) {
                         this.errorReporter.reportParseFailed("Expected valid symbol!", tag)
+                    }
+                    const declarations = symbol?.declarations ?? []
+                    if (!declarations.some(this.nodeDetector.getSubcomponentAnnotation)) {
+                        this.errorReporter.reportParseFailed("@includeSubcomponent should reference a declaration marked @subcomponent!", tag)
                     }
                     return this.nodeDetector.getOriginalSymbol(symbol)
                 })
