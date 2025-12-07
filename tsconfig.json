@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
     "target": "es2022",
-    "outDir": "build",
-    "module": "CommonJS",
+    "rootDir": "./src",
+    "outDir": "./build",
+    "module": "Node16",
     "declaration": true,
     "removeComments": true,
     "noImplicitAny": true,

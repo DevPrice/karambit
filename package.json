@@ -8,7 +8,9 @@
     "ioc",
     "inject"
   ],
-  "main": "build/karambit.js",
+  "exports": {
+    ".": "./build/karambit.js"
+  },
   "bin": {
     "karambit": "bin/index.js"
   },
