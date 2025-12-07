@@ -61,15 +61,17 @@ export class ModuleLocator {
                 }
                 return symbol
             })
+            .map(this.nodeDetector.getOriginalSymbol)
     }
 
     private getModulesFromSymbols(symbols: ts.Symbol[]): Module[] {
         const installedModules: Map<ts.Symbol, Module> = new Map()
         let symbol: ts.Symbol | undefined
         while (symbol = symbols.shift()) { // eslint-disable-line
-            if (!installedModules.has(symbol)) {
-                const module = this.getModuleForSymbol(symbol)
-                installedModules.set(symbol, module)
+            const originalSymbol = this.nodeDetector.getOriginalSymbol(symbol)
+            if (!installedModules.has(originalSymbol)) {
+                const module = this.getModuleForSymbol(originalSymbol)
+                installedModules.set(originalSymbol, module)
                 symbols.push(...module.includes)
             }
         }
@@ -94,7 +96,7 @@ export class ModuleLocator {
                     if (!symbol) {
                         this.errorReporter.reportParseFailed("Expected valid symbol!", tag)
                     }
-                    return symbol
+                    return this.nodeDetector.getOriginalSymbol(symbol)
                 })
         }
         if (decorator) {
@@ -250,5 +252,6 @@ export class ModuleLocator {
         return arrayLiteral.elements
             .map(it => this.typeChecker.getTypeAtLocation(it).getSymbol())
             .filter(isNotNull)
+            .map(this.nodeDetector.getOriginalSymbol)
     }
 }

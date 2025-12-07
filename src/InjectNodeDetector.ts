@@ -431,6 +431,7 @@ export class InjectNodeDetector {
         return new Set(type.getProperties().map(it => it.name))
     }
 
+    @bound
     getOriginalSymbol(symbol: ts.Symbol): ts.Symbol {
         if (symbol.flags & ts.SymbolFlags.Alias) {
             return this.typeChecker.getAliasedSymbol(symbol)
