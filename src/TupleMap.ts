@@ -96,5 +96,7 @@ export class TupleMap<K extends ReadonlyArray<unknown>, V> implements Map<K, V> 
         throw new Error("Not implemented")
     }
 
-    readonly [Symbol.toStringTag]: string
+    get [Symbol.toStringTag](): string {
+        return this.backingMap.toString()
+    }
 }
