@@ -20,39 +20,21 @@ import {ComponentDeclaration, isComponentDeclaration} from "./TypescriptUtil"
 declare const generatedQualifier: unique symbol
 type GeneratedSourceFile = ts.SourceFile & Qualified<typeof generatedQualifier>
 
-export abstract class ComponentGenerationModule {
-
-    /**
-     * @provides
-     * @reusable
-     */
-    static provideGeneratedComponent(generator: ComponentGenerator): GeneratedComponent {
-        return generator.generateComponent()
-    }
-}
-
 /**
- * @subcomponent
- * @includeModule {@link ComponentGenerationModule}
- * @scope {@link ComponentGenerationScope}
- * @factory {@link ComponentGenerationSubcomponentFactory}
+ * @component
+ * @includeModule {@link ProgramModule}
+ * @includeSubcomponent {@link SourceFileSubcomponent}
+ * @scope {@link ProgramScope}
  */
-export interface ComponentGenerationSubcomponent extends ComponentGeneratorDependencies { }
-export type ComponentGenerationSubcomponentFactory = (/** @bindsInstance */ componentDeclaration: ComponentDeclaration) => ComponentGenerationSubcomponent
+export abstract class ProgramComponent {
 
-export abstract class SourceFileModule {
+    protected constructor(/** @bindsInstance */ program: ts.Program, /** @bindsInstance */ private readonly options: KarambitOptions) { }
 
-    /** @binds */
-    abstract bindComponentGeneratorDependenciesFactory: (
-        factory: ComponentGenerationSubcomponentFactory
-    ) => ComponentGeneratorDependenciesFactory
+    protected abstract readonly fileWriter: ComponentWriter
+    protected abstract readonly generatedFile: GeneratedSourceFile
 
-    /**
-     * @provides
-     * @intoSet
-     */
-    static provideAnnotationValidationVisitor(annotationValidator: AnnotationValidator): SourceFileVisitor {
-        return annotationValidator.validateAnnotations
+    generateComponentFile() {
+        this.fileWriter.writeComponentFile(this.generatedFile, this.options.outFile)
     }
 }
 
@@ -69,6 +51,15 @@ export interface SourceFileSubcomponent {
     readonly nodeDetector: InjectNodeDetector
 }
 export type SourceFileSubcomponentFactory = (/** @bindsInstance */ sourceFile: ts.SourceFile) => SourceFileSubcomponent
+
+/**
+ * @subcomponent
+ * @includeModule {@link ComponentGenerationModule}
+ * @scope {@link ComponentGenerationScope}
+ * @factory {@link ComponentGenerationSubcomponentFactory}
+ */
+export type ComponentGenerationSubcomponent = ComponentGeneratorDependencies
+export type ComponentGenerationSubcomponentFactory = (/** @bindsInstance */ componentDeclaration: ComponentDeclaration) => ComponentGenerationSubcomponent
 
 export abstract class ProgramModule {
 
@@ -161,20 +152,29 @@ export abstract class ProgramModule {
     }
 }
 
-/**
- * @component
- * @includeModule {@link ProgramModule}
- * @includeSubcomponent {@link SourceFileSubcomponent}
- * @scope {@link ProgramScope}
- */
-export abstract class ProgramComponent {
+export abstract class SourceFileModule {
 
-    protected constructor(/** @bindsInstance */ program: ts.Program, /** @bindsInstance */ private readonly options: KarambitOptions) { }
+    /** @binds */
+    abstract bindComponentGeneratorDependenciesFactory: (
+        factory: ComponentGenerationSubcomponentFactory
+    ) => ComponentGeneratorDependenciesFactory
 
-    protected abstract readonly fileWriter: ComponentWriter
-    protected abstract readonly generatedFile: GeneratedSourceFile
+    /**
+     * @provides
+     * @intoSet
+     */
+    static provideAnnotationValidationVisitor(annotationValidator: AnnotationValidator): SourceFileVisitor {
+        return annotationValidator.validateAnnotations
+    }
+}
 
-    generateComponentFile() {
-        this.fileWriter.writeComponentFile(this.generatedFile, this.options.outFile)
+export abstract class ComponentGenerationModule {
+
+    /**
+     * @provides
+     * @reusable
+     */
+    static provideGeneratedComponent(generator: ComponentGenerator): GeneratedComponent {
+        return generator.generateComponent()
     }
 }
