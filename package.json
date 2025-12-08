@@ -32,8 +32,8 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "check": "npm run lint && npm run test",
-    "prerelease": "npm run clean && npm run --prefix decorators build",
-    "release": "npm run build && npm run check",
+    "prerelease": "npm run clean",
+    "release": "npm run build && npm run --prefix decorators build && npm run check",
     "prerelease-version": "version-from-git --no-git-tag-version --no-commit-hooks"
   },
   "author": "DevPrice",
