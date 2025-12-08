@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import * as Path from "node:path"
 import * as fs from "fs"
 import {hideBin} from "yargs/helpers"
@@ -97,9 +97,7 @@ yargs(hideBin(process.argv))
                 process.exit(1)
             }
 
-            const tsconfigFile = fs.lstatSync(args.tsconfig).isDirectory()
-                ? Path.join(args.tsconfig, "tsconfig.json")
-                : args.tsconfig
+            const tsconfigFile = getFile(args.tsconfig, "tsconfig.json")
 
             const configFile = ts.readConfigFile(tsconfigFile, ts.sys.readFile)
             if (configFile.error) {
@@ -126,36 +124,40 @@ yargs(hideBin(process.argv))
     )
     .parseSync()
 
+function getFile(input: string, defaultFilename: string) {
+    return fs.lstatSync(input).isDirectory()
+        ? Path.join(input, defaultFilename)
+        : input
+}
+
 function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
     const program = ts.createProgram(fileNames, {...compilerOptions, incremental: false})
     process.exit(generateFromProgram(program, compilerOptions, cliOptions))
 }
 
 function watchComponents(fileNames: string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
-    const watchRef: {value?: ts.WatchOfFilesAndCompilerOptions<ts.SemanticDiagnosticsBuilderProgram>} = {}
-    watchRef.value = ts.createWatchProgram(
+    // TODO: When Karambit generates its output, it causes TS to recreate the program, causing Karambit to regenerate again if it changed...
+    const createProgram: ts.CreateProgram<ts.SemanticDiagnosticsBuilderProgram> = (...args) => {
+        const program = ts.createSemanticDiagnosticsBuilderProgram(...args)
+        process.stdout.write("Regenerating Karambit output...")
+        const result = generateFromProgram(program.getProgram(), program.getCompilerOptions(), cliOptions)
+        if (result === 0) {
+            process.stdout.write(" done.\n")
+        } else {
+            process.stdout.write("\n")
+        }
+        return program
+    }
+    ts.createWatchProgram(
         ts.createWatchCompilerHost(
-            fileNames.filter(file => file !== cliOptions.output),
+            fileNames,
             compilerOptions,
             ts.sys,
-            ts.createEmitAndSemanticDiagnosticsBuilderProgram,
-            diagnostic => {
-                const watch = watchRef.value
-                if (watch) {
-                    process.stdout.write("Regenerating Karambit output...")
-                    const result = generateFromProgram(watch.getProgram().getProgram(), watch.getProgram().getCompilerOptions(), cliOptions)
-                    if (result === 0) {
-                        process.stdout.write(" done.\n")
-                    } else {
-                        process.stdout.write("\n")
-                        console.error(diagnostic.messageText)
-                    }
-                }
-            },
+            createProgram,
+            () => {},
             () => {},
         )
     )
-    generateFromProgram(watchRef.value.getProgram().getProgram(), watchRef.value.getProgram().getCompilerOptions(), cliOptions)
 }
 
 function generateFromProgram(program: ts.Program, compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): number {
