@@ -1,8 +1,10 @@
 {
   "compilerOptions": {
     "target": "es2023",
-    "outDir": "lib",
-    "module": "CommonJS",
+    "rootDir": "./src",
+    "outDir": "./lib",
+    "tsBuildInfoFile": "./lib/.tsbuildinfo",
+    "module": "Node16",
     "strict": true,
     "declaration": true,
     "removeComments": true,

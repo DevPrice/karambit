@@ -3,6 +3,7 @@
     "target": "es2022",
     "rootDir": "./src",
     "outDir": "./build",
+    "tsBuildInfoFile": "./build/.tsbuildinfo",
     "module": "Node16",
     "declaration": true,
     "removeComments": true,

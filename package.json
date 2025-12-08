@@ -54,7 +54,7 @@
     "globals": "^15.11.0",
     "husky": "^8.0.1",
     "jest": "^29.7.0",
-    "karambit-inject": "^4.0.3",
+    "karambit-inject": "^4.0.4",
     "lint-staged": "^15.2.10",
     "ts-jest": "^29.2.5",
     "typescript": "^5.9.3",
