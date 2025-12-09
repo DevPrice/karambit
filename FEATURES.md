@@ -154,23 +154,30 @@ Modules are installed using the `@includeModule` tag. Modules can be installed t
 Often, you want to bind an interface to a specific concrete instance. You might normally do so like this:
 ```typescript
 /** @provides */
-static provideAnimal(dog: Dog): Animal {
-    return dog
+export const AnimalModule = {
+    /** @provides */
+    provideAnimal(dog: Dog): Animal {
+        return dog
+    },
 }
 ```
 
 `@binds` can simplify this type of binding and will result in simpler generated code. The above provider could be replaced with:
 ```typescript
-/** @binds */
-abstract bindAnimal(dog: Dog): Animal
+export interface AnimalModule {
+    /** @binds */
+    bindAnimal(dog: Dog): Animal
+}
 ```
 
 `@binds` methods must be abstract and have a callable type with exactly one argument. The argument type must be assignable to the return type.
 
 `@binds` can also be used with property declarations with the same restrictions:
 ```typescript
-/** @binds */
-abstract bindAnimal: (dog: Dog) => Animal
+export interface AnimalModule {
+    /** @binds */
+    bindAnimal: (dog: Dog) => Animal
+}
 ```
 
 ### Includes

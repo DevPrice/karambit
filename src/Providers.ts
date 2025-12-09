@@ -36,10 +36,11 @@ export function isPropertyProvider(provider: InstanceProvider): provider is Prop
 }
 
 export function isModuleLike(node: ts.Node): node is ModuleLike {
-    return ts.isClassDeclaration(node) || ts.isVariableDeclaration(node)
+    return ts.isClassDeclaration(node) || ts.isVariableDeclaration(node) || ts.isInterfaceDeclaration(node)
 }
 
-export type ModuleLike = ts.ClassDeclaration | ts.VariableDeclaration
+export type ModuleLike = ts.ClassDeclaration | ts.VariableDeclaration | ts.InterfaceDeclaration
+export type ModuleProviderLike = ts.MethodDeclaration | ts.PropertyDeclaration | ts.MethodSignature
 
 export interface ProvidesMethod {
     readonly providerType: ProviderType.PROVIDES_METHOD

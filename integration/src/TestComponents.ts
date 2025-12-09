@@ -198,11 +198,10 @@ export interface ScopedSubcomponent {
 
 export interface ParentInterface { }
 
-// test that modules with no Decorator are valid
+/**
+ * @includeModule {@link ParentInterfaceModule}
+ */
 export abstract class ParentModule {
-
-    /** @binds */
-    abstract bindParentClassInterface(concrete: ParentClass): ParentClassInterface
 
     @Binds()
     abstract bindChildSubcomponentFactory: (factory: (values: number[]) => ChildSubcomponent) => ChildSubcomponentFactory
@@ -211,6 +210,11 @@ export abstract class ParentModule {
     static provideParentInterface(): ParentInterface {
         return {}
     }
+}
+
+export interface ParentInterfaceModule {
+    /** @binds */
+    bindParentClassInterface(concrete: ParentClass): ParentClassInterface
 }
 
 export interface ParentClassInterface {

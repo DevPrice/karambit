@@ -11,7 +11,7 @@ import {ComponentLikeDeclaration, isValidIdentifier} from "./TypescriptUtil"
 export interface Binding {
     paramType: QualifiedType
     returnType: QualifiedType
-    declaration: ts.MethodDeclaration | ts.PropertyDeclaration
+    declaration: ts.MethodDeclaration | ts.PropertyDeclaration | ts.MethodSignature
 }
 
 export interface Module {
@@ -187,20 +187,18 @@ export class ModuleLocator {
     }
 
     @bound
-    private getBinding(method: ts.MethodDeclaration): Binding {
-        if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword)) {
+    private getBinding(method: ts.MethodDeclaration | ts.MethodSignature): Binding {
+        if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword) && !ts.isMethodSignature(method)) {
             this.errorReporter.reportBindingNotAbstract(method)
         }
         const signature = this.typeChecker.getSignatureFromDeclaration(method)!
         const returnType = createQualifiedType({
-            type: signature.getReturnType(),
-            qualifier: this.nodeDetector.getQualifier(method)
+            type: signature.getReturnType()
         })
         const parameters = method.parameters
         if (parameters.length != 1) this.errorReporter.reportInvalidBindingArguments(method)
         const paramType = createQualifiedType({
-            type: this.typeChecker.getTypeAtLocation(parameters[0].type ?? parameters[0]),
-            qualifier: this.nodeDetector.getQualifier(parameters[0])
+            type: this.typeChecker.getTypeAtLocation(parameters[0].type ?? parameters[0])
         })
         if (paramType === returnType) this.errorReporter.reportTypeBoundToSelf(method)
         const assignable = this.typeChecker.isTypeAssignableTo(paramType.type, returnType.type)
@@ -257,9 +255,12 @@ export class ModuleLocator {
         return {factories, bindings}
     }
 
-    private getMethods(module: ModuleLike): ts.MethodDeclaration[] {
+    private getMethods(module: ModuleLike): (ts.MethodDeclaration | ts.MethodSignature)[] {
         if (ts.isClassDeclaration(module)) {
             return module.members.filter(ts.isMethodDeclaration)
+        }
+        if (ts.isInterfaceDeclaration(module)) {
+            return module.members.filter(ts.isMethodSignature)
         }
         if (module.initializer && ts.isObjectLiteralExpression(module.initializer)) {
             return module.initializer.properties.filter(ts.isMethodDeclaration)

@@ -5,6 +5,7 @@ import {bound, isNotNull} from "./Util"
 import {Hacks} from "./Hacks"
 import {KarambitOptions} from "./karambit"
 import {Annotated, AnnotationLike, ComponentScope, isJSDocTag, isValidIdentifier, reusableScope} from "./TypescriptUtil"
+import {ModuleProviderLike} from "./Providers"
 
 export const KarambitAnnotationTag = {
     component: "component",
@@ -304,7 +305,7 @@ export class InjectNodeDetector {
     }
 
     @bound
-    getMapBindingInfo(returnType: QualifiedType, declaration: ts.MethodDeclaration | ts.PropertyDeclaration): {keyType: ts.Type, valueType: QualifiedType, expression?: ts.Expression} | undefined {
+    getMapBindingInfo(returnType: QualifiedType, declaration: ModuleProviderLike): {keyType: ts.Type, valueType: QualifiedType, expression?: ts.Expression} | undefined {
         const keyInfo = this.getMapKey(declaration)
         if (keyInfo) return {...keyInfo, valueType: returnType}
 
@@ -324,7 +325,8 @@ export class InjectNodeDetector {
         return undefined
     }
 
-    private getMapKey(declaration: ts.MethodDeclaration | ts.PropertyDeclaration): {keyType: ts.Type, expression: ts.Expression} | undefined {
+    private getMapKey(declaration: ModuleProviderLike): {keyType: ts.Type, expression: ts.Expression} | undefined {
+        if (ts.isMethodSignature(declaration)) return undefined
         const decorators = declaration.modifiers?.filter(this.isMapKeyDecorator)
         if (!decorators || decorators.length !== 1) return undefined
         const decorator = decorators[0]
