@@ -100,11 +100,11 @@ A module is a collection of static methods marked with `@provides` and each Comp
 In our example, the `string` type is provided in the `HelloWorldModule`:
 
 ```typescript
-export abstract class HelloWorldModule {
+export const HelloWorldModule = {
     /** @provides */
-    static provideGreeting(): string {
+    provideGreeting(): string {
         return "Hello"
-    }
+    },
 }
 ```
 

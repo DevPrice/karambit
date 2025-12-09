@@ -7,11 +7,11 @@ export class Greeter {
     }
 }
 
-export abstract class HelloWorldModule {
+export const HelloWorldModule = {
     /** @provides */
-    static provideGreeting(): string {
+    provideGreeting(): string {
         return "Hello"
-    }
+    },
 }
 
 /**

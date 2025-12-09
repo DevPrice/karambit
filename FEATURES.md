@@ -118,6 +118,17 @@ When Karambit needs an instance of a type, it will look for an installed Module 
 
 In the Hello World sample, the `string` type is provided via a `@provides` method:
 ```typescript
+export const HelloWorldModule = {
+    /** @provides */
+    provideGreeting(): string {
+        return "Hello"
+    },
+}
+```
+
+Modules can alternatively be defined as abstract classes, which allows mixing `@provides` and `@binds` within a single module.
+
+```typescript
 export abstract class HelloWorldModule {
     /** @provides */
     static provideGreeting(): string {
@@ -127,7 +138,7 @@ export abstract class HelloWorldModule {
 ```
 
 > **Note**
-> Provides methods must be static.
+> Provides methods defined in a class must be static.
 
 Modules are installed using the `@includeModule` tag. Modules can be installed to Components, Subcomponents, and even other Modules.
 
