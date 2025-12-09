@@ -145,7 +145,7 @@ function getFile(input: string, defaultFilename: string) {
 }
 
 function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
-    const program = ts.createProgram(fileNames, {...compilerOptions, incremental: false})
+    const program = ts.createProgram(fileNames, {...compilerOptions, incremental: compilerOptions.incremental && !!compilerOptions.tsBuildInfoFile})
     process.exit(generateFromProgram(program, compilerOptions, cliOptions))
 }
 
