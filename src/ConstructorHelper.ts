@@ -59,7 +59,7 @@ export class ConstructorHelper {
                 this.errorReporter.reportParseFailed("Component factory type must be a type alias declaration of function type!", linkTag)
             }
             if (!declaration.modifiers?.some(modifier => modifier.kind === ts.SyntaxKind.ExportKeyword)) {
-                this.errorReporter.reportParseFailed("Component factory type exported!", declaration)
+                this.errorReporter.reportParseFailed("Component factory type must be exported!", declaration)
             }
             const parameters = declaration.type.parameters.map((param, index) => {
                 return {

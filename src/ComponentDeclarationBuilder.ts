@@ -260,7 +260,7 @@ export class ComponentDeclarationBuilder {
             undefined,
             undefined,
             [],
-            undefined,
+            factory.factorySymbol && ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(factory.factorySymbol)),
             ts.factory.createBlock(
                 [
                     ts.factory.createReturnStatement(
@@ -274,7 +274,7 @@ export class ComponentDeclarationBuilder {
                                     it.name,
                                     undefined,
                                     factory.factorySymbol
-                                        ? paramType(ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(factory.factorySymbol)), it.index)
+                                        ? undefined
                                         : this.constructorParamTypeNode(
                                             ts.factory.createTypeQueryNode(
                                                 ts.factory.createQualifiedName(
