@@ -22,6 +22,8 @@ const scriptTargets: ReadonlyMap<string, ts.ScriptTarget> = new Map(
 interface GenerateCommandOptions {
     tsconfig: string
     output: string
+    include?: string[]
+    exclude?: string[]
     verbose: boolean
     dryRun: boolean
     nameMaxLength: number
@@ -47,6 +49,18 @@ yargs(hideBin(process.argv))
                 alias: "o",
                 description: "Output file",
                 default: "gen/karambit.ts",
+            })
+            .option("include", {
+                type: "array",
+                string: true,
+                alias: "i",
+                description: "Specify source files to include. Includes all source files by default",
+            })
+            .option("exclude", {
+                type: "array",
+                string: true,
+                alias: "e",
+                description: "Specify source files to exclude",
             })
             .option("watch", {
                 type: "boolean",
@@ -165,6 +179,8 @@ function generateFromProgram(program: ts.Program, compilerOptions: ts.CompilerOp
         generateComponentFiles(program, {
             sourceRoot: Path.dirname(cliOptions.tsconfig),
             outFile: cliOptions.output,
+            include: cliOptions.include,
+            exclude: cliOptions.exclude,
             dryRun: cliOptions.dryRun,
             nameMaxLength: cliOptions.nameMaxLength,
             allowEmptyModules: cliOptions.allowEmptyModules,

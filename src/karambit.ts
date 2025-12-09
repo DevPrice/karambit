@@ -41,6 +41,8 @@ export interface KarambitOptions {
     allowEmptyOutput: boolean
     enableDocTags: boolean
     outputScriptTarget: ts.ScriptTarget
+    include?: string[]
+    exclude?: string[]
     logger?: Logger
     printerOptions?: ts.PrinterOptions
 }

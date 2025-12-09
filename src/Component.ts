@@ -1,4 +1,5 @@
 import * as ts from "typescript"
+import picomatch from "picomatch"
 import {Provider, Qualified} from "karambit-inject"
 import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
 import type {SourceFileGenerator} from "./SourceFileGenerator"
@@ -120,10 +121,21 @@ export abstract class ProgramModule {
         program: ts.Program,
         logger: Logger,
         sourceFileSubcomponentFactory: SourceFileSubcomponentFactory,
+        options: KarambitOptions,
     ) {
         // TODO: Avoid business logic in the module
+        const includes = options?.include && picomatch(options.include.map(platformizePath))
+        const excludes = options?.exclude && picomatch(options.exclude.map(platformizePath))
+        function normalizePath(file: string): string {
+            return platformizePath(Path.relative(".", file))
+        }
+        function platformizePath(file: string): string {
+            return file.replaceAll(Path.sep, Path.posix.sep)
+        }
         return program.getSourceFiles()
             .filter(sourceFile => !program.isSourceFileFromExternalLibrary(sourceFile) && !program.isSourceFileDefaultLibrary(sourceFile))
+            .filter(sourceFile => !includes || includes(normalizePath(sourceFile.fileName)))
+            .filter(sourceFile => !excludes || !excludes(normalizePath(sourceFile.fileName)))
             .flatMap(sourceFile => {
                 logger.debug(`Reading ${Path.relative(".", sourceFile.fileName)}...`)
                 const sourceFileComponent = sourceFileSubcomponentFactory(sourceFile)
