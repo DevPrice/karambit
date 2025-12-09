@@ -95,7 +95,7 @@ export class Greeter {
 
 The constructor of `Greeter` depends on one other type: `string`. However, we can't simply mark `string`'s constructor with `@inject`.  This is where Modules come in to play.
 
-A module is a collection of static methods marked with `@provides` and each Component can install many Modules. These provider methods work just like `@inject` constructors; they can have arguments and will be used by Karambit to provide an instance of their return type.
+A module is a collection of methods marked with `@provides` and each Component can install many Modules. These provider methods work just like `@inject` constructors; they can have arguments and will be used by Karambit to provide an instance of their return type.
 
 In our example, the `string` type is provided in the `HelloWorldModule`:
 
