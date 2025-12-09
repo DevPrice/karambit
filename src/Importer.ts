@@ -28,6 +28,7 @@ export class Importer {
         const identifier = this.getImportIdentifier(importSpecifier)
 
         if (this.newImports.has(importSpecifier)) return identifier
+        // TODO: This should probably be checking if the symbol is globally accessible instead
         if (importSpecifier !== "typescript" || Path.basename(importSourceFile.fileName) === "typescript.d.ts") {
             this.addImport(importSpecifier)
         }
@@ -94,18 +95,15 @@ export class Importer {
     }
 
     private getImportSpecifier(fileToImport: ts.SourceFile): string {
-        const nodeModuleRegex = /(?:^|\/)node_modules\/((?:@[^/]+\/)?[^/]+)/
-        const match = nodeModuleRegex.exec(fileToImport.fileName)
-        if (match) return match[1]
-        const generatedFileDir = Path.relative(
-            this.karambitOptions.sourceRoot,
-            Path.dirname(this.karambitOptions.outFile),
-        )
-        const outputPath = Path.relative(generatedFileDir, fileToImport.fileName).replace(/\.ts$/, "")
-        if (Path.sep === "\\") {
-            // Windows can handle '/' characters, but Unix-like environments don't like '\'
-            return outputPath.replaceAll("\\", "/")
+        if (ts.isExternalModule(fileToImport) && fileToImport.moduleName) {
+            return fileToImport.moduleName
         }
-        return outputPath
+        const outDir = Path.dirname(this.karambitOptions.outFile)
+        const outputPath = Path.relative(outDir, fileToImport.fileName)
+            .replaceAll(Path.sep, Path.posix.sep)
+            .replace(/\.ts$/, "")
+        return outDir === Path.dirname(fileToImport.fileName)
+            ? "./" + outputPath
+            : outputPath
     }
 }
