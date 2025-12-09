@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound, isNotNull} from "./Util"

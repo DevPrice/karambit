@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import * as Path from "path"
 import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {
@@ -14,11 +14,9 @@ import {
 import {filterTree, isNotNull, printTreeMap} from "./Util"
 import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
 import {Binding} from "./ModuleLocator"
-import {Chalk} from "chalk"
+import chalk from "chalk"
 import {KarambitError, KarambitErrorScope} from "./KarambitError"
 import {ComponentDeclaration, ComponentScope, scopeToString} from "./TypescriptUtil"
-
-const chalk: Chalk = require("chalk")
 
 type ErrorContext = ts.Node | ts.Node[]
 

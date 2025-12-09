@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 
 /**
  * Wraps hacky calls to non-public TypeScript APIs.

@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 
 export interface Annotated extends ts.Node {
     name?: { getText: () => string }

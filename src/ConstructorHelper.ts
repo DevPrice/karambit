@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
 import {createQualifiedType} from "./QualifiedType"
 import {ComponentFactory, ConstructorParameter} from "./Providers"

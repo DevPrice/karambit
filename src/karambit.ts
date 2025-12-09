@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import {KarambitProgramComponent} from "./karambit-generated/karambit"
 import type {Logger} from "./Util"
 

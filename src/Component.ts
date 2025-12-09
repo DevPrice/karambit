@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import picomatch from "picomatch"
 import {Provider, Qualified} from "karambit-inject"
 import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"

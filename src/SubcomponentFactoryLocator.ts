@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import {createQualifiedType, internalQualifier} from "./QualifiedType"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ConstructorHelper} from "./ConstructorHelper"

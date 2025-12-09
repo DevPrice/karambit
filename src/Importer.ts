@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import * as Path from "path"
 import {ProgramScope} from "./Scopes"
 import {KarambitOptions} from "./karambit"

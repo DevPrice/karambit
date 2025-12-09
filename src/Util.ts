@@ -1,4 +1,4 @@
-import chalk = require("chalk")
+import chalk from "chalk"
 import {TupleMap} from "./TupleMap"
 
 export type Logger = Pick<typeof console, "debug" | "info" | "warn" | "error">

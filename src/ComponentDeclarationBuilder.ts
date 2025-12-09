@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {NameGenerator} from "./NameGenerator"
 import {Importer} from "./Importer"

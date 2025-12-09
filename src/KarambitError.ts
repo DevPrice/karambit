@@ -1,5 +1,5 @@
 import {ComponentDeclaration} from "./TypescriptUtil"
-import chalk = require("chalk")
+import chalk from "chalk"
 
 export enum KarambitErrorScope {
     INTERNAL = "Internal",

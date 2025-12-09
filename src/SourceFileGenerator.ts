@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import {GeneratedComponent} from "./ComponentGenerator"
 import {NameGenerator} from "./NameGenerator"
 import {isNotNull} from "./Util"

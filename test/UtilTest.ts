@@ -1,6 +1,6 @@
 import * as assert from "assert"
 import {filterTreeMap, printTreeMap} from "../src/Util"
-import chalk = require("chalk")
+import chalk from "chalk"
 
 describe("Util", () => {
     describe("Print trees", () => {

@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {MapMultibinding, PropertyProvider, ProviderType, ProvidesMethod, SetMultibinding} from "./Providers"
 import {TupleMap} from "./TupleMap"

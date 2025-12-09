@@ -2,7 +2,7 @@ import * as fs from "fs"
 import * as Path from "path"
 import * as assert from "assert"
 import {generateComponentFiles, KarambitError} from "karambit-inject"
-import * as ts from "typescript"
+import ts from "typescript"
 
 const failuresDir = "failures"
 

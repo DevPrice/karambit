@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import {Hacks} from "./Hacks"
 
 export const internalQualifier = Symbol("internal-qualifier")

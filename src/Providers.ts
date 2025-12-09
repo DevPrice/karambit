@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
 import {ComponentDeclaration, ComponentLikeDeclaration, ComponentScope} from "./TypescriptUtil"
 

@@ -2,7 +2,7 @@ import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {TypeResolver} from "./TypeResolver"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Container, findCycles, isNotNull, memoized} from "./Util"
-import * as ts from "typescript"
+import ts from "typescript"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {

@@ -1,4 +1,4 @@
-import * as ts from "typescript"
+import ts from "typescript"
 import * as Path from "path"
 import * as fs from "fs"
 import {Logger} from "./Util"

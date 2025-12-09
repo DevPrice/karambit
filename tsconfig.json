@@ -5,6 +5,7 @@
     "outDir": "./build",
     "tsBuildInfoFile": "./build/.tsbuildinfo",
     "module": "Node16",
+    "esModuleInterop": true,
     "declaration": true,
     "removeComments": true,
     "strict": true,
