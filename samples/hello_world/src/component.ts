@@ -1,3 +1,11 @@
+/**
+ * @component
+ * @includeModule {@link HelloWorldModule}
+ */
+export interface HelloWorldComponent {
+    readonly greeter: Greeter
+}
+
 /** @inject */
 export class Greeter {
     constructor(private readonly greeting: string) { }
@@ -12,12 +20,4 @@ export const HelloWorldModule = {
     provideGreeting(): string {
         return "Hello"
     },
-}
-
-/**
- * @component
- * @includeModule {@link HelloWorldModule}
- */
-export interface HelloWorldComponent {
-    readonly greeter: Greeter
 }
