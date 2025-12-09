@@ -1,7 +1,7 @@
 import ts from "typescript"
 import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
-import {ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
+import {isModuleLike, ModuleLike, ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
 import {ErrorReporter} from "./ErrorReporter"
 import {findAllChildren} from "./Visitor"
 import {bound, isNotNull, memoized} from "./Util"
@@ -45,7 +45,7 @@ export class ModuleLocator {
         return []
     }
 
-    private getInstalledFromTags(declaration: ComponentLikeDeclaration): ts.Symbol[] {
+    private getInstalledFromTags(declaration: ComponentLikeDeclaration | ModuleLike): ts.Symbol[] {
         const tags = this.nodeDetector.getJSDocTags(declaration, KarambitAnnotationTag.includeModule)
         return tags
             .flatMap(tag => {
@@ -130,10 +130,16 @@ export class ModuleLocator {
 
     @memoized
     private getModuleForSymbol(symbol: ts.Symbol): Module {
-        const declarations = this.nodeDetector.getOriginalSymbol(symbol).getDeclarations()?.filter(dec => ts.isClassDeclaration(dec))
+        const declarations = symbol.getDeclarations()?.filter(isModuleLike)
         if (declarations === undefined || declarations.length === 0) {
             this.errorReporter.reportParseFailed(`No declarations found for symbol '${symbol.name}'!`)
         }
+        declarations.forEach(declaration => {
+            // noinspection JSBitwiseOperatorUsage
+            if (ts.isVariableDeclaration(declaration) && (!ts.isVariableDeclarationList(declaration.parent) || !(declaration.parent.flags & ts.NodeFlags.Const))) {
+                this.errorReporter.reportParseFailed("Module declarations must be declared const!", declaration.parent)
+            }
+        })
         const includes = declarations.flatMap(declaration => {
             const tagIncludes = this.getInstalledFromTags(declaration)
             if (tagIncludes.length > 0) {
@@ -157,13 +163,13 @@ export class ModuleLocator {
 
     @bound
     private getProvidesMethod(method: ts.MethodDeclaration): Omit<ProvidesMethod, "module"> {
-        if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.StaticKeyword)) {
-            this.errorReporter.reportParseFailed("Provider methods must be static!", method)
+        if (ts.isClassDeclaration(method.parent) && !method.modifiers?.some(it => it.kind === ts.SyntaxKind.StaticKeyword)) {
+            this.errorReporter.reportParseFailed("Provider class methods must be static!", method)
         }
         const signature = this.typeChecker.getSignatureFromDeclaration(method)!
         const returnType = createQualifiedType({
             type: signature.getReturnType(),
-            qualifier: this.nodeDetector.getQualifier(method)
+            qualifier: this.nodeDetector.getQualifier(method),
         })
         const parameters: ProvidesMethodParameter[] = method.parameters.map(param => {
             return {
@@ -229,24 +235,36 @@ export class ModuleLocator {
         return {paramType, returnType, declaration: property}
     }
 
-    private getFactoriesAndBindings(module: ts.ClassDeclaration): {factories: ProvidesMethod[], bindings: Binding[]} {
-        const factories = module.members.filter((node): node is ts.MethodDeclaration => {
+    private getFactoriesAndBindings(module: ModuleLike): {factories: ProvidesMethod[], bindings: Binding[]} {
+        const methods = this.getMethods(module)
+        const properties = ts.isClassDeclaration(module)
+            ? module.members.filter(ts.isPropertyDeclaration)
+            : []
+        const factories = methods.filter((node): node is ts.MethodDeclaration => {
             return ts.isMethodDeclaration(node) && !!this.nodeDetector.getProvidesAnnotation(node)
         })
             .flatMap(this.getProvidesMethod)
             .map(factory => ({...factory, module}))
 
-        const bindings = module.members.filter((node): node is ts.MethodDeclaration => {
-            return ts.isMethodDeclaration(node) && !!this.nodeDetector.getBindsAnnotation(node)
-        })
+        const bindings = methods
+            .filter(this.nodeDetector.getBindsAnnotation)
             .map(this.getBinding)
             .concat(
-                module.members.filter((node): node is ts.PropertyDeclaration => {
-                    return ts.isPropertyDeclaration(node) && !!this.nodeDetector.getBindsAnnotation(node)
-                })
+                properties
+                    .filter(this.nodeDetector.getBindsAnnotation)
                     .map(this.getPropertyBinding)
             )
         return {factories, bindings}
+    }
+
+    private getMethods(module: ModuleLike): ts.MethodDeclaration[] {
+        if (ts.isClassDeclaration(module)) {
+            return module.members.filter(ts.isMethodDeclaration)
+        }
+        if (module.initializer && ts.isObjectLiteralExpression(module.initializer)) {
+            return module.initializer.properties.filter(ts.isMethodDeclaration)
+        }
+        return []
     }
 
     private getSymbolList(decorator: ts.Decorator, identifierName: string): ts.Symbol[] {
@@ -259,8 +277,7 @@ export class ModuleLocator {
             this.errorReporter.reportCompileTimeConstantRequired(decorator, identifierName)
         }
         return arrayLiteral.elements
-            .map(it => this.typeChecker.getTypeAtLocation(it).getSymbol())
+            .map(this.typeChecker.getSymbolAtLocation)
             .filter(isNotNull)
-            .map(this.nodeDetector.getOriginalSymbol)
     }
 }

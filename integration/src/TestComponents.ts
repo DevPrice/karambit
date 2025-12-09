@@ -248,13 +248,11 @@ export abstract class ParentComponent extends InheritedClass {
 }
 export type ParentComponentInterface = (child: ChildComponent, typeLiteralChild: {value: symbol}, /** @bindsInstance */ boundString: string) => ParentComponent
 
-@Module
-export abstract class ProviderModule {
-
-    @Provides
-    static provideProvider(): ProvidedOnly {
+export const ProviderModule = {
+    /** @provides */
+    provideProvider(): ProvidedOnly {
         return { }
-    }
+    },
 }
 
 @Component({modules: [ProviderModule]})

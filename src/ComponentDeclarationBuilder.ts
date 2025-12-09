@@ -181,7 +181,7 @@ export class ComponentDeclarationBuilder {
                 [ts.factory.createHeritageClause(
                     ts.isClassLike(declaration) ? ts.SyntaxKind.ExtendsKeyword : ts.SyntaxKind.ImplementsKeyword,
                     [ts.factory.createExpressionWithTypeArguments(
-                        this.importer.getExpressionForDeclaration(declaration),
+                        this.importer.getExpressionForSymbol(symbol),
                         undefined
                     )]
                 )],

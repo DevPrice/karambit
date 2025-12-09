@@ -1,6 +1,6 @@
 import ts from "typescript"
 import {QualifiedType} from "./QualifiedType"
-import {ComponentDeclaration, ComponentLikeDeclaration, ComponentScope} from "./TypescriptUtil"
+import {ComponentDeclaration, ComponentScope} from "./TypescriptUtil"
 
 export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | AssistedFactory | UndefinedProvider | ParentProvider | SetMultibinding | MapMultibinding
 export type MultibindingProvider = SetMultibinding | MapMultibinding
@@ -35,9 +35,15 @@ export function isPropertyProvider(provider: InstanceProvider): provider is Prop
     return provider.providerType === ProviderType.PROPERTY
 }
 
+export function isModuleLike(node: ts.Node): node is ModuleLike {
+    return ts.isClassDeclaration(node) || ts.isVariableDeclaration(node)
+}
+
+export type ModuleLike = ts.ClassDeclaration | ts.VariableDeclaration
+
 export interface ProvidesMethod {
     readonly providerType: ProviderType.PROVIDES_METHOD
-    readonly module: ts.ClassDeclaration
+    readonly module: ModuleLike
     readonly declaration: ts.MethodDeclaration
     readonly type: QualifiedType
     readonly parameters: ProvidesMethodParameter[]

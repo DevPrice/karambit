@@ -58,6 +58,15 @@ export class Importer {
     }
 
     getExpressionForDeclaration(node: ts.Declaration): ts.Expression {
+        if (ts.isVariableDeclaration(node)) {
+            if (ts.isIdentifier(node.name)) {
+                // seems like a hack for modules, but I'm not sure what the right way is to get this symbol
+                const symbol = this.typeChecker.getSymbolAtLocation(node.name)
+                if (symbol) {
+                    return this.getExpressionForSymbol(symbol)
+                }
+            }
+        }
         const type = this.typeChecker.getTypeAtLocation(node)!
         const symbol = this.symbolForType(type)
         return this.getExpressionForSymbol(symbol)
