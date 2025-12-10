@@ -44,6 +44,8 @@ jobs:
         key: ${{ hashFiles('package-lock.json') }}
     - if: ${{ steps.node-cache.outputs.cache-hit != 'true' }}
       run: npm ci
+    - name: Codegen
+      run: npm run karambit
     - name: TypeDoc
       run: npm run build:docs
     - name: Setup Pages
