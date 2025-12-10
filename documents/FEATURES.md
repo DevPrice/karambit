@@ -8,7 +8,7 @@ title: Feature guide
 
 [Components](https://en.wikipedia.org/wiki/Component_(graph_theory)) are the most fundamental part of Karambit. Each Component hosts a single graph of dependencies, and they expose the contract which Karambit implements during compilation.
 
-A component is an abstract class marked with the `@component` tag. It's defined by its installed [Modules](#modules), installed [Subcomponents](#subcomponents), [scope](#scope), [constructor arguments](#component-dependencies), and [declared properties](#exposing-types).
+A component is an abstract class marked with the `@component` tag. It's defined by its installed [Modules](#modules), installed [Subcomponents](#subcomponents), [scope](#scope), [dependencies](#component-dependencies), and [declared properties](#exposing-types).
 
 ### Exposing types
 
