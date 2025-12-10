@@ -34,7 +34,7 @@ function runKarambitForError(dirName: string, errorScope: string) {
     const program = ts.createProgram(parsedCommandLine.fileNames, parsedCommandLine.options)
 
     expectKarambitError(errorScope, () => {
-        generateComponentFiles(program, {sourceRoot: dirName, dryRun: true})
+        generateComponentFiles(program, {dryRun: true})
     })
 }
 
