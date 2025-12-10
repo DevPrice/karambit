@@ -1,3 +1,7 @@
+---
+title: Feature guide
+---
+
 # Karambit feature guide
 
 ## Components
@@ -419,7 +423,7 @@ export abstract class NumberModule {
 }
 ```
 
-Alternatively, if you're using [karambit-decorators](decorators/README.md), you can return the value directly using the `@MapKey` decorator:
+Alternatively, if you're using [karambit-decorators](../decorators/README.md), you can return the value directly using the `@MapKey` decorator:
 
 ```typescript
 export abstract class NumberModule {

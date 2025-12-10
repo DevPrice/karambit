@@ -177,7 +177,6 @@ function watchComponents(fileNames: string[], compilerOptions: ts.CompilerOption
 function generateFromProgram(program: ts.Program, compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): number {
     try {
         generateComponentFiles(program, {
-            sourceRoot: Path.dirname(cliOptions.tsconfig),
             outFile: cliOptions.output,
             include: cliOptions.include,
             exclude: cliOptions.exclude,

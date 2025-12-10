@@ -2,6 +2,7 @@
 build
 karambit-generated
 node_modules
+docs
 npm-debug.log
 
 # Created by https://www.gitignore.io/api/intellij

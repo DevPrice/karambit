@@ -1,6 +1,9 @@
 import chalk from "chalk"
 import {TupleMap} from "./TupleMap"
 
+/**
+ * Used to report log messages. By default, defers to {@link console}.
+ */
 export type Logger = Pick<typeof console, "debug" | "info" | "warn" | "error">
 
 export function ignore(..._: unknown[]) { }

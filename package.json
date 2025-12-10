@@ -28,6 +28,7 @@
     "karambit": "karambit -o src/karambit-generated/karambit.ts",
     "prebuild": "npm run karambit",
     "build": "tsc",
+    "build:docs": "typedoc",
     "test": "jest && npm run --prefix integration build && npm run --prefix integration test",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
@@ -59,6 +60,7 @@
     "karambit-inject": "^4.0.4",
     "lint-staged": "^15.2.10",
     "ts-jest": "^29.2.5",
+    "typedoc": "^0.28.15",
     "typescript": "^5.9.3",
     "version-from-git": "^1.1.2"
   },

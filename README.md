@@ -26,7 +26,7 @@ This project is available as a package in [NPM](https://www.npmjs.com/package/ka
 $ npm install --save-dev karambit-inject
 ```
 
-Karambit works by generating based on JSDoc tags (or, alternatively, [decorators](decorators/README.md)).
+Karambit works by generating based on JSDoc tags (or, alternatively, [decorators](decorators)).
 
 Karambit works using a simple CLI-based tool for generating code. Once the code is generated, you import it just like any other TypeScript code.
 
@@ -144,7 +144,7 @@ export class KarambitHelloWorldComponent implements component_1.HelloWorldCompon
 
 While this example is a bit contrived, you should be able to see how simple it can be to add new types to a graph and build much more complex dependency structures.
 
-This is only scratching the surface of what Karambit is capable of, so check out the [feature guide](FEATURES.md) for a more in-depth look at everything it has to offer. For a more real-world example, check out [Karambit's Component declarations](src/Component.ts).
+This is only scratching the surface of what Karambit is capable of, so check out the [feature guide](documents/FEATURES.md) for a more in-depth look at everything it has to offer. For a more real-world example, check out [Karambit's Component declarations](src/Component.ts).
 
 ## License
 

@@ -1,0 +1,10 @@
+{
+  "entryPoints": ["src/karambit.ts"],
+  "projectDocuments": ["documents/FEATURES.md"],
+  "externalSymbolLinkMappings": {
+    "typescript": {
+      "console": "https://nodejs.org/api/console.html",
+      "ts.createProgram": "https://learning-notes.mistermicheels.com/javascript/typescript/compiler-api/#turning-code-into-a-program"
+    }
+  }
+}
