@@ -8,7 +8,7 @@ title: Feature guide
 
 [Components](https://en.wikipedia.org/wiki/Component_(graph_theory)) are the most fundamental part of Karambit. Each Component hosts a single graph of dependencies, and they expose the contract which Karambit implements during compilation.
 
-A component is an abstract class marked with the `@component` tag. It's defined by its installed [Modules](#Modules), installed [Subcomponents](#Subcomponents), [scope](#Scope), [constructor arguments](#Component-dependencies), and [declared properties](#Exposing-types).
+A component is an abstract class marked with the `@component` tag. It's defined by its installed [Modules](#modules), installed [Subcomponents](#subcomponents), [scope](#scope), [constructor arguments](#component-dependencies), and [declared properties](#exposing-types).
 
 ### Exposing types
 
@@ -105,7 +105,7 @@ export class MyClass {
 }
 ```
 
-> **Note** `@inject` classes may also be marked with a single [Scope](#Scope), but not a [Qualifier](#Qualifiers) (use a [`@provides`](#Provides) method for that).
+> **Note** `@inject` classes may also be marked with a single [Scope](#scope), but not a [Qualifier](#qualifiers) (use a [`@provides`](#provides) method for that).
 
 ## Modules
 
@@ -333,7 +333,7 @@ The main use-case of a Subcomponent is to break up the scope of some Component.
 
 The declaration of a Subcomponent is almost identical to any other Component, except that it may not share the scope of any ancestor Component or Subcomponent.
 
-A Subcomponent can itself have its own Subcomponents, as well as its own [component dependencies](#Component-dependencies).
+A Subcomponent can itself have its own Subcomponents, as well as its own [component dependencies](#component-dependencies).
 
 ```typescript
 /**
