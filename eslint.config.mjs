@@ -3,7 +3,7 @@ import baseConfig from "@devprice/eslint-config"
 
 export default [
     {
-        ignores: ["**/build/", "**/lib/", "**/karambit-generated/"],
+        ignores: ["**/build/", "**/lib/", "**/karambit-generated/", "**/docs/"],
     },
     ...baseConfig, {
         languageOptions: {
