@@ -51,6 +51,8 @@ jobs:
           node-version: 20
           cache: 'npm'
           registry-url: https://registry.npmjs.org/
+      - name: Update npm
+        run: npm install -g npm@latest
       - id: node-cache
         uses: actions/cache@v4
         with:
@@ -83,6 +85,8 @@ jobs:
           cache: 'npm'
           registry-url: 'https://npm.pkg.github.com'
           scope: ${{ github.repository_owner }}
+      - name: Update npm
+        run: npm install -g npm@latest
       - uses: actions/checkout@v4
       - id: node-cache
         uses: actions/cache@v4
