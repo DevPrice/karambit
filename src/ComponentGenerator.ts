@@ -44,7 +44,7 @@ export interface ComponentGeneratorDependencies {
 
 export type ComponentGeneratorDependenciesFactory = (componentDeclaration: ComponentDeclaration) => ComponentGeneratorDependencies
 
-type RootDependency = Dependency & {name: ts.PropertyName, getter: boolean}
+type RootDependency = Dependency & {name: ts.PropertyName, getter: boolean, declaration?: ts.Declaration}
 
 interface ComponentDefinition extends ModuleProviders {
     declaration: ComponentLikeDeclaration
@@ -87,6 +87,7 @@ export class ComponentGenerator {
             }
         })
         return unimplementedProperties.map(property => {
+            this.errorReporter.assertValidType(property.returnType, property.declaration)
             return {
                 type: createQualifiedType({type: property.returnType}),
                 optional: property.optional,

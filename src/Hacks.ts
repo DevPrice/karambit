@@ -34,4 +34,12 @@ export class Hacks {
     static getTypeChecker(type: ts.Type): ts.TypeChecker | undefined {
         return (type as any).checker
     }
+
+    static isError(type: ts.Type): boolean {
+        return Hacks.intrinsicName(type) === "error"
+    }
+
+    private static intrinsicName(type: ts.Type): string {
+        return (type as any).intrinsicName
+    }
 }

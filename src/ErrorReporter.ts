@@ -17,6 +17,7 @@ import {Binding} from "./ModuleLocator"
 import chalk from "chalk"
 import {KarambitError, KarambitErrorScope} from "./KarambitError"
 import {ComponentDeclaration, ComponentScope, scopeToString} from "./TypescriptUtil"
+import {Hacks} from "./Hacks"
 
 type ErrorContext = ts.Node | ts.Node[]
 
@@ -170,6 +171,22 @@ export class ErrorReporter {
                     `${chain.map(qualifiedTypeToString).join(" -> ")}`,
                 context,
             ),
+            this.component,
+        )
+    }
+
+    assertValidType(type: ts.Type, context?: ErrorContext) {
+        if (Hacks.isError(type)) {
+            this.reportInvalidType(type, context)
+        }
+    }
+
+    reportInvalidType(type: ts.Type, context?: ErrorContext): never {
+        const rawName = this.typeChecker.typeToString(type)
+        const displayName = rawName === "any" ? "<anonymous>" : rawName
+        ErrorReporter.fail(
+            KarambitErrorScope.INVALID_TYPE,
+            addContext(`Unable to resolve type ${chalk.yellow(displayName)}!`, context),
             this.component,
         )
     }

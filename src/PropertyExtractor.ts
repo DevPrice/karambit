@@ -4,6 +4,7 @@ import {ErrorReporter} from "./ErrorReporter"
 export type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
 export type ElementLike = ts.ClassElement | ts.TypeElement
 export interface ComponentProperty {
+    declaration?: ts.Declaration
     symbol: ts.Symbol
     parameters?: readonly unknown[]
     optional: boolean
@@ -46,6 +47,7 @@ export class PropertyExtractor {
                     symbol,
                     returnType,
                     optional,
+                    declaration: symbol.valueDeclaration,
                 }
             })
     }

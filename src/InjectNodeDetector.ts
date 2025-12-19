@@ -180,6 +180,13 @@ export class InjectNodeDetector {
     }
 
     @bound
+    isProvidesAnnotation(annotation: AnnotationLike): boolean {
+        return ts.isDecorator(annotation)
+            ? this.isKarambitDecorator(annotation, "Provides")
+            : this.karambitOptions.enableDocTags && annotation.tagName.getText() === KarambitAnnotationTag.provides
+    }
+
+    @bound
     getProvidesAnnotation(node: Annotated): AnnotationLike | undefined {
         return node.modifiers?.find(this.isProvidesDecorator) || this.getJSDocTag(node, "provides")
     }
@@ -187,6 +194,13 @@ export class InjectNodeDetector {
     @bound
     private isProvidesDecorator(decorator: ts.Node): decorator is ts.Decorator {
         return this.isKarambitDecorator(decorator, "Provides")
+    }
+
+    @bound
+    isBindsAnnotation(annotation: AnnotationLike): boolean {
+        return ts.isDecorator(annotation)
+            ? this.isKarambitDecorator(annotation, "Binds")
+            : this.karambitOptions.enableDocTags && annotation.tagName.getText() === KarambitAnnotationTag.binds
     }
 
     @bound

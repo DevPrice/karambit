@@ -19,6 +19,10 @@ export enum KarambitErrorScope {
      */
     INVALID_SCOPE = "InvalidScope",
     /**
+     * Indicates that the TypeScript compiler failed to resolve a dependency type used within a Component.
+     */
+    INVALID_TYPE = "InvalidType",
+    /**
      * Indicates that a provider declaration was malformed.
      */
     INVALID_BINDING = "InvalidBinding",

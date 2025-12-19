@@ -1,4 +1,4 @@
-import ts from "typescript"
+import ts, {TypeChecker} from "typescript"
 import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound} from "./Util"
@@ -12,6 +12,7 @@ import {AnnotationLike, ComponentLikeDeclaration, isComponentLikeDeclaration, is
 export class AnnotationValidator {
 
     constructor(
+        private readonly typeChecker: TypeChecker,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly errorReporter: ErrorReporter,
     ) { }
@@ -26,6 +27,8 @@ export class AnnotationValidator {
         const assistedAnnotations = annotations.filter(this.nodeDetector.isAssistedAnnotation)
         const factoryTags = annotations.filter(tag => this.nodeDetector.isKarambitDocTag(tag, KarambitAnnotationTag.factory))
         const moduleDecorators = annotations.filter(this.nodeDetector.isModuleDecorator)
+        const providesAnnotations = annotations.filter(this.nodeDetector.isProvidesAnnotation)
+        const bindsAnnotations = annotations.filter(this.nodeDetector.isBindsAnnotation)
 
         componentAnnotations.forEach(this.requireDeclarationExported)
         componentAnnotations.forEach(this.requireAbstractClassOrInterface)
@@ -57,6 +60,38 @@ export class AnnotationValidator {
         })
 
         moduleDecorators.forEach(this.requireDeclarationExported)
+
+        providesAnnotations.forEach(annotation => {
+            const parent = getAnnotationParent(annotation)
+            if (ts.isMethodDeclaration(parent) || ts.isMethodSignature(parent)) {
+                const signature = this.typeChecker.getSignatureFromDeclaration(parent)
+                const type = signature && signature.getReturnType()
+                if (type) {
+                    this.errorReporter.assertValidType(type, parent)
+                }
+            } else {
+                this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} annotation must be applied to a method declaration!`, parent)
+            }
+        })
+
+        bindsAnnotations.forEach(annotation => {
+            const parent = getAnnotationParent(annotation)
+            if (ts.isPropertyDeclaration(parent)) {
+                // TODO: Validate property declarations
+            } else if (ts.isMethodDeclaration(parent) || ts.isMethodSignature(parent)) {
+                // TODO: Assert single parameter
+                const signature = this.typeChecker.getSignatureFromDeclaration(parent)
+                signature?.parameters?.forEach(param => {
+                    this.errorReporter.assertValidType(this.typeChecker.getTypeOfSymbol(param), parent)
+                })
+                const type = signature && signature.getReturnType()
+                if (type) {
+                    this.errorReporter.assertValidType(type, parent)
+                }
+            } else {
+                this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} annotation must be applied to a property or method declaration!`, parent)
+            }
+        })
     }
 
     @bound
@@ -71,7 +106,7 @@ export class AnnotationValidator {
     private requireAbstractClassOrInterface(annotation: AnnotationLike): void {
         const declaration = getDeclaration(annotation)
         if (!declaration || !(ts.isInterfaceDeclaration(declaration) || ts.isTypeAliasDeclaration(declaration) || declaration.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword))) {
-            this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} annotated must be applied to an interface or abstract class!`, getAnnotationParent(annotation))
+            this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} annotation must be applied to an interface or abstract class!`, getAnnotationParent(annotation))
         }
     }
 
