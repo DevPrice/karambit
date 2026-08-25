@@ -48,11 +48,10 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Node 24 bundles npm >= 11.5.1, required for OIDC trusted publishing
+          node-version: 24
           cache: 'npm'
           registry-url: https://registry.npmjs.org/
-      - name: Update npm
-        run: npm install -g npm@latest
       - id: node-cache
         uses: actions/cache@v4
         with:
@@ -78,16 +77,13 @@ jobs:
       packages: write
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js 20.x
+      - name: Use Node.js 24.x
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
           registry-url: 'https://npm.pkg.github.com'
           scope: ${{ github.repository_owner }}
-      - name: Update npm
-        run: npm install -g npm@latest
-      - uses: actions/checkout@v4
       - id: node-cache
         uses: actions/cache@v4
         with:
