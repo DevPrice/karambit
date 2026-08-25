@@ -256,15 +256,6 @@ export class InjectNodeDetector {
 
     @bound
     getModuleAnnotation(node: Annotated): AnnotationLike | undefined {
-        const tags = ts.getJSDocTags(node).filter(tag => tag.tagName.text.localeCompare("includes", undefined, {sensitivity: "base"}) === 0)
-        for (const tag of tags) {
-            const linkTags = tag.getChildren().filter(ts.isJSDocLink)
-            for (const linkTag of linkTags) {
-                const type = linkTag.name && this.typeChecker.getTypeAtLocation(linkTag.name)
-                console.log(type && this.typeChecker.typeToString(type))
-            }
-            console.log(node.name?.getText() ?? "<unknown_node>", ": ", linkTags.map(it => it.getText()).join(", "))
-        }
         return node.modifiers?.find(this.isModuleDecorator) ?? this.getJSDocTag(node, "karambitModule")
     }
 
