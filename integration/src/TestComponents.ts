@@ -196,6 +196,8 @@ export interface ScopedSubcomponent {
     readonly scopedInterface: ScopedSubcomponentInterface
 }
 
+export type AliasedScopedSubcomponent = ScopedSubcomponent
+
 export interface ParentInterface { }
 
 /**
@@ -229,7 +231,7 @@ export abstract class InheritedClass {
 /**
  * @component
  * @includeModule {@link ParentModule}
- * @includeSubcomponent {@link ChildSubcomponent} {@link ScopedSubcomponent}
+ * @includeSubcomponent {@link ChildSubcomponent} {@link AliasedScopedSubcomponent}
  * @factory {@link ParentComponentInterface}
  * @generatedName CustomComponentName
  */
@@ -279,7 +281,9 @@ export class AnotherIncludedModule {
     }
 }
 
-/** @includeModule {@link AnotherIncludedModule} */
+export type AliasedIncludedModule = AnotherIncludedModule
+
+/** @includeModule {@link AliasedIncludedModule} */
 export class IncludedModule { }
 
 @Module({includes: [IncludedModule]})

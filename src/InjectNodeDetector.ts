@@ -105,7 +105,7 @@ export class InjectNodeDetector {
             const declarations = originalSymbol.declarations ?? []
             const declaration = declarations && declarations.length === 1 && declarations[0]
             const declarationType = declaration && this.typeChecker.getTypeAtLocation(declaration)
-            if (declarationType) {
+            if (declarationType && declarationType.symbol) {
                 return this.getOriginalSymbol(declarationType.symbol)
             }
         }

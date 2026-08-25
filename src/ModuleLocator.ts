@@ -60,13 +60,14 @@ export class ModuleLocator {
                 if (!symbol) {
                     this.errorReporter.reportParseFailed("Expected valid symbol!", tag)
                 }
-                const declarations = symbol?.declarations ?? []
+                const originalSymbol = this.nodeDetector.getOriginalSymbol(symbol)
+                const aliasedSymbol = this.nodeDetector.getAliasedTypeSymbol(originalSymbol)
+                const declarations = [...originalSymbol.declarations ?? [], ...aliasedSymbol.declarations ?? []]
                 if (declarations.some(this.nodeDetector.getComponentAnnotation) || declarations.some(this.nodeDetector.getSubcomponentAnnotation)) {
                     this.errorReporter.reportParseFailed("@includeModule should NOT reference a Component or Subcomponent!", tag)
                 }
-                return symbol
+                return aliasedSymbol
             })
-            .map(this.nodeDetector.getOriginalSymbol)
     }
 
     private getModulesFromSymbols(symbols: ts.Symbol[]): Module[] {
@@ -101,11 +102,16 @@ export class ModuleLocator {
                     if (!symbol) {
                         this.errorReporter.reportParseFailed("Expected valid symbol!", tag)
                     }
-                    const declarations = symbol?.declarations ?? []
-                    if (!declarations.some(this.nodeDetector.getSubcomponentAnnotation)) {
+                    const originalSymbol = this.nodeDetector.getOriginalSymbol(symbol)
+                    // a subcomponent may be declared as the type alias itself, which carries the annotation, so only
+                    // resolve through the alias when the referenced declaration isn't annotated
+                    const subcomponentSymbol = (originalSymbol.declarations ?? []).some(this.nodeDetector.getSubcomponentAnnotation)
+                        ? originalSymbol
+                        : this.nodeDetector.getAliasedTypeSymbol(originalSymbol)
+                    if (!(subcomponentSymbol.declarations ?? []).some(this.nodeDetector.getSubcomponentAnnotation)) {
                         this.errorReporter.reportParseFailed("@includeSubcomponent should reference a declaration marked @subcomponent!", tag)
                     }
-                    return this.nodeDetector.getOriginalSymbol(symbol)
+                    return subcomponentSymbol
                 })
         }
         if (decorator) {
