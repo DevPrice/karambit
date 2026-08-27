@@ -76,6 +76,14 @@ export abstract class ProgramModule {
      * @provides
      * @reusable
      */
+    static provideCompilerOptions(program: ts.Program): ts.CompilerOptions {
+        return program.getCompilerOptions()
+    }
+
+    /**
+     * @provides
+     * @reusable
+     */
     static providePrinter(options: KarambitOptions): ts.Printer {
         return ts.createPrinter(options.printerOptions)
     }

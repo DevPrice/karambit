@@ -3,7 +3,7 @@ import * as Path from "path"
 import {ProgramScope} from "./Scopes"
 import {KarambitOptions} from "./karambit"
 import {bound, memoized} from "./Util"
-import {removeModuleFileExtension} from "./TypescriptUtil"
+import {getEmittedModuleFileExtension, removeModuleFileExtension} from "./TypescriptUtil"
 
 /**
  * @inject
@@ -16,6 +16,7 @@ export class Importer {
     constructor(
         private readonly karambitOptions: KarambitOptions,
         private readonly typeChecker: ts.TypeChecker,
+        private readonly compilerOptions: ts.CompilerOptions,
     ) { }
 
     @memoized
@@ -85,7 +86,7 @@ export class Importer {
 
     @memoized
     private getImportIdentifier(specifier: string): ts.Identifier {
-        const identifierText = Path.basename(specifier).replaceAll(/[^a-z\d]+/ig, "$")
+        const identifierText = removeModuleFileExtension(Path.basename(specifier)).replaceAll(/[^a-z\d]+/ig, "$")
         return ts.factory.createUniqueName(identifierText)
     }
 
@@ -109,11 +110,24 @@ export class Importer {
             return fileToImport.moduleName
         }
         const outDir = Path.dirname(this.karambitOptions.outFile)
-        const outputPath = removeModuleFileExtension(
-            Path.relative(outDir, fileToImport.fileName).replaceAll(Path.sep, Path.posix.sep)
-        )
+        const relativePath = Path.relative(outDir, fileToImport.fileName).replaceAll(Path.sep, Path.posix.sep)
+        const extension = this.requiresExplicitExtensions()
+            ? getEmittedModuleFileExtension(relativePath, this.compilerOptions)
+            : ""
+        const outputPath = removeModuleFileExtension(relativePath) + extension
         return outputPath.startsWith(".")
             ? outputPath
             : "./" + outputPath
+    }
+
+    /**
+     * ECMAScript imports are resolved without guessing at extensions, so relative specifiers in an output
+     * file that Node loads as ESM have to name the emitted file exactly. Everywhere else - CommonJS output,
+     * and the bundler and node10 resolution modes - an extensionless specifier is what resolves.
+     */
+    @memoized
+    private requiresExplicitExtensions(): boolean {
+        const outFile = Path.resolve(this.karambitOptions.outFile)
+        return ts.getImpliedNodeFormatForFile(outFile, undefined, ts.sys, this.compilerOptions) === ts.ModuleKind.ESNext
     }
 }
