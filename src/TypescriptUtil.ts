@@ -45,3 +45,14 @@ export function isComponentLikeDeclaration(node: ts.Node): node is ComponentLike
 export function isJSDocTag(node: ts.Node): node is ts.JSDocTag {
     return node.kind >= ts.SyntaxKind.JSDocTag && node.kind <= ts.SyntaxKind.JSDocImportTag
 }
+
+/**
+ * File extensions that TypeScript resolves implicitly, longest first so that
+ * declaration extensions are matched before their `.ts`/`.mts`/`.cts` suffixes.
+ */
+const moduleFileExtensions = [".d.ts", ".d.mts", ".d.cts", ".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]
+
+export function removeModuleFileExtension(fileName: string): string {
+    const extension = moduleFileExtensions.find(it => fileName.length > it.length && fileName.endsWith(it))
+    return extension ? fileName.slice(0, -extension.length) : fileName
+}

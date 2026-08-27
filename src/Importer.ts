@@ -3,6 +3,7 @@ import * as Path from "path"
 import {ProgramScope} from "./Scopes"
 import {KarambitOptions} from "./karambit"
 import {bound, memoized} from "./Util"
+import {removeModuleFileExtension} from "./TypescriptUtil"
 
 /**
  * @inject
@@ -108,11 +109,11 @@ export class Importer {
             return fileToImport.moduleName
         }
         const outDir = Path.dirname(this.karambitOptions.outFile)
-        const outputPath = Path.relative(outDir, fileToImport.fileName)
-            .replaceAll(Path.sep, Path.posix.sep)
-            .replace(/\.ts$/, "")
-        return outDir === Path.dirname(fileToImport.fileName)
-            ? "./" + outputPath
-            : outputPath
+        const outputPath = removeModuleFileExtension(
+            Path.relative(outDir, fileToImport.fileName).replaceAll(Path.sep, Path.posix.sep)
+        )
+        return outputPath.startsWith(".")
+            ? outputPath
+            : "./" + outputPath
     }
 }
