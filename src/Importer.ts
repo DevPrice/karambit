@@ -16,6 +16,7 @@ export class Importer {
     constructor(
         private readonly karambitOptions: KarambitOptions,
         private readonly typeChecker: ts.TypeChecker,
+        private readonly nameAllocator: ts.NameAllocator,
         private readonly compilerOptions: ts.CompilerOptions,
     ) { }
 
@@ -87,7 +88,7 @@ export class Importer {
     @memoized
     private getImportIdentifier(specifier: string): ts.Identifier {
         const identifierText = ts.removeModuleFileExtension(Path.basename(specifier)).replaceAll(/[^a-z\d]+/ig, "$")
-        return ts.createUniqueName(identifierText)
+        return this.nameAllocator.allocate(identifierText)
     }
 
     private addImport(importSpecifier: string): ts.ImportDeclaration {

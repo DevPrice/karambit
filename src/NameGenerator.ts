@@ -12,30 +12,39 @@ export class NameGenerator {
 
     constructor(
         private readonly typeChecker: ts.TypeChecker,
+        private readonly nameAllocator: ts.NameAllocator,
         private readonly karambitOptions: KarambitOptions
-    ) { }
+    ) {
+        this.parentName = nameAllocator.allocate("parent")
+        this.unsetSymbolName = nameAllocator.allocate("unsetSymbol")
+    }
 
     private getterNames = new Map<QualifiedType, ts.Identifier | ts.PrivateIdentifier>()
 
-    readonly parentName: ts.Identifier = ts.createUniqueName("parent")
-    readonly unsetSymbolName: ts.Identifier = ts.createUniqueName("unsetSymbol")
+    readonly parentName: ts.Identifier
+    readonly unsetSymbolName: ts.Identifier
 
     getComponentIdentifier(type: ts.Type, preferredName?: string): ts.Identifier {
-        // for some reason, createUniqueName doesn't work with the export keyword here...?
-        return ts.createIdentifier(preferredName ?? `Karambit${capitalize(this.getValidIdentifier(type))}`)
+        // exported, so it keeps the name it's declared with rather than an allocated one
+        const name = preferredName ?? `Karambit${capitalize(this.getValidIdentifier(type))}`
+        return ts.createIdentifier(this.nameAllocator.reserve(name))
+    }
+
+    getSubcomponentIdentifier(name: string): ts.Identifier {
+        return this.nameAllocator.allocate(name)
     }
 
     @memoized
     getPropertyIdentifier(type: QualifiedType): ts.Identifier {
         const identifierText = this.getValidIdentifier(type.type)
-        return ts.createUniqueName(uncapitalize(identifierText))
+        return this.nameAllocator.allocate(uncapitalize(identifierText))
     }
 
     @memoized
     getPropertyIdentifierForParameter(param: ts.ParameterDeclaration): ts.Identifier {
         const type = this.typeChecker.getTypeAtLocation(param.type ?? param)
         const identifierText = this.getValidIdentifier(type)
-        return ts.createUniqueName(uncapitalize(identifierText))
+        return this.nameAllocator.allocate(uncapitalize(identifierText))
     }
 
     getGetterMethodIdentifier(type: QualifiedType): ts.Identifier | ts.PrivateIdentifier {
@@ -43,7 +52,7 @@ export class NameGenerator {
         if (existingName) return existingName
 
         const identifierText = this.getValidIdentifier(type.type)
-        const newName = ts.createUniqueName(`get${capitalize(identifierText)}`)
+        const newName = this.nameAllocator.allocate(`get${capitalize(identifierText)}`)
         this.getterNames.set(type, newName)
         return newName
     }
@@ -53,7 +62,7 @@ export class NameGenerator {
         if (existingName) return existingName
 
         const identifierText = this.getValidIdentifier(type.type)
-        const newName = ts.createUniqueName(`get${capitalize(identifierText)}_Factory`)
+        const newName = this.nameAllocator.allocate(`get${capitalize(identifierText)}_Factory`)
         this.getterNames.set(type, newName)
         return newName
     }
@@ -63,7 +72,7 @@ export class NameGenerator {
         if (existingName) return existingName
 
         const identifierText = this.getValidIdentifier(type.type)
-        const newName = ts.createUniqueName(`get${capitalize(identifierText)}_Factory`)
+        const newName = this.nameAllocator.allocate(`get${capitalize(identifierText)}_Factory`)
         this.getterNames.set(type, newName)
         return newName
     }

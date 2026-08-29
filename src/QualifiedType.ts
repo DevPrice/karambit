@@ -23,11 +23,10 @@ export function createQualifiedType(args: QualifiedType): QualifiedType {
     return args
 }
 
-export function qualifiedTypeToString(qualifiedType: QualifiedType): string {
-    const checker = ts.getTypeChecker(qualifiedType.type)
+export function qualifiedTypeToString(typeChecker: ts.TypeChecker, qualifiedType: QualifiedType): string {
     const qualifierString = typeof qualifiedType.qualifier === "string" ?
         `named "${qualifiedType.qualifier}"` :
         typeof qualifiedType.qualifier === "object" ? qualifiedType.qualifier?.getName() : undefined
     const qualifierInfo = qualifierString ? ` with qualifier ${qualifierString}` : ""
-    return (checker?.typeToString(qualifiedType.type) ?? "unknown type") + qualifierInfo
+    return typeChecker.typeToString(qualifiedType.type) + qualifierInfo
 }

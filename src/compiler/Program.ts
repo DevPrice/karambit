@@ -1,13 +1,6 @@
 import ts from "typescript"
 import type {SourceFile} from "./Ast"
 
-/**
- * Loading a project and turning generated nodes back into text.
- *
- * These are the calls that differ most between compiler backends - one builds a program in-process,
- * another drives a compiler server - so nothing outside this module names them.
- */
-
 export type Program = ts.Program
 export type CompilerOptions = ts.CompilerOptions
 export type PrinterOptions = ts.PrinterOptions
@@ -20,7 +13,6 @@ export interface ParsedConfig {
     readonly errors: readonly Diagnostic[]
 }
 
-/** Reads a tsconfig file, returning its file list, options and any diagnostics raised while parsing. */
 export function parseConfigFile(configFileName: string, basePath: string): ParsedConfig | {readonly readError: string} {
     const configFile = ts.readConfigFile(configFileName, ts.sys.readFile)
     if (configFile.error) {
@@ -30,7 +22,6 @@ export function parseConfigFile(configFileName: string, basePath: string): Parse
     return {fileNames: parsed.fileNames, options: parsed.options, errors: parsed.errors}
 }
 
-/** Renders a diagnostic's message as a single string. */
 export function formatDiagnostic(diagnostic: Diagnostic): string {
     return ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")
 }
@@ -42,10 +33,7 @@ export function createProgram(fileNames: readonly string[], options: CompilerOpt
     )
 }
 
-/**
- * Watches the project and calls `onProgram` with a fresh program whenever the input changes. Blocks
- * for the lifetime of the watch.
- */
+// calls onProgram with a fresh program whenever the input changes; blocks for the life of the watch
 export function watchProgram(
     fileNames: readonly string[],
     options: CompilerOptions,
@@ -68,7 +56,6 @@ export function watchProgram(
     )
 }
 
-/** Every script target the compiler accepts, keyed by its lowercased name. */
 export function getScriptTargets(): ReadonlyMap<string, ts.ScriptTarget> {
     return new Map(
         Object.entries(ts.ScriptTarget)
@@ -78,7 +65,6 @@ export function getScriptTargets(): ReadonlyMap<string, ts.ScriptTarget> {
     )
 }
 
-/** Renders a source file as TypeScript text. */
 export function printFile(sourceFile: SourceFile, options?: PrinterOptions): string {
     return ts.createPrinter(options).printFile(sourceFile)
 }

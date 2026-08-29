@@ -31,6 +31,10 @@ export class ErrorReporter {
         private readonly component?: ComponentDeclaration,
     ) { }
 
+    private typeName(type: QualifiedType): string {
+        return qualifiedTypeToString(this.typeChecker, type)
+    }
+
     reportCompileTimeConstantRequired(context: ts.Node, identifierName: string): never {
         ErrorReporter.fail(
             KarambitErrorScope.PARSE,
@@ -72,7 +76,7 @@ export class ErrorReporter {
         ErrorReporter.fail(
             KarambitErrorScope.INVALID_SCOPE,
             addContext(
-                `Invalid scope for type ${qualifiedTypeToString(type)}! ` +
+                `Invalid scope for type ${this.typeName(type)}! ` +
                 `Got: ${provider.scope ? scopeToString(provider.scope) : "no scope"}, expected: ${expected ? scopeToString(expected) : "no scope"}.\n`,
                 provider.declaration,
             ),
@@ -120,12 +124,12 @@ export class ErrorReporter {
         const missingSet = new Set(missingTypes)
         const getChildren = (item: QualifiedType) => item === component.type ? Array.from(component.exposedProperties).map(it => it.type) : graph.get(item)?.dependencies ?? []
         const typeToString = (item: QualifiedType) => {
-            if (missingSet.has(item)) return chalk.yellow(qualifiedTypeToString(item))
-            return qualifiedTypeToString(item)
+            if (missingSet.has(item)) return chalk.yellow(this.typeName(item))
+            return this.typeName(item)
         }
         ErrorReporter.fail(
             KarambitErrorScope.MISSING_PROVIDER,
-            `No provider in ${qualifiedTypeToString(component.type)} for required types: ${Array.from(missingSet.keys()).map(typeToString).join(", ")}\n\n` +
+            `No provider in ${this.typeName(component.type)} for required types: ${Array.from(missingSet.keys()).map(typeToString).join(", ")}\n\n` +
             `${printTreeMap(component.type, filterTree(component.type, getChildren, item => missingSet.has(item), typeToString), typeToString)}\n`,
             this.component
         )
@@ -139,7 +143,7 @@ export class ErrorReporter {
             : parentProvider.type
         ErrorReporter.fail(
             KarambitErrorScope.MISSING_PROVIDER,
-            addContext(`Required type(s) of ${qualifiedTypeToString(parentType)} may not be provided by optional binding(s)!\n\n${parentDeclarationContext}`, declarations),
+            addContext(`Required type(s) of ${this.typeName(parentType)} may not be provided by optional binding(s)!\n\n${parentDeclarationContext}`, declarations),
             this.component,
         )
     }
@@ -147,7 +151,7 @@ export class ErrorReporter {
     reportDuplicateProviders(type: QualifiedType, providers: InstanceProvider[]): never {
         ErrorReporter.fail(
             KarambitErrorScope.DUPLICATE_PROVIDERS,
-            `${qualifiedTypeToString(type)} is provided multiple times!\n\n` +
+            `${this.typeName(type)} is provided multiple times!\n\n` +
             providers.map(providerForDisplay).filter(isNotNull).map(it => `provided by:\n${it}\n`).join("\n") + "\n",
             this.component,
         )
@@ -156,7 +160,7 @@ export class ErrorReporter {
     reportDuplicateBindings(type: QualifiedType, bindings: Binding[]): never {
         ErrorReporter.fail(
             KarambitErrorScope.DUPLICATE_BINDINGS,
-            `${qualifiedTypeToString(type)} is bound multiple times!\n\n` +
+            `${this.typeName(type)} is bound multiple times!\n\n` +
             bindings.map(it => it.declaration).map(nodeForDisplay).filter(isNotNull).map(it => it.toString()).join("\n\n") + "\n",
             this.component,
         )
@@ -166,8 +170,8 @@ export class ErrorReporter {
         ErrorReporter.fail(
             KarambitErrorScope.DEPENDENCY_CYCLE,
             addContext(
-                `${qualifiedTypeToString(type)} causes a dependency cycle (circular dependency)!\n\n` +
-                    `${chain.map(qualifiedTypeToString).join(" -> ")}`,
+                `${this.typeName(type)} causes a dependency cycle (circular dependency)!\n\n` +
+                    `${chain.map(it => this.typeName(it)).join(" -> ")}`,
                 context,
             ),
             this.component,
@@ -194,7 +198,7 @@ export class ErrorReporter {
         ErrorReporter.fail(
             KarambitErrorScope.BINDING_CYCLE,
             "Binding cycle detected!\n\n" +
-            `${chain.map(qualifiedTypeToString).join(" -> ")}\n`,
+            `${chain.map(it => this.typeName(it)).join(" -> ")}\n`,
             this.component,
         )
     }

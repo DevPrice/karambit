@@ -3,16 +3,14 @@ import type {SourceFile} from "./Ast"
 import type {CompilerOptions} from "./Program"
 
 /**
- * Module resolution concerns: how a file is loaded, and what an import specifier naming it looks like.
- */
-
-/**
- * File extensions the compiler resolves implicitly, longest first so that declaration extensions are
- * matched before their `.ts`/`.mts`/`.cts` suffixes.
+ * File extensions that TypeScript resolves implicitly, longest first so that
+ * declaration extensions are matched before their `.ts`/`.mts`/`.cts` suffixes.
  */
 const moduleFileExtensions = [".d.ts", ".d.mts", ".d.cts", ".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"]
 
-/** Extensions that only ever describe a module, and so can never appear in an import specifier. */
+/**
+ * Extensions that only ever describe a module, and so can never appear in an import specifier.
+ */
 const declarationFileExtensions = [".d.ts", ".d.mts", ".d.cts"]
 
 export function getModuleFileExtension(fileName: string): string | undefined {
@@ -50,21 +48,10 @@ function jsxIsPreserved(options: CompilerOptions): boolean {
     return options.jsx === ts.JsxEmit.Preserve || options.jsx === ts.JsxEmit.ReactNative
 }
 
-/**
- * Whether the file at `fileName` is loaded as an ECMAScript module.
- *
- * ECMAScript imports are resolved without guessing at extensions, so relative specifiers in a file that
- * Node loads as ESM have to name the emitted file exactly. Everywhere else - CommonJS output, and the
- * bundler and node10 resolution modes - an extensionless specifier is what resolves.
- */
 export function isEsmFile(fileName: string, options: CompilerOptions): boolean {
     return ts.getImpliedNodeFormatForFile(fileName as ts.Path, undefined, ts.sys, options) === ts.ModuleKind.ESNext
 }
 
-/**
- * The module name a source file declares for itself, for files that are modules and name themselves,
- * such as an ambient declaration file.
- */
 export function getDeclaredModuleName(sourceFile: SourceFile): string | undefined {
     return ts.isExternalModule(sourceFile) ? sourceFile.moduleName : undefined
 }

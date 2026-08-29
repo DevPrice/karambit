@@ -82,6 +82,14 @@ export abstract class ProgramModule {
 
     /**
      * @provides
+     * @scope {@link ProgramScope}
+     */
+    static provideNameAllocator(): ts.NameAllocator {
+        return new ts.NameAllocator()
+    }
+
+    /**
+     * @provides
      * @reusable
      */
     static provideDefaultLogger(options: KarambitOptions): Logger {

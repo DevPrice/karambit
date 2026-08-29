@@ -1,13 +1,5 @@
 import ts from "typescript"
 
-/**
- * Syntax tree and type-system types, re-exported under names this package owns.
- *
- * Everything here is a pass-through today. The point of the indirection is that these names are the
- * only ones the rest of Karambit refers to, so a future compiler backend can redefine them without
- * touching call sites.
- */
-
 export type Node = ts.Node
 export type NodeArray<T extends ts.Node> = ts.NodeArray<T>
 export type SourceFile = ts.SourceFile
@@ -45,11 +37,7 @@ export type TupleType = ts.TupleType
 export type Symbol = ts.Symbol
 export type Signature = ts.Signature
 
-/**
- * Enums are re-exported as a value and a type under the same name, so `SyntaxKind.CallExpression`
- * and `kind: SyntaxKind` both resolve through this package.
- */
-
+// exported as both a value and a type, so `SyntaxKind.CallExpression` and `kind: SyntaxKind` both work
 export const SyntaxKind = ts.SyntaxKind
 export type SyntaxKind = ts.SyntaxKind
 

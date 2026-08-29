@@ -230,7 +230,7 @@ export class ComponentGenerator {
         const graph = graphBuilder.buildDependencyGraph(new Set(definition.exposedProperties))
 
         const subcomponentName = factory.subcomponentType.type.symbol.name
-        const subcomponentIdentifier = ts.createUniqueName(subcomponentName)
+        const subcomponentIdentifier = this.nameGenerator.getSubcomponentIdentifier(subcomponentName)
 
         const subcomponents = distinctBy(
             Array.from(graph.resolved.keys()).map(it => it.type)
