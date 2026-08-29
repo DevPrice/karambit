@@ -1,9 +1,9 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import * as Path from "path"
 import {ProgramScope} from "./Scopes"
 import {KarambitOptions} from "./karambit"
 import {bound, memoized} from "./Util"
-import {getEmittedModuleFileExtension, removeModuleFileExtension} from "./TypescriptUtil"
+
 
 /**
  * @inject
@@ -21,8 +21,8 @@ export class Importer {
 
     @memoized
     private getImportForSymbol(symbol: ts.Symbol): ts.Identifier | undefined {
-        const declarations = symbol.getDeclarations()
-        if (!declarations || declarations.length === 0) return undefined
+        const declarations = ts.getDeclarations(symbol)
+        if (declarations.length === 0) return undefined
 
         const importSourceFile = declarations[0].getSourceFile()
         const importSpecifier = this.getImportSpecifier(importSourceFile)
@@ -40,13 +40,13 @@ export class Importer {
 
     getQualifiedNameForSymbol(symbol: ts.Symbol): ts.EntityName {
         const left = this.getImportForSymbol(symbol)
-        const right = ts.factory.createIdentifier(symbol.name)
-        return left ? ts.factory.createQualifiedName(left, right) : right
+        const right = ts.createIdentifier(symbol.name)
+        return left ? ts.createQualifiedName(left, right) : right
     }
 
     @bound
     addImportsToSourceFile(sourceFile: ts.SourceFile): ts.SourceFile {
-        return ts.factory.updateSourceFile(
+        return ts.updateSourceFile(
             sourceFile,
             [
                 ...this.newImports.values(),
@@ -76,29 +76,29 @@ export class Importer {
 
     getExpressionForSymbol(symbol: ts.Symbol): ts.Expression {
         const left = this.getImportForSymbol(symbol)
-        const right = ts.factory.createIdentifier(symbol.name)
-        return left ? ts.factory.createPropertyAccessExpression(left, right) : right
+        const right = ts.createIdentifier(symbol.name)
+        return left ? ts.createPropertyAccessExpression(left, right) : right
     }
 
     private symbolForType(type: ts.Type) {
-        return type.aliasSymbol ?? type.symbol
+        return ts.getTypeSymbol(type)!
     }
 
     @memoized
     private getImportIdentifier(specifier: string): ts.Identifier {
-        const identifierText = removeModuleFileExtension(Path.basename(specifier)).replaceAll(/[^a-z\d]+/ig, "$")
-        return ts.factory.createUniqueName(identifierText)
+        const identifierText = ts.removeModuleFileExtension(Path.basename(specifier)).replaceAll(/[^a-z\d]+/ig, "$")
+        return ts.createUniqueName(identifierText)
     }
 
     private addImport(importSpecifier: string): ts.ImportDeclaration {
-        const newImport = ts.factory.createImportDeclaration(
+        const newImport = ts.createImportDeclaration(
             undefined,
-            ts.factory.createImportClause(
+            ts.createImportClause(
                 undefined,
                 undefined,
-                ts.factory.createNamespaceImport(this.getImportIdentifier(importSpecifier)),
+                ts.createNamespaceImport(this.getImportIdentifier(importSpecifier)),
             ),
-            ts.factory.createStringLiteral(importSpecifier),
+            ts.createStringLiteral(importSpecifier),
             undefined
         )
         this.newImports.set(importSpecifier, newImport)
@@ -106,15 +106,16 @@ export class Importer {
     }
 
     private getImportSpecifier(fileToImport: ts.SourceFile): string {
-        if (ts.isExternalModule(fileToImport) && fileToImport.moduleName) {
-            return fileToImport.moduleName
+        const declaredModuleName = ts.getDeclaredModuleName(fileToImport)
+        if (declaredModuleName) {
+            return declaredModuleName
         }
         const outDir = Path.dirname(this.karambitOptions.outFile)
         const relativePath = Path.relative(outDir, fileToImport.fileName).replaceAll(Path.sep, Path.posix.sep)
         const extension = this.requiresExplicitExtensions()
-            ? getEmittedModuleFileExtension(relativePath, this.compilerOptions)
+            ? ts.getEmittedModuleFileExtension(relativePath, this.compilerOptions)
             : ""
-        const outputPath = removeModuleFileExtension(relativePath) + extension
+        const outputPath = ts.removeModuleFileExtension(relativePath) + extension
         return outputPath.startsWith(".")
             ? outputPath
             : "./" + outputPath
@@ -128,6 +129,6 @@ export class Importer {
     @memoized
     private requiresExplicitExtensions(): boolean {
         const outFile = Path.resolve(this.karambitOptions.outFile)
-        return ts.getImpliedNodeFormatForFile(outFile, undefined, ts.sys, this.compilerOptions) === ts.ModuleKind.ESNext
+        return ts.isEsmFile(outFile, this.compilerOptions)
     }
 }

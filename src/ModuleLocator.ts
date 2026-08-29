@@ -1,4 +1,4 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {isModuleLike, ModuleLike, ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
@@ -136,7 +136,7 @@ export class ModuleLocator {
 
     @memoized
     private getModuleForSymbol(symbol: ts.Symbol): Module {
-        const declarations = symbol.getDeclarations()?.filter(isModuleLike)
+        const declarations = ts.getDeclarations(symbol).filter(isModuleLike)
         if (declarations === undefined || declarations.length === 0) {
             this.errorReporter.reportParseFailed(`No declarations found for symbol '${symbol.name}'!`)
         }

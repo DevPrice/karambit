@@ -1,4 +1,4 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import {QualifiedType} from "./QualifiedType"
 import {ProgramScope} from "./Scopes"
 import {memoized} from "./Util"
@@ -17,25 +17,25 @@ export class NameGenerator {
 
     private getterNames = new Map<QualifiedType, ts.Identifier | ts.PrivateIdentifier>()
 
-    readonly parentName: ts.Identifier = ts.factory.createUniqueName("parent")
-    readonly unsetSymbolName: ts.Identifier = ts.factory.createUniqueName("unsetSymbol")
+    readonly parentName: ts.Identifier = ts.createUniqueName("parent")
+    readonly unsetSymbolName: ts.Identifier = ts.createUniqueName("unsetSymbol")
 
     getComponentIdentifier(type: ts.Type, preferredName?: string): ts.Identifier {
         // for some reason, createUniqueName doesn't work with the export keyword here...?
-        return ts.factory.createIdentifier(preferredName ?? `Karambit${capitalize(this.getValidIdentifier(type))}`)
+        return ts.createIdentifier(preferredName ?? `Karambit${capitalize(this.getValidIdentifier(type))}`)
     }
 
     @memoized
     getPropertyIdentifier(type: QualifiedType): ts.Identifier {
         const identifierText = this.getValidIdentifier(type.type)
-        return ts.factory.createUniqueName(uncapitalize(identifierText))
+        return ts.createUniqueName(uncapitalize(identifierText))
     }
 
     @memoized
     getPropertyIdentifierForParameter(param: ts.ParameterDeclaration): ts.Identifier {
         const type = this.typeChecker.getTypeAtLocation(param.type ?? param)
         const identifierText = this.getValidIdentifier(type)
-        return ts.factory.createUniqueName(uncapitalize(identifierText))
+        return ts.createUniqueName(uncapitalize(identifierText))
     }
 
     getGetterMethodIdentifier(type: QualifiedType): ts.Identifier | ts.PrivateIdentifier {
@@ -43,7 +43,7 @@ export class NameGenerator {
         if (existingName) return existingName
 
         const identifierText = this.getValidIdentifier(type.type)
-        const newName = ts.factory.createUniqueName(`get${capitalize(identifierText)}`)
+        const newName = ts.createUniqueName(`get${capitalize(identifierText)}`)
         this.getterNames.set(type, newName)
         return newName
     }
@@ -53,7 +53,7 @@ export class NameGenerator {
         if (existingName) return existingName
 
         const identifierText = this.getValidIdentifier(type.type)
-        const newName = ts.factory.createUniqueName(`get${capitalize(identifierText)}_Factory`)
+        const newName = ts.createUniqueName(`get${capitalize(identifierText)}_Factory`)
         this.getterNames.set(type, newName)
         return newName
     }
@@ -63,7 +63,7 @@ export class NameGenerator {
         if (existingName) return existingName
 
         const identifierText = this.getValidIdentifier(type.type)
-        const newName = ts.factory.createUniqueName(`get${capitalize(identifierText)}_Factory`)
+        const newName = ts.createUniqueName(`get${capitalize(identifierText)}_Factory`)
         this.getterNames.set(type, newName)
         return newName
     }

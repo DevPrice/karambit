@@ -2,7 +2,7 @@ import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {TypeResolver} from "./TypeResolver"
 import {ConstructorHelper} from "./ConstructorHelper"
 import {Container, findCycles, isNotNull, memoized} from "./Util"
-import ts from "typescript"
+import * as ts from "./compiler"
 import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {
@@ -228,7 +228,7 @@ export class DependencyGraphBuilder {
     @memoized
     private getInjectableConstructor(type: ts.Type): InjectableConstructor | undefined {
         const symbol = type.getSymbol()
-        const declarations = symbol?.getDeclarations()?.filter(ts.isClassDeclaration)
+        const declarations = symbol && ts.getDeclarations(symbol).filter(ts.isClassDeclaration)
         const declaration = declarations && declarations.length > 0 ? declarations[0] : undefined
         if (!declaration) return undefined
         if (!this.nodeDetector.getInjectAnnotation(declaration)) return undefined

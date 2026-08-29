@@ -1,4 +1,4 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {NameGenerator} from "./NameGenerator"
 import {Importer} from "./Importer"
@@ -46,36 +46,36 @@ export class ComponentDeclarationBuilder {
             this.errorReporter.reportParseFailed("Component missing name!", options.declaration)
         }
         const parentSymbol = this.typeChecker.getSymbolAtLocation(parentName)!
-        return ts.factory.createClassDeclaration(
-            [ts.factory.createToken(ts.SyntaxKind.ExportKeyword)],
+        return ts.createClassDeclaration(
+            [ts.createToken(ts.SyntaxKind.ExportKeyword)],
             options.identifier,
             [],
-            [ts.factory.createHeritageClause(
+            [ts.createHeritageClause(
                 ts.isClassLike(options.declaration) ? ts.SyntaxKind.ExtendsKeyword : ts.SyntaxKind.ImplementsKeyword,
-                [ts.factory.createExpressionWithTypeArguments(
+                [ts.createExpressionWithTypeArguments(
                     this.importer.getExpressionForSymbol(parentSymbol),
                     undefined
                 )]
             )],
             [
-                ts.factory.createConstructorDeclaration(
+                ts.createConstructorDeclaration(
                     undefined,
                     options.factoryParams.map(param =>
-                        ts.factory.createParameterDeclaration(
-                            [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword), ts.factory.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
+                        ts.createParameterDeclaration(
+                            [ts.createModifier(ts.SyntaxKind.PrivateKeyword), ts.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
                             undefined,
                             this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                             undefined,
                             options.factorySymbol
                                 ? paramType(
-                                    ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(options.factorySymbol)),
+                                    ts.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(options.factorySymbol)),
                                     param.index,
                                 )
-                                : this.constructorParamTypeNode(ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(parentSymbol)), param.index, parentSymbol),
+                                : this.constructorParamTypeNode(ts.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(parentSymbol)), param.index, parentSymbol),
                             undefined,
                         )
                     ),
-                    ts.factory.createBlock(
+                    ts.createBlock(
                         [
                             ts.isClassLike(options.declaration)
                                 ? this.componentSuperCall(options.declaration, options.factoryParams)
@@ -100,8 +100,8 @@ export class ComponentDeclarationBuilder {
                 }
                 return match
             })
-        return ts.factory.createExpressionStatement(ts.factory.createCallExpression(
-            ts.factory.createSuper(),
+        return ts.createExpressionStatement(ts.createCallExpression(
+            ts.createSuper(),
             undefined,
             mappedParams.map(param => {
                 return this.nameGenerator.getPropertyIdentifierForParameter(param.declaration)
@@ -118,29 +118,29 @@ export class ComponentDeclarationBuilder {
             this.errorReporter.reportParseFailed("Invalid property!")
         }
         const parentSymbol = this.typeChecker.getSymbolAtLocation(parentName)!
-        const typeNode = ts.factory.createIndexedAccessTypeNode(
-            ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(parentSymbol)),
-            ts.factory.createLiteralTypeNode(ts.factory.createStringLiteral(options.name.text)),
+        const typeNode = ts.createIndexedAccessTypeNode(
+            ts.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(parentSymbol)),
+            ts.createLiteralTypeNode(ts.createStringLiteral(options.name.text)),
         )
         const resolvedType = this.typeResolver.resolveBoundType(options.type)
         if (options.getter) {
-            return ts.factory.createGetAccessorDeclaration(
+            return ts.createGetAccessorDeclaration(
                 [],
                 options.name,
                 [],
-                options.optional && typeNode ? ts.factory.createUnionTypeNode([typeNode, ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)]) : typeNode,
-                ts.factory.createBlock([ts.factory.createReturnStatement(this.getParamExpression(resolvedType))]),
+                options.optional && typeNode ? ts.createUnionTypeNode([typeNode, ts.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)]) : typeNode,
+                ts.createBlock([ts.createReturnStatement(this.getParamExpression(resolvedType))]),
             )
         } else {
-            return ts.factory.createMethodDeclaration(
+            return ts.createMethodDeclaration(
                 [],
                 undefined,
                 options.name,
                 undefined,
                 [],
                 [],
-                ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("ReturnType"), [typeNode]),
-                ts.factory.createBlock([ts.factory.createReturnStatement(this.getParamExpression(resolvedType))]),
+                ts.createTypeReferenceNode(ts.createIdentifier("ReturnType"), [typeNode]),
+                ts.createBlock([ts.createReturnStatement(this.getParamExpression(resolvedType))]),
             )
         }
     }
@@ -169,45 +169,45 @@ export class ComponentDeclarationBuilder {
         }
         const symbol = factory.subcomponentType.type.symbol
         const declaration = symbol.declarations![0]
-        return ts.factory.createPropertyDeclaration(
-            [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
+        return ts.createPropertyDeclaration(
+            [ts.createToken(ts.SyntaxKind.PrivateKeyword)],
             this.nameGenerator.getPropertyIdentifier(factory.subcomponentType),
             undefined,
             undefined,
-            ts.factory.createClassExpression(
+            ts.createClassExpression(
                 undefined,
                 identifier,
                 undefined,
-                [ts.factory.createHeritageClause(
+                [ts.createHeritageClause(
                     ts.isClassLike(declaration) ? ts.SyntaxKind.ExtendsKeyword : ts.SyntaxKind.ImplementsKeyword,
-                    [ts.factory.createExpressionWithTypeArguments(
+                    [ts.createExpressionWithTypeArguments(
                         this.importer.getExpressionForSymbol(symbol),
                         undefined
                     )]
                 )],
                 [
-                    ts.factory.createConstructorDeclaration(
+                    ts.createConstructorDeclaration(
                         undefined,
-                        [ts.factory.createParameterDeclaration(
-                            [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword), ts.factory.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
+                        [ts.createParameterDeclaration(
+                            [ts.createModifier(ts.SyntaxKind.PrivateKeyword), ts.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
                             undefined,
                             this.nameGenerator.parentName,
                             undefined,
-                            ts.factory.createTypeReferenceNode(parentType, undefined),
+                            ts.createTypeReferenceNode(parentType, undefined),
                             undefined,
                         ), ...factory.factoryParams.map(param =>
-                            ts.factory.createParameterDeclaration(
-                                [ts.factory.createModifier(ts.SyntaxKind.PrivateKeyword), ts.factory.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
+                            ts.createParameterDeclaration(
+                                [ts.createModifier(ts.SyntaxKind.PrivateKeyword), ts.createModifier(ts.SyntaxKind.ReadonlyKeyword)],
                                 undefined,
                                 this.nameGenerator.getPropertyIdentifierForParameter(param.declaration),
                                 undefined,
                                 factory.factorySymbol
-                                    ? paramType(ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(factory.factorySymbol)), param.index)
-                                    : this.constructorParamTypeNode(ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(symbol)), param.index, symbol),
+                                    ? paramType(ts.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(factory.factorySymbol)), param.index)
+                                    : this.constructorParamTypeNode(ts.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(symbol)), param.index, symbol),
                                 undefined
                             )
                         )],
-                        ts.factory.createBlock(
+                        ts.createBlock(
                             [
                                 ts.isClassLike(declaration)
                                     ? this.componentSuperCall(declaration, factory.factoryParams)
@@ -231,12 +231,12 @@ export class ComponentDeclarationBuilder {
                 ...paramType,
                 type: providedType
             })
-            return ts.factory.createArrowFunction(
+            return ts.createArrowFunction(
                 undefined,
                 undefined,
                 [],
                 undefined,
-                ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+                ts.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
                 this.getParamExpression(qualifiedProvidedType)
             )
         }
@@ -245,30 +245,30 @@ export class ComponentDeclarationBuilder {
         const identifier = subcomponentFactory
             ? this.nameGenerator.getSubcomponentFactoryGetterMethodIdentifier(instanceProvider.subcomponentType)
             : (assistedFactory ? this.nameGenerator.getAssistedFactoryGetterMethodIdentifier(instanceProvider.resultType) : this.nameGenerator.getGetterMethodIdentifier(paramType))
-        return ts.factory.createCallExpression(
-            ts.factory.createPropertyAccessExpression(ts.factory.createThis(), identifier),
+        return ts.createCallExpression(
+            ts.createPropertyAccessExpression(ts.createThis(), identifier),
             undefined,
             []
         )
     }
 
     private getSubcomponentFactoryDeclaration(factory: SubcomponentFactory): ts.ClassElement {
-        return ts.factory.createMethodDeclaration(
-            [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
+        return ts.createMethodDeclaration(
+            [ts.createToken(ts.SyntaxKind.PrivateKeyword)],
             undefined,
             this.nameGenerator.getGetterMethodIdentifier(factory.subcomponentType),
             undefined,
             undefined,
             [],
-            factory.factorySymbol && ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(factory.factorySymbol)),
-            ts.factory.createBlock(
+            factory.factorySymbol && ts.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(factory.factorySymbol)),
+            ts.createBlock(
                 [
-                    ts.factory.createReturnStatement(
-                        ts.factory.createArrowFunction(
+                    ts.createReturnStatement(
+                        ts.createArrowFunction(
                             undefined,
                             undefined,
                             factory.factoryParams.map(it =>
-                                ts.factory.createParameterDeclaration(
+                                ts.createParameterDeclaration(
                                     undefined,
                                     undefined,
                                     it.name,
@@ -276,9 +276,9 @@ export class ComponentDeclarationBuilder {
                                     factory.factorySymbol
                                         ? undefined
                                         : this.constructorParamTypeNode(
-                                            ts.factory.createTypeQueryNode(
-                                                ts.factory.createQualifiedName(
-                                                    ts.factory.createIdentifier("this"),
+                                            ts.createTypeQueryNode(
+                                                ts.createQualifiedName(
+                                                    ts.createIdentifier("this"),
                                                     this.nameGenerator.getPropertyIdentifier(factory.subcomponentType),
                                                 )
                                             ),
@@ -289,8 +289,8 @@ export class ComponentDeclarationBuilder {
                                 )
                             ),
                             undefined,
-                            ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-                            this.createSubcomponentExpression(factory, factory.factoryParams.map(it => ts.factory.createIdentifier(it.name))),
+                            ts.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+                            this.createSubcomponentExpression(factory, factory.factoryParams.map(it => ts.createIdentifier(it.name))),
                         )
                     )
                 ],
@@ -300,36 +300,36 @@ export class ComponentDeclarationBuilder {
     }
 
     private createSubcomponentExpression(factory: SubcomponentFactory, params: ts.Expression[]): ts.Expression {
-        return ts.factory.createNewExpression(
-            ts.factory.createPropertyAccessExpression(
-                ts.factory.createThis(),
+        return ts.createNewExpression(
+            ts.createPropertyAccessExpression(
+                ts.createThis(),
                 this.nameGenerator.getPropertyIdentifier(factory.subcomponentType)
             ),
             undefined,
-            [ts.factory.createThis(), ...params]
+            [ts.createThis(), ...params]
         )
     }
 
     private getAssistedFactoryDeclaration(factory: AssistedFactory): ts.ClassElement {
         const symbol = this.typeChecker.getSymbolAtLocation(factory.declaration.name!)!
-        const typeNode = factory.declaration.name && ts.factory.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(symbol))
-        return ts.factory.createMethodDeclaration(
-            [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
+        const typeNode = factory.declaration.name && ts.createTypeQueryNode(this.importer.getQualifiedNameForSymbol(symbol))
+        return ts.createMethodDeclaration(
+            [ts.createToken(ts.SyntaxKind.PrivateKeyword)],
             undefined,
             this.nameGenerator.getAssistedFactoryGetterMethodIdentifier(factory.resultType),
             undefined,
             undefined,
             [],
             undefined,
-            ts.factory.createBlock(
+            ts.createBlock(
                 [
-                    ts.factory.createReturnStatement(
-                        ts.factory.createArrowFunction(
+                    ts.createReturnStatement(
+                        ts.createArrowFunction(
                             undefined,
                             undefined,
                             factory.factoryParams
                                 .map(it =>
-                                    ts.factory.createParameterDeclaration(
+                                    ts.createParameterDeclaration(
                                         undefined,
                                         undefined,
                                         it.name,
@@ -339,7 +339,7 @@ export class ComponentDeclarationBuilder {
                                     )
                                 ),
                             undefined,
-                            ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+                            ts.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
                             this.createAssistedFactoryExpression(
                                 factory,
                                 factory.constructorParams
@@ -348,7 +348,7 @@ export class ComponentDeclarationBuilder {
                                             const factoryParam = factory.factoryParams
                                                 .find(p => p.type === it.type)
                                             if (!factoryParam) throw new Error("Error generating Assisted Factory!")
-                                            return ts.factory.createIdentifier(factoryParam.name)
+                                            return ts.createIdentifier(factoryParam.name)
                                         } else {
                                             return this.getParamExpression(it.type)
                                         }
@@ -363,7 +363,7 @@ export class ComponentDeclarationBuilder {
     }
 
     private createAssistedFactoryExpression(factory: AssistedFactory, params: ts.Expression[]): ts.Expression {
-        return ts.factory.createNewExpression(
+        return ts.createNewExpression(
             this.importer.getExpressionForDeclaration(factory.declaration),
             undefined,
             params,
@@ -376,16 +376,16 @@ export class ComponentDeclarationBuilder {
 
     private createSetMultibindingExpression(provider: SetMultibinding): ts.Expression {
         const parentAccessExpression: ts.Expression | undefined = provider.parentBinding
-            ? ts.factory.createSpreadElement(this.accessParentGetter(provider.type))
+            ? ts.createSpreadElement(this.accessParentGetter(provider.type))
             : undefined
-        return ts.factory.createNewExpression(
-            ts.factory.createIdentifier("Set"),
+        return ts.createNewExpression(
+            ts.createIdentifier("Set"),
             undefined,
-            [ts.factory.createArrayLiteralExpression(
+            [ts.createArrayLiteralExpression(
                 provider.elementProviders
                     .map(it => {
                         if (it.isIterableProvider) {
-                            return ts.factory.createSpreadElement(this.getParamExpression(it.type))
+                            return ts.createSpreadElement(this.getParamExpression(it.type))
                         } else {
                             return this.getParamExpression(it.type)
                         }
@@ -402,16 +402,16 @@ export class ComponentDeclarationBuilder {
 
     private createMapMultibindingExpression(provider: MapMultibinding): ts.Expression {
         const parentAccessExpression: ts.Expression | undefined = provider.parentBinding
-            ? ts.factory.createSpreadElement(this.accessParentGetter(provider.type))
+            ? ts.createSpreadElement(this.accessParentGetter(provider.type))
             : undefined
-        return ts.factory.createNewExpression(
-            ts.factory.createIdentifier("Map"),
+        return ts.createNewExpression(
+            ts.createIdentifier("Map"),
             undefined,
-            [ts.factory.createArrayLiteralExpression(
+            [ts.createArrayLiteralExpression(
                 provider.entryProviders
                     .map(entryProvider => {
                         if (entryProvider.isIterableProvider) {
-                            return ts.factory.createSpreadElement(this.getMapEntryExpression(entryProvider.type, entryProvider.key))
+                            return ts.createSpreadElement(this.getMapEntryExpression(entryProvider.type, entryProvider.key))
                         } else {
                             return this.getMapEntryExpression(entryProvider.type, entryProvider.key)
                         }
@@ -424,7 +424,7 @@ export class ComponentDeclarationBuilder {
 
     private getMapEntryExpression(type: QualifiedType, keyExpression?: ts.Expression): ts.Expression {
         if (keyExpression) {
-            return ts.factory.createArrayLiteralExpression([asConst(keyExpression), this.getParamExpression(type)], false)
+            return ts.createArrayLiteralExpression([asConst(keyExpression), this.getParamExpression(type)], false)
         }
         return this.getParamExpression(type)
     }
@@ -434,22 +434,22 @@ export class ComponentDeclarationBuilder {
     }
 
     private getterMethodDeclarationWithTypeNode(type: QualifiedType, typeNode: ts.TypeNode | undefined, expression: ts.Expression, optional: boolean = false): ts.MethodDeclaration {
-        return ts.factory.createMethodDeclaration(
-            [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
+        return ts.createMethodDeclaration(
+            [ts.createToken(ts.SyntaxKind.PrivateKeyword)],
             undefined,
             this.nameGenerator.getGetterMethodIdentifier(type),
             undefined,
             [],
             [],
-            optional && typeNode ? ts.factory.createUnionTypeNode([typeNode, ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)]) : typeNode,
-            ts.factory.createBlock([ts.factory.createReturnStatement(expression)])
+            optional && typeNode ? ts.createUnionTypeNode([typeNode, ts.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword)]) : typeNode,
+            ts.createBlock([ts.createReturnStatement(expression)])
         )
     }
 
     private getConstructorProviderDeclaration(constructor: InjectableConstructor, componentScope?: ComponentScope): ts.ClassElement[] {
         const self = this
         function constructorCallExpression(): ts.Expression {
-            return ts.factory.createNewExpression(
+            return ts.createNewExpression(
                 self.importer.getExpressionForDeclaration(constructor.declaration),
                 undefined,
                 constructor.parameters.map(it => it.type).map(self.typeResolver.resolveBoundType).map(self.getParamExpression)
@@ -464,29 +464,29 @@ export class ComponentDeclarationBuilder {
             }
             const propIdentifier = self.nameGenerator.getPropertyIdentifier(qualifiedType)
             return [
-                ts.factory.createPropertyDeclaration(
-                    [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
+                ts.createPropertyDeclaration(
+                    [ts.createToken(ts.SyntaxKind.PrivateKeyword)],
                     propIdentifier,
-                    ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-                    ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(symbol)),
+                    ts.createToken(ts.SyntaxKind.QuestionToken),
+                    ts.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(symbol)),
                     undefined
                 ),
                 self.getterMethodDeclarationWithTypeNode(
                     qualifiedType,
-                    ts.factory.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(symbol)),
-                    ts.factory.createBinaryExpression(
-                        ts.factory.createPropertyAccessExpression(
-                            ts.factory.createThis(),
+                    ts.createTypeReferenceNode(this.importer.getQualifiedNameForSymbol(symbol)),
+                    ts.createBinaryExpression(
+                        ts.createPropertyAccessExpression(
+                            ts.createThis(),
                             propIdentifier
                         ),
-                        ts.factory.createToken(ts.SyntaxKind.QuestionQuestionToken),
-                        ts.factory.createParenthesizedExpression(
-                            ts.factory.createBinaryExpression(
-                                ts.factory.createPropertyAccessExpression(
-                                    ts.factory.createThis(),
+                        ts.createToken(ts.SyntaxKind.QuestionQuestionToken),
+                        ts.createParenthesizedExpression(
+                            ts.createBinaryExpression(
+                                ts.createPropertyAccessExpression(
+                                    ts.createThis(),
                                     propIdentifier
                                 ),
-                                ts.factory.createToken(ts.SyntaxKind.EqualsToken),
+                                ts.createToken(ts.SyntaxKind.EqualsToken),
                                 constructorCallExpression()
                             )
                         )
@@ -502,19 +502,19 @@ export class ComponentDeclarationBuilder {
     }
 
     private createScopedExpression(propIdentifier: ts.Identifier | ts.PrivateIdentifier, expression: ts.Expression) {
-        return ts.factory.createBinaryExpression(
-            ts.factory.createPropertyAccessExpression(
-                ts.factory.createThis(),
+        return ts.createBinaryExpression(
+            ts.createPropertyAccessExpression(
+                ts.createThis(),
                 propIdentifier
             ),
-            ts.factory.createToken(ts.SyntaxKind.QuestionQuestionToken),
-            ts.factory.createParenthesizedExpression(
-                ts.factory.createBinaryExpression(
-                    ts.factory.createPropertyAccessExpression(
-                        ts.factory.createThis(),
+            ts.createToken(ts.SyntaxKind.QuestionQuestionToken),
+            ts.createParenthesizedExpression(
+                ts.createBinaryExpression(
+                    ts.createPropertyAccessExpression(
+                        ts.createThis(),
                         propIdentifier
                     ),
-                    ts.factory.createToken(ts.SyntaxKind.EqualsToken),
+                    ts.createToken(ts.SyntaxKind.EqualsToken),
                     expression
                 )
             )
@@ -522,34 +522,34 @@ export class ComponentDeclarationBuilder {
     }
 
     private createScopedNullableExpression(propIdentifier: ts.Identifier | ts.PrivateIdentifier, expression: ts.Expression) {
-        return ts.factory.createConditionalExpression(
-            ts.factory.createBinaryExpression(
-                ts.factory.createPropertyAccessExpression(
-                    ts.factory.createThis(),
+        return ts.createConditionalExpression(
+            ts.createBinaryExpression(
+                ts.createPropertyAccessExpression(
+                    ts.createThis(),
                     propIdentifier
                 ),
-                ts.factory.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
+                ts.createToken(ts.SyntaxKind.EqualsEqualsEqualsToken),
                 this.getUnsetPropertyExpression()
             ),
-            ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-            ts.factory.createParenthesizedExpression(ts.factory.createBinaryExpression(
-                ts.factory.createPropertyAccessExpression(
-                    ts.factory.createThis(),
+            ts.createToken(ts.SyntaxKind.QuestionToken),
+            ts.createParenthesizedExpression(ts.createBinaryExpression(
+                ts.createPropertyAccessExpression(
+                    ts.createThis(),
                     propIdentifier
                 ),
-                ts.factory.createToken(ts.SyntaxKind.EqualsToken),
+                ts.createToken(ts.SyntaxKind.EqualsToken),
                 expression
             )),
-            ts.factory.createToken(ts.SyntaxKind.ColonToken),
-            ts.factory.createPropertyAccessExpression(
-                ts.factory.createThis(),
+            ts.createToken(ts.SyntaxKind.ColonToken),
+            ts.createPropertyAccessExpression(
+                ts.createThis(),
                 propIdentifier
             )
         )
     }
 
     private factoryCallExpression(providesMethod: ProvidesMethod): ts.Expression {
-        return ts.factory.createCallExpression(
+        return ts.createCallExpression(
             this.providesMethodExpression(providesMethod),
             undefined,
             providesMethod.parameters.map(it => it.type).map(this.typeResolver.resolveBoundType).map(this.getParamExpression)
@@ -557,9 +557,9 @@ export class ComponentDeclarationBuilder {
     }
 
     private providesMethodExpression(providesMethod: ProvidesMethod): ts.Expression {
-        return ts.factory.createPropertyAccessExpression(
+        return ts.createPropertyAccessExpression(
             this.importer.getExpressionForDeclaration(providesMethod.module),
-            ts.factory.createIdentifier(providesMethod.declaration.name.getText())
+            ts.createIdentifier(providesMethod.declaration.name.getText())
         )
     }
 
@@ -578,8 +578,8 @@ export class ComponentDeclarationBuilder {
         }
         const moduleSymbol = this.typeChecker.getSymbolAtLocation(moduleName)!
         return functionReturnType(
-            ts.factory.createTypeQueryNode(
-                ts.factory.createQualifiedName(this.importer.getQualifiedNameForSymbol(moduleSymbol), methodName),
+            ts.createTypeQueryNode(
+                ts.createQualifiedName(this.importer.getQualifiedNameForSymbol(moduleSymbol), methodName),
                 undefined,
             )
         )
@@ -588,8 +588,8 @@ export class ComponentDeclarationBuilder {
     private getMissingOptionalDeclaration(type: QualifiedType): ts.ClassElement {
         return this.getterMethodDeclarationWithTypeNode(
             type,
-            ts.factory.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
-            ts.factory.createVoidExpression(ts.factory.createNumericLiteral(0)),
+            ts.createKeywordTypeNode(ts.SyntaxKind.UndefinedKeyword),
+            ts.createVoidExpression(ts.createNumericLiteral(0)),
         )
     }
 
@@ -615,11 +615,11 @@ export class ComponentDeclarationBuilder {
     private getCachedPropertyDeclaration(type: QualifiedType, typeNode: ts.TypeNode): ts.ClassElement {
         const propIdentifier = this.nameGenerator.getPropertyIdentifier(type)
         const nullable = isTypeNullable(type.type)
-        return ts.factory.createPropertyDeclaration(
-            [ts.factory.createToken(ts.SyntaxKind.PrivateKeyword)],
+        return ts.createPropertyDeclaration(
+            [ts.createToken(ts.SyntaxKind.PrivateKeyword)],
             propIdentifier,
-            nullable ? undefined : ts.factory.createToken(ts.SyntaxKind.QuestionToken),
-            nullable ? typeNode && ts.factory.createUnionTypeNode([this.typeOfUnsetSymbol(), typeNode]) : typeNode,
+            nullable ? undefined : ts.createToken(ts.SyntaxKind.QuestionToken),
+            nullable ? typeNode && ts.createUnionTypeNode([this.typeOfUnsetSymbol(), typeNode]) : typeNode,
             nullable ? this.getUnsetPropertyExpression() : undefined
         )
     }
@@ -636,7 +636,7 @@ export class ComponentDeclarationBuilder {
     }
 
     private typeOfUnsetSymbol() {
-        return ts.factory.createTypeQueryNode(this.nameGenerator.getUnsetSymbolIdentifier(), undefined)
+        return ts.createTypeQueryNode(this.nameGenerator.getUnsetSymbolIdentifier(), undefined)
     }
 
     private constructorParamTypeNode(typeNode: ts.TypeNode, index: number, constructorSymbol?: ts.Symbol) {
@@ -651,12 +651,12 @@ export class ComponentDeclarationBuilder {
         if (isProtected) {
             // for protected constructors, we need to intersect with the { new(): never } type to satisfy the type checker
             return constructorParamType(
-                ts.factory.createIntersectionTypeNode([
-                    ts.factory.createTypeLiteralNode([
-                        ts.factory.createConstructSignature(
+                ts.createIntersectionTypeNode([
+                    ts.createTypeLiteralNode([
+                        ts.createConstructSignature(
                             undefined,
                             [],
-                            ts.factory.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword),
+                            ts.createKeywordTypeNode(ts.SyntaxKind.NeverKeyword),
                         )
                     ]),
                     typeNode,
@@ -669,10 +669,10 @@ export class ComponentDeclarationBuilder {
     }
 
     accessParentGetter(type: QualifiedType): ts.Expression {
-        return ts.factory.createCallExpression(
-            ts.factory.createPropertyAccessExpression(
-                ts.factory.createPropertyAccessExpression(
-                    ts.factory.createThis(),
+        return ts.createCallExpression(
+            ts.createPropertyAccessExpression(
+                ts.createPropertyAccessExpression(
+                    ts.createThis(),
                     this.nameGenerator.parentName
                 ),
                 this.nameGenerator.getGetterMethodIdentifier(type)
@@ -684,53 +684,53 @@ export class ComponentDeclarationBuilder {
 }
 
 function constructorParamType(type: ts.TypeNode, index: number) {
-    return ts.factory.createIndexedAccessTypeNode(
-        ts.factory.createTypeReferenceNode(
-            ts.factory.createIdentifier("ConstructorParameters"),
+    return ts.createIndexedAccessTypeNode(
+        ts.createTypeReferenceNode(
+            ts.createIdentifier("ConstructorParameters"),
             [type],
         ),
-        ts.factory.createLiteralTypeNode(ts.factory.createNumericLiteral(index)),
+        ts.createLiteralTypeNode(ts.createNumericLiteral(index)),
     )
 }
 
 function paramType(type: ts.TypeNode, index: number) {
-    return ts.factory.createIndexedAccessTypeNode(
-        ts.factory.createTypeReferenceNode(
-            ts.factory.createIdentifier("Parameters"),
+    return ts.createIndexedAccessTypeNode(
+        ts.createTypeReferenceNode(
+            ts.createIdentifier("Parameters"),
             [type],
         ),
-        ts.factory.createLiteralTypeNode(ts.factory.createNumericLiteral(index)),
+        ts.createLiteralTypeNode(ts.createNumericLiteral(index)),
     )
 }
 
 function functionReturnType(type: ts.TypeNode) {
-    return ts.factory.createTypeReferenceNode(
-        ts.factory.createIdentifier("ReturnType"),
+    return ts.createTypeReferenceNode(
+        ts.createIdentifier("ReturnType"),
         [type],
     )
 }
 
 function iterableType(type: ts.TypeNode) {
-    return ts.factory.createExpressionWithTypeArguments(ts.factory.createIdentifier("Iterable"), [type])
+    return ts.createExpressionWithTypeArguments(ts.createIdentifier("Iterable"), [type])
 }
 
 function accessDependencyProperty(memberName: ts.Identifier | ts.PrivateIdentifier, propertyName?: string): ts.PropertyAccessExpression {
-    const propertyAccess = ts.factory.createPropertyAccessExpression(
-        ts.factory.createThis(),
+    const propertyAccess = ts.createPropertyAccessExpression(
+        ts.createThis(),
         memberName
     )
     if (!propertyName) {
         return propertyAccess
     }
-    return ts.factory.createPropertyAccessExpression(
+    return ts.createPropertyAccessExpression(
         propertyAccess,
-        ts.factory.createIdentifier(propertyName)
+        ts.createIdentifier(propertyName)
     )
 }
 
 function asConst(literalExpression: ts.Expression) {
-    return ts.factory.createAsExpression(
+    return ts.createAsExpression(
         literalExpression,
-        ts.factory.createTypeReferenceNode(ts.factory.createIdentifier("const"), undefined),
+        ts.createTypeReferenceNode(ts.createIdentifier("const"), undefined),
     )
 }

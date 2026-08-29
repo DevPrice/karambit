@@ -1,23 +1,12 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import * as Path from "node:path"
 import * as fs from "fs"
 import {hideBin} from "yargs/helpers"
 import yargs from "yargs"
 import {generateComponentFiles} from "./karambit"
 import {KarambitError} from "./KarambitError"
-import {isNotNull} from "./Util"
 
-const scriptTargets: ReadonlyMap<string, ts.ScriptTarget> = new Map(
-    Object.entries(ts.ScriptTarget)
-        .filter(([key]) => key.localeCompare("json", undefined, {sensitivity: "base"}))
-        .map(([key, value]) => {
-            if (isNaN(Number(key)) && typeof value !== "string") {
-                return [key.toLowerCase(), value] as const
-            }
-            return undefined
-        })
-        .filter(isNotNull)
-)
+const scriptTargets: ReadonlyMap<string, ts.ScriptTarget> = ts.getScriptTargets()
 
 interface GenerateCommandOptions {
     tsconfig: string
@@ -113,26 +102,24 @@ yargs(hideBin(process.argv))
 
             const tsconfigFile = getFile(args.tsconfig, "tsconfig.json")
 
-            const configFile = ts.readConfigFile(tsconfigFile, ts.sys.readFile)
-            if (configFile.error) {
+            const basePath = Path.dirname(args.tsconfig)
+            const config = ts.parseConfigFile(tsconfigFile, basePath)
+            if ("readError" in config) {
                 console.error("Failed to read config file!")
-                console.error(ts.flattenDiagnosticMessageText(configFile.error.messageText, "\n"))
+                console.error(config.readError)
                 process.exit(1)
             }
-
-            const basePath = Path.dirname(args.tsconfig)
-            const parsedCommandLine = ts.parseJsonConfigFileContent(configFile.config, ts.sys, basePath)
-            if (parsedCommandLine.errors.length > 0) {
-                for (const error of parsedCommandLine.errors) {
-                    console.error(ts.flattenDiagnosticMessageText(error.messageText, "\n"))
+            if (config.errors.length > 0) {
+                for (const error of config.errors) {
+                    console.error(ts.formatDiagnostic(error))
                 }
                 process.exit(1)
             }
 
             if (args.watch) {
-                watchComponents(parsedCommandLine.fileNames, parsedCommandLine.options, args)
+                watchComponents(config.fileNames, config.options, args)
             } else {
-                generateComponents(parsedCommandLine.fileNames, parsedCommandLine.options, args)
+                generateComponents(config.fileNames, config.options, args)
             }
         },
     )
@@ -144,34 +131,22 @@ function getFile(input: string, defaultFilename: string) {
         : input
 }
 
-function generateComponents(fileNames: string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
-    const program = ts.createProgram(fileNames, {...compilerOptions, incremental: compilerOptions.incremental && !!compilerOptions.tsBuildInfoFile})
+function generateComponents(fileNames: readonly string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
+    const program = ts.createProgram(fileNames, compilerOptions)
     process.exit(generateFromProgram(program, compilerOptions, cliOptions))
 }
 
-function watchComponents(fileNames: string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
+function watchComponents(fileNames: readonly string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
     // TODO: When Karambit generates its output, it causes TS to recreate the program, causing Karambit to regenerate again if it changed...
-    const createProgram: ts.CreateProgram<ts.SemanticDiagnosticsBuilderProgram> = (...args) => {
-        const program = ts.createSemanticDiagnosticsBuilderProgram(...args)
+    ts.watchProgram(fileNames, compilerOptions, (program, options) => {
         process.stdout.write("Regenerating Karambit output...")
-        const result = generateFromProgram(program.getProgram(), program.getCompilerOptions(), cliOptions)
+        const result = generateFromProgram(program, options, cliOptions)
         if (result === 0) {
             process.stdout.write(" done.\n")
         } else {
             process.stdout.write("\n")
         }
-        return program
-    }
-    ts.createWatchProgram(
-        ts.createWatchCompilerHost(
-            fileNames,
-            compilerOptions,
-            ts.sys,
-            createProgram,
-            () => {},
-            () => {},
-        )
-    )
+    })
 }
 
 function generateFromProgram(program: ts.Program, compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): number {

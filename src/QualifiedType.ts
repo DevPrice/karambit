@@ -1,5 +1,4 @@
-import ts from "typescript"
-import {Hacks} from "./Hacks"
+import * as ts from "./compiler"
 
 export const internalQualifier = Symbol("internal-qualifier")
 
@@ -25,7 +24,7 @@ export function createQualifiedType(args: QualifiedType): QualifiedType {
 }
 
 export function qualifiedTypeToString(qualifiedType: QualifiedType): string {
-    const checker = Hacks.getTypeChecker(qualifiedType.type)
+    const checker = ts.getTypeChecker(qualifiedType.type)
     const qualifierString = typeof qualifiedType.qualifier === "string" ?
         `named "${qualifiedType.qualifier}"` :
         typeof qualifiedType.qualifier === "object" ? qualifiedType.qualifier?.getName() : undefined

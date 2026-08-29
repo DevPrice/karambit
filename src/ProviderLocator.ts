@@ -1,4 +1,4 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import {createQualifiedType, QualifiedType} from "./QualifiedType"
 import {MapMultibinding, PropertyProvider, ProviderType, ProvidesMethod, SetMultibinding} from "./Providers"
 import {TupleMap} from "./TupleMap"
@@ -9,7 +9,6 @@ import {ConstructorHelper} from "./ConstructorHelper"
 import {NameGenerator} from "./NameGenerator"
 import {PropertyExtractor} from "./PropertyExtractor"
 import {ComponentLikeDeclaration, ComponentScope} from "./TypescriptUtil"
-import {Hacks} from "./Hacks"
 
 export interface ModuleProviders {
     factories: ReadonlyMap<QualifiedType, ProvidesMethod>
@@ -31,7 +30,6 @@ export class ProviderLocator {
         private readonly nodeDetector: InjectNodeDetector,
         private readonly moduleLocator: ModuleLocator,
         private readonly errorReporter: ErrorReporter,
-        private readonly hacks: Hacks,
     ) { }
 
     findPropertyProviders(component: ComponentLikeDeclaration): ReadonlyMap<QualifiedType, PropertyProvider> {
@@ -52,7 +50,7 @@ export class ProviderLocator {
                 if (existing) throw this.errorReporter.reportDuplicateProviders(type, [existing, provider])
                 dependencyMap.set(type, provider)
             } else {
-                if (!this.hacks.isObjectType(type.type) || !(type.type.objectFlags & (ts.ObjectFlags.Anonymous | ts.ObjectFlags.ClassOrInterface))) {
+                if (!ts.isObjectType(type.type) || !(type.type.objectFlags & (ts.ObjectFlags.Anonymous | ts.ObjectFlags.ClassOrInterface))) {
                     this.errorReporter.reportParseFailed("Component dependencies must be a structural object! Did you mean to use @bindsInstance?", param.declaration)
                 }
 

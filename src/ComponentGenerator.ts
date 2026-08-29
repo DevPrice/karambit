@@ -1,4 +1,4 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import {NameGenerator} from "./NameGenerator"
 import {InjectNodeDetector} from "./InjectNodeDetector"
 import {ModuleLocator} from "./ModuleLocator"
@@ -91,7 +91,7 @@ export class ComponentGenerator {
             return {
                 type: createQualifiedType({type: property.returnType}),
                 optional: property.optional,
-                name: ts.factory.createIdentifier(property.symbol.name),
+                name: ts.createIdentifier(property.symbol.name),
                 getter: !property.parameters,
             }
         })
@@ -230,7 +230,7 @@ export class ComponentGenerator {
         const graph = graphBuilder.buildDependencyGraph(new Set(definition.exposedProperties))
 
         const subcomponentName = factory.subcomponentType.type.symbol.name
-        const subcomponentIdentifier = ts.factory.createUniqueName(subcomponentName)
+        const subcomponentIdentifier = ts.createUniqueName(subcomponentName)
 
         const subcomponents = distinctBy(
             Array.from(graph.resolved.keys()).map(it => it.type)

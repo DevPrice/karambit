@@ -1,4 +1,4 @@
-import ts, {TypeChecker} from "typescript"
+import * as ts from "./compiler"
 import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
 import {ErrorReporter} from "./ErrorReporter"
 import {bound} from "./Util"
@@ -12,7 +12,7 @@ import {AnnotationLike, ComponentLikeDeclaration, isComponentLikeDeclaration, is
 export class AnnotationValidator {
 
     constructor(
-        private readonly typeChecker: TypeChecker,
+        private readonly typeChecker: ts.TypeChecker,
         private readonly nodeDetector: InjectNodeDetector,
         private readonly errorReporter: ErrorReporter,
     ) { }

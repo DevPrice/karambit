@@ -1,4 +1,4 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import picomatch from "picomatch"
 import {Provider, Qualified} from "karambit-inject"
 import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
@@ -78,14 +78,6 @@ export abstract class ProgramModule {
      */
     static provideCompilerOptions(program: ts.Program): ts.CompilerOptions {
         return program.getCompilerOptions()
-    }
-
-    /**
-     * @provides
-     * @reusable
-     */
-    static providePrinter(options: KarambitOptions): ts.Printer {
-        return ts.createPrinter(options.printerOptions)
     }
 
     /**

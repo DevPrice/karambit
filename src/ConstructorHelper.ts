@@ -1,4 +1,4 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
 import {createQualifiedType} from "./QualifiedType"
 import {ComponentFactory, ConstructorParameter} from "./Providers"
@@ -76,7 +76,7 @@ export class ConstructorHelper {
             })
             const type = this.typeChecker.getTypeAtLocation(declaration.type)
             return {
-                symbol: this.nodeDetector.getOriginalSymbol(type.aliasSymbol ?? type.symbol),
+                symbol: this.nodeDetector.getOriginalSymbol(ts.getTypeSymbol(type)!),
                 parameters,
             }
         }

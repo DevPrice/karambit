@@ -1,7 +1,8 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import * as Path from "path"
 import * as fs from "fs"
 import {Logger} from "./Util"
+import {KarambitOptions} from "./karambit"
 
 export interface ComponentWriter {
     writeComponentFile(sourceFile: ts.SourceFile, outputFilename: string): void
@@ -13,11 +14,11 @@ export interface ComponentWriter {
 export class FileWriter implements ComponentWriter {
 
     constructor(
-        private readonly printer: ts.Printer,
+        private readonly options: KarambitOptions,
     ) { }
 
     writeComponentFile(sourceFile: ts.SourceFile, outputFilename: string) {
-        const resultText: string = this.printer.printFile(sourceFile)
+        const resultText: string = ts.printFile(sourceFile, this.options.printerOptions)
         if (resultText) {
             const outputDir = Path.dirname(outputFilename)
             if (!fs.existsSync(outputDir)) {

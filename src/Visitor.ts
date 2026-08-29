@@ -1,4 +1,4 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 
 export type SourceFileVisitor = (sourceFile: ts.SourceFile) => void
 

@@ -1,4 +1,4 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import {ErrorReporter} from "./ErrorReporter"
 
 export type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
@@ -54,11 +54,11 @@ export class PropertyExtractor {
 }
 
 export function needsImplementation(declaration: ts.Declaration): boolean {
-    if (ts.isPropertyDeclaration(declaration) || ts.isAutoAccessorPropertyDeclaration(declaration)) {
+    if (ts.isPropertyLikeDeclaration(declaration)) {
         return declaration.initializer === undefined
     }
     if (ts.isMethodDeclaration(declaration) || ts.isGetAccessorDeclaration(declaration) || ts.isSetAccessorDeclaration(declaration)) {
         return declaration.body === undefined
     }
-    return !ts.isParameterPropertyDeclaration(declaration, declaration.parent)
+    return !ts.isParameterProperty(declaration)
 }

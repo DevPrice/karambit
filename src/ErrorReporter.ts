@@ -1,4 +1,4 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import * as Path from "path"
 import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
 import {
@@ -17,7 +17,6 @@ import {Binding} from "./ModuleLocator"
 import chalk from "chalk"
 import {KarambitError, KarambitErrorScope} from "./KarambitError"
 import {ComponentDeclaration, ComponentScope, scopeToString} from "./TypescriptUtil"
-import {Hacks} from "./Hacks"
 
 type ErrorContext = ts.Node | ts.Node[]
 
@@ -176,7 +175,7 @@ export class ErrorReporter {
     }
 
     assertValidType(type: ts.Type, context?: ErrorContext) {
-        if (Hacks.isError(type)) {
+        if (ts.isErrorType(type)) {
             this.reportInvalidType(type, context)
         }
     }

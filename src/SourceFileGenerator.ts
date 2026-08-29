@@ -1,4 +1,4 @@
-import ts from "typescript"
+import * as ts from "./compiler"
 import {GeneratedComponent} from "./ComponentGenerator"
 import {NameGenerator} from "./NameGenerator"
 import {isNotNull} from "./Util"
@@ -24,14 +24,8 @@ export class SourceFileGenerator {
         }
         const classDeclarations = components.map(it => it.classDeclaration)
         const requiresUnsetSymbolDeclaration = components.some(it => it.requiresUnsetSymbolDeclaration)
-        const sourceFile = ts.createSourceFile(
-            this.options.outFile,
-            "",
-            this.options.outputScriptTarget,
-            undefined,
-            ts.ScriptKind.TS,
-        )
-        return ts.factory.updateSourceFile(
+        const sourceFile = ts.createSourceFile(this.options.outFile, this.options.outputScriptTarget)
+        return ts.updateSourceFile(
             sourceFile,
             [
                 ...this.importer.getImports(),
@@ -42,18 +36,18 @@ export class SourceFileGenerator {
     }
 
     private unsetSymbolDeclaration() {
-        return ts.factory.createVariableStatement(
+        return ts.createVariableStatement(
             undefined,
-            ts.factory.createVariableDeclarationList([
-                ts.factory.createVariableDeclaration(
+            ts.createVariableDeclarationList([
+                ts.createVariableDeclaration(
                     this.nameGenerator.unsetSymbolName,
                     undefined,
-                    ts.factory.createTypeOperatorNode(
+                    ts.createTypeOperatorNode(
                         ts.SyntaxKind.UniqueKeyword,
-                        ts.factory.createKeywordTypeNode(ts.SyntaxKind.SymbolKeyword),
+                        ts.createKeywordTypeNode(ts.SyntaxKind.SymbolKeyword),
                     ),
-                    ts.factory.createCallExpression(
-                        ts.factory.createIdentifier("Symbol"),
+                    ts.createCallExpression(
+                        ts.createIdentifier("Symbol"),
                         undefined,
                         [],
                     ),
