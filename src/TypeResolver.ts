@@ -1,7 +1,7 @@
-import {bound, findCycles, isNotNull} from "./Util"
-import {ErrorReporter} from "./ErrorReporter"
-import {QualifiedType} from "./QualifiedType"
-import {Binding} from "./ModuleLocator"
+import {bound, findCycles, isNotNull} from "./Util.js"
+import {ErrorReporter} from "./ErrorReporter.js"
+import {QualifiedType} from "./QualifiedType.js"
+import {Binding} from "./ModuleLocator.js"
 
 export type TypeResolverFactory = (bindings: Iterable<Binding>) => TypeResolver
 

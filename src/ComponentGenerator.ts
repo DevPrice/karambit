@@ -1,13 +1,13 @@
-import * as ts from "./compiler"
-import {NameGenerator} from "./NameGenerator"
-import {InjectNodeDetector} from "./InjectNodeDetector"
-import {ModuleLocator} from "./ModuleLocator"
-import {Dependency, DependencyGraph, DependencyGraphBuilderFactory} from "./DependencyGraphBuilder"
-import {ConstructorHelper} from "./ConstructorHelper"
-import {TypeResolver, TypeResolverFactory} from "./TypeResolver"
-import {createQualifiedType, internalQualifier, QualifiedType} from "./QualifiedType"
-import {SubcomponentFactoryLocatorFactory} from "./SubcomponentFactoryLocator"
-import {needsImplementation, PropertyExtractor} from "./PropertyExtractor"
+import * as ts from "./compiler/index.js"
+import {NameGenerator} from "./NameGenerator.js"
+import {InjectNodeDetector} from "./InjectNodeDetector.js"
+import {ModuleLocator} from "./ModuleLocator.js"
+import {Dependency, DependencyGraph, DependencyGraphBuilderFactory} from "./DependencyGraphBuilder.js"
+import {ConstructorHelper} from "./ConstructorHelper.js"
+import {TypeResolver, TypeResolverFactory} from "./TypeResolver.js"
+import {createQualifiedType, internalQualifier, QualifiedType} from "./QualifiedType.js"
+import {SubcomponentFactoryLocatorFactory} from "./SubcomponentFactoryLocator.js"
+import {needsImplementation, PropertyExtractor} from "./PropertyExtractor.js"
 import {
     InstanceProvider,
     isSubcomponentFactory,
@@ -17,12 +17,12 @@ import {
     ProvidesMethod,
     SubcomponentFactory,
     UndefinedProvider,
-} from "./Providers"
-import {ErrorReporter} from "./ErrorReporter"
-import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder"
-import {ComponentDeclaration, ComponentLikeDeclaration, ComponentScope, isTypeNullable} from "./TypescriptUtil"
-import {ModuleProviders, ProviderLocator} from "./ProviderLocator"
-import {distinctBy, isNotNull} from "./Util"
+} from "./Providers.js"
+import {ErrorReporter} from "./ErrorReporter.js"
+import {ComponentDeclarationBuilderFactory} from "./ComponentDeclarationBuilder.js"
+import {ComponentDeclaration, ComponentLikeDeclaration, ComponentScope, isTypeNullable} from "./TypescriptUtil.js"
+import {ModuleProviders, ProviderLocator} from "./ProviderLocator.js"
+import {distinctBy, isNotNull} from "./Util.js"
 
 interface GeneratedSubcomponent {
     readonly name: string
@@ -79,11 +79,11 @@ export class ComponentGenerator {
 
     private getRootDependencies(componentType: ts.Type): RootDependency[] {
         const unimplementedProperties = this.propertyExtractor.extractProperties(componentType)
-            .filter(property => property.symbol.declarations?.every(needsImplementation))
+            .filter(property => ts.getTypeSymbol(property).declarations?.every(needsImplementation))
         unimplementedProperties.forEach(method => {
             if (method.parameters && method.parameters.length > 0) {
                 // TODO: Maybe consider accepting arguments as dependencies
-                this.errorReporter.reportParseFailed("Component has method(s) that Karambit cannot implement! A Component should not have any unimplemented methods with arguments.", method.symbol.valueDeclaration)
+                this.errorReporter.reportParseFailed("Component has method(s) that Karambit cannot implement! A Component should not have any unimplemented methods with arguments.", ts.getTypeSymbol(method).valueDeclaration)
             }
         })
         return unimplementedProperties.map(property => {
@@ -91,7 +91,7 @@ export class ComponentGenerator {
             return {
                 type: createQualifiedType({type: property.returnType}),
                 optional: property.optional,
-                name: ts.createIdentifier(property.symbol.name),
+                name: ts.createIdentifier(ts.getTypeSymbol(property).name),
                 getter: !property.parameters,
             }
         })
@@ -142,7 +142,7 @@ export class ComponentGenerator {
             return graphBuilder.buildDependencyGraph(new Set([{type, optional: false}]), given).missing.size === 0
         }
         const generatedSubcomponents = subcomponents.map(it =>
-            this.generateSubcomponent(it, componentIdentifier, typeResolver, definition.scope ? new Map([[definition.scope, componentType.symbol.name]]) : new Map(), canBind)
+            this.generateSubcomponent(it, componentIdentifier, typeResolver, definition.scope ? new Map([[definition.scope, ts.getTypeSymbol(componentType).name]]) : new Map(), canBind)
         )
 
         const missingSubcomponentDependencies = generatedSubcomponents.flatMap(it => Array.from(it.graph.missing.keys()))
@@ -187,7 +187,7 @@ export class ComponentGenerator {
         const classDeclaration = builder.declareComponent({
             identifier: componentIdentifier,
             declaration: component,
-            factorySymbol: componentFactory.symbol,
+            factorySymbol: ts.getTypeSymbol(componentFactory),
             factoryParams: componentFactory.parameters,
             members: [
                 ...definition.exposedProperties.map(it => builder.declareComponentProperty(component, it)),
@@ -229,7 +229,7 @@ export class ComponentGenerator {
         )
         const graph = graphBuilder.buildDependencyGraph(new Set(definition.exposedProperties))
 
-        const subcomponentName = factory.subcomponentType.type.symbol.name
+        const subcomponentName = ts.getTypeSymbol(factory.subcomponentType.type).name
         const subcomponentIdentifier = this.nameGenerator.getSubcomponentIdentifier(subcomponentName)
 
         const subcomponents = distinctBy(

@@ -1,5 +1,5 @@
-import {Identifier} from "./Ast"
-import {createIdentifier} from "./Factory"
+import type {Identifier} from "./Ast.js"
+import {createIdentifier} from "./Factory.js"
 
 /**
  * Allocates identifiers that don't collide within a generated file. The compiler's emitter does this

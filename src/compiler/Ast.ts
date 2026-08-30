@@ -1,69 +1,49 @@
-import ts from "typescript"
+import * as ast from "typescript/unstable/ast"
+import {ModuleKind, ObjectFlags, SignatureKind, SymbolFlags, TypeFlags} from "typescript/unstable/sync"
+import type * as api from "typescript/unstable/sync"
 
-export type Node = ts.Node
-export type NodeArray<T extends ts.Node> = ts.NodeArray<T>
-export type SourceFile = ts.SourceFile
-export type Statement = ts.Statement
-export type Declaration = ts.Declaration
-export type Expression = ts.Expression
-export type Identifier = ts.Identifier
-export type PrivateIdentifier = ts.PrivateIdentifier
-export type StringLiteral = ts.StringLiteral
-export type EntityName = ts.EntityName
-export type PropertyName = ts.PropertyName
-export type PropertyAccessExpression = ts.PropertyAccessExpression
-export type ModifierLike = ts.ModifierLike
-export type Decorator = ts.Decorator
-export type JSDocTag = ts.JSDocTag
+export type Node = ast.Node
+export type NodeArray<T extends ast.Node> = ast.NodeArray<T>
+export type SourceFile = ast.SourceFile
+export type Statement = ast.Statement
+export type Declaration = ast.Declaration
+export type Expression = ast.Expression
+export type Identifier = ast.Identifier
+export type PrivateIdentifier = ast.PrivateIdentifier
+export type StringLiteral = ast.StringLiteral
+export type EntityName = ast.EntityName
+export type PropertyName = ast.PropertyName
+export type PropertyAccessExpression = ast.PropertyAccessExpression
+export type ModifierLike = ast.ModifierLike
+export type Decorator = ast.Decorator
+export type JSDocTag = ast.JSDocTag
 
-export type ClassDeclaration = ts.ClassDeclaration
-export type ClassElement = ts.ClassElement
-export type ClassLikeDeclaration = ts.ClassLikeDeclaration
-export type InterfaceDeclaration = ts.InterfaceDeclaration
-export type TypeAliasDeclaration = ts.TypeAliasDeclaration
-export type MethodDeclaration = ts.MethodDeclaration
-export type MethodSignature = ts.MethodSignature
-export type PropertyDeclaration = ts.PropertyDeclaration
-export type PropertySignature = ts.PropertySignature
-export type ParameterDeclaration = ts.ParameterDeclaration
-export type VariableDeclaration = ts.VariableDeclaration
-export type ImportDeclaration = ts.ImportDeclaration
-export type TypeElement = ts.TypeElement
-export type TypeNode = ts.TypeNode
+export type ClassDeclaration = ast.ClassDeclaration
+export type ClassElement = ast.ClassElement
+export type ClassLikeDeclaration = ast.ClassLikeDeclaration
+export type InterfaceDeclaration = ast.InterfaceDeclaration
+export type TypeAliasDeclaration = ast.TypeAliasDeclaration
+export type MethodDeclaration = ast.MethodDeclaration
+export type MethodSignature = ast.MethodSignatureDeclaration
+export type PropertyDeclaration = ast.PropertyDeclaration
+export type PropertySignature = ast.PropertySignatureDeclaration
+export type ParameterDeclaration = ast.ParameterDeclaration
+export type VariableDeclaration = ast.VariableDeclaration
+export type ImportDeclaration = ast.ImportDeclaration
+export type TypeElement = ast.TypeElement
+export type TypeNode = ast.TypeNode
 
-export type Type = ts.Type
-export type ObjectType = ts.ObjectType
-export type TupleType = ts.TupleType
-export type Symbol = ts.Symbol
-export type Signature = ts.Signature
+export type Type = api.Type
+export type ObjectType = api.ObjectType
+export type TupleType = api.TupleType
+export type Symbol = api.Symbol
+export type Signature = api.Signature
 
 // exported as both a value and a type, so `SyntaxKind.CallExpression` and `kind: SyntaxKind` both work
-export const SyntaxKind = ts.SyntaxKind
-export type SyntaxKind = ts.SyntaxKind
+export const SyntaxKind = ast.SyntaxKind
+export type SyntaxKind = ast.SyntaxKind
 
-export const NodeFlags = ts.NodeFlags
-export type NodeFlags = ts.NodeFlags
+export const NodeFlags = ast.NodeFlags
+export type NodeFlags = ast.NodeFlags
 
-export const TypeFlags = ts.TypeFlags
-export type TypeFlags = ts.TypeFlags
-
-export const SymbolFlags = ts.SymbolFlags
-export type SymbolFlags = ts.SymbolFlags
-
-export const ObjectFlags = ts.ObjectFlags
-export type ObjectFlags = ts.ObjectFlags
-
-export const SignatureKind = ts.SignatureKind
-export type SignatureKind = ts.SignatureKind
-
-export const ScriptTarget = ts.ScriptTarget
-export type ScriptTarget = ts.ScriptTarget
-
-export const ScriptKind = ts.ScriptKind
-export type ScriptKind = ts.ScriptKind
-
-export const ModuleKind = ts.ModuleKind
-export type ModuleKind = ts.ModuleKind
-
-export const JsxEmit = ts.JsxEmit
-export type JsxEmit = ts.JsxEmit
+export {ModuleKind, ObjectFlags, SignatureKind, SymbolFlags, TypeFlags}

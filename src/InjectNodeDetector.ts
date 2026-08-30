@@ -1,10 +1,10 @@
-import * as ts from "./compiler"
-import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType"
-import {ErrorReporter} from "./ErrorReporter"
-import {bound, isNotNull} from "./Util"
-import {KarambitOptions} from "./karambit"
-import {Annotated, AnnotationLike, ComponentScope, isJSDocTag, isValidIdentifier, reusableScope} from "./TypescriptUtil"
-import {ModuleProviderLike} from "./Providers"
+import * as ts from "./compiler/index.js"
+import {createQualifiedType, QualifiedType, TypeQualifier} from "./QualifiedType.js"
+import {ErrorReporter} from "./ErrorReporter.js"
+import {bound, isNotNull} from "./Util.js"
+import {KarambitOptions} from "./karambit.js"
+import {Annotated, AnnotationLike, ComponentScope, isJSDocTag, isValidIdentifier, reusableScope} from "./TypescriptUtil.js"
+import {ModuleProviderLike} from "./Providers.js"
 
 export const KarambitAnnotationTag = {
     component: "component",
@@ -70,7 +70,7 @@ export class InjectNodeDetector {
 
         const scopeTag = this.getJSDocTag(item, KarambitAnnotationTag.scope)
         if (scopeTag) {
-            const children = scopeTag.getChildren()
+            const children = ts.getChildren(scopeTag)
             const linkTags = children.filter(ts.isJSDocLink)
             if (linkTags.length > 0) {
                 if (linkTags.length > 1) {
@@ -103,8 +103,8 @@ export class InjectNodeDetector {
             const declarations = originalSymbol.declarations ?? []
             const declaration = declarations && declarations.length === 1 && declarations[0]
             const declarationType = declaration && this.typeChecker.getTypeAtLocation(declaration)
-            if (declarationType && declarationType.symbol) {
-                return this.getOriginalSymbol(declarationType.symbol)
+            if (declarationType && ts.getTypeSymbol(declarationType)) {
+                return this.getOriginalSymbol(ts.getTypeSymbol(declarationType))
             }
         }
         return originalSymbol
@@ -317,9 +317,9 @@ export class InjectNodeDetector {
 
     @bound
     getMapTupleBindingInfo(returnType: QualifiedType): {keyType: ts.Type, valueType: QualifiedType} | undefined {
-        const target = ts.getTypeTarget(returnType.type)
+        const target = ts.getTypeTarget(this.typeChecker, returnType.type)
         if (target && ts.isTupleType(this.typeChecker, target) && target.fixedLength === 2) {
-            const typeArgs = ts.getResolvedTypeArguments(returnType.type) ?? []
+            const typeArgs = ts.getResolvedTypeArguments(this.typeChecker, returnType.type) ?? []
             if (typeArgs.length === 2) {
                 return {keyType: typeArgs[0], valueType: createQualifiedType({...returnType, type: typeArgs[1]})}
             }
@@ -372,7 +372,7 @@ export class InjectNodeDetector {
         const type = ts.isCallExpression(decorator.expression)
             ? this.typeChecker.getTypeAtLocation(decorator.expression.expression)
             : this.typeChecker.getTypeAtLocation(decorator.expression)
-        return type.getProperties().some(property => property.name === (name ? `__karambit${name}Annotation` : "__karambitAnnotation"))
+        return this.typeChecker.getPropertiesOfType(type).some(property => property.name === (name ? `__karambit${name}Annotation` : "__karambitAnnotation"))
     }
 
     private isCompileTimeConstant(expression: ts.Expression): boolean {
@@ -396,8 +396,8 @@ export class InjectNodeDetector {
 
     private isKarambitGenericType(type: ts.Type, typeName: string, typeBrand: string): ts.Type | undefined {
         const symbol = type.getSymbol()
-        if (symbol && (symbol.getName() === typeName || this.getPropertyNames(type).has(typeBrand))) {
-            const typeArguments = ts.getResolvedTypeArguments(type) ?? type.aliasTypeArguments ?? []
+        if (symbol && (ts.getSymbolName(symbol) === typeName || this.getPropertyNames(type).has(typeBrand))) {
+            const typeArguments = ts.getResolvedTypeArguments(this.typeChecker, type) ?? ts.getAliasTypeArguments(type) ?? []
             if (typeArguments.length != 1) ErrorReporter.reportParseFailed(`Invalid ${typeName} type!`)
             return typeArguments[0]
         }
@@ -407,7 +407,7 @@ export class InjectNodeDetector {
     isReadonlySet(type: ts.Type): ts.Type | undefined {
         const symbol = type.getSymbol()
         if (symbol?.getName() === "ReadonlySet") {
-            const typeArguments = ts.getResolvedTypeArguments(type) ?? type.aliasTypeArguments ?? []
+            const typeArguments = ts.getResolvedTypeArguments(this.typeChecker, type) ?? ts.getAliasTypeArguments(type) ?? []
             if (typeArguments.length != 1) ErrorReporter.reportParseFailed("Invalid ReadonlySet type!")
             return typeArguments[0]
         }
@@ -417,7 +417,7 @@ export class InjectNodeDetector {
     isReadonlyMap(type: ts.Type): [ts.Type, ts.Type] | undefined {
         const symbol = type.getSymbol()
         if (symbol?.getName() === "ReadonlyMap") {
-            const typeArguments = ts.getResolvedTypeArguments(type) ?? type.aliasTypeArguments ?? []
+            const typeArguments = ts.getResolvedTypeArguments(this.typeChecker, type) ?? ts.getAliasTypeArguments(type) ?? []
             if (typeArguments.length != 2) ErrorReporter.reportParseFailed("Invalid ReadonlyMap type!")
             return typeArguments as [ts.Type, ts.Type]
         }
@@ -425,13 +425,13 @@ export class InjectNodeDetector {
 
     @bound
     isIterable(type: ts.Type): ts.Type | undefined {
-        const iterator = type.getProperties().find(it => it.name.startsWith("__@iterator@"))
+        const iterator = this.typeChecker.getPropertiesOfType(type).find(it => it.name.startsWith("__@iterator@"))
         const iterableType = iterator?.valueDeclaration && this.typeChecker.getTypeOfSymbolAtLocation(iterator, iterator?.valueDeclaration)
         if (iterableType) {
             const iteratorTypes = this.typeChecker.getSignaturesOfType(iterableType, ts.SignatureKind.Call).map(this.typeChecker.getReturnTypeOfSignature)
             if (iteratorTypes.length !== 1) this.errorReporter.reportParseFailed(`Invalid Iterable type: ${this.typeChecker.typeToString(type)}!`)
             const iteratorType = iteratorTypes[0]
-            const typeArguments = ts.getResolvedTypeArguments(iteratorType) ?? type.aliasTypeArguments ?? []
+            const typeArguments = ts.getResolvedTypeArguments(this.typeChecker, iteratorType) ?? ts.getAliasTypeArguments(type) ?? []
             if (typeArguments.length != 1) this.errorReporter.reportParseFailed(`Invalid Iterable type: ${this.typeChecker.typeToString(type)}!`)
             return typeArguments[0]
         }
@@ -451,7 +451,7 @@ export class InjectNodeDetector {
     }
 
     private getPropertyNames(type: ts.Type): ReadonlySet<string> {
-        return new Set(type.getProperties().map(it => it.name))
+        return new Set(this.typeChecker.getPropertiesOfType(type).map(it => it.name))
     }
 
     @bound

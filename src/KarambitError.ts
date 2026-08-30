@@ -1,4 +1,4 @@
-import {ComponentDeclaration} from "./TypescriptUtil"
+import {ComponentDeclaration} from "./TypescriptUtil.js"
 import chalk from "chalk"
 
 /**

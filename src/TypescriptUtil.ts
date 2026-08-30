@@ -1,4 +1,4 @@
-import * as ts from "./compiler"
+import * as ts from "./compiler/index.js"
 
 export interface Annotated extends ts.Node {
     name?: { getText: () => string }

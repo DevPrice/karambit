@@ -1,9 +1,9 @@
-import * as ts from "./compiler"
-import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
-import {ErrorReporter} from "./ErrorReporter"
-import {bound} from "./Util"
-import {findAllChildren, findAncestor} from "./Visitor"
-import {AnnotationLike, ComponentLikeDeclaration, isComponentLikeDeclaration, isJSDocTag} from "./TypescriptUtil"
+import * as ts from "./compiler/index.js"
+import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector.js"
+import {ErrorReporter} from "./ErrorReporter.js"
+import {bound} from "./Util.js"
+import {findAllChildren, findAncestor} from "./Visitor.js"
+import {AnnotationLike, ComponentLikeDeclaration, isComponentLikeDeclaration, isJSDocTag} from "./TypescriptUtil.js"
 
 /**
  * @inject
@@ -65,7 +65,7 @@ export class AnnotationValidator {
             const parent = getAnnotationParent(annotation)
             if (ts.isMethodDeclaration(parent) || ts.isMethodSignature(parent)) {
                 const signature = this.typeChecker.getSignatureFromDeclaration(parent)
-                const type = signature && signature.getReturnType()
+                const type = signature && this.typeChecker.getReturnTypeOfSignature(signature)
                 if (type) {
                     this.errorReporter.assertValidType(type, parent)
                 }
@@ -84,7 +84,7 @@ export class AnnotationValidator {
                 signature?.parameters?.forEach(param => {
                     this.errorReporter.assertValidType(this.typeChecker.getTypeOfSymbol(param), parent)
                 })
-                const type = signature && signature.getReturnType()
+                const type = signature && this.typeChecker.getReturnTypeOfSignature(signature)
                 if (type) {
                     this.errorReporter.assertValidType(type, parent)
                 }

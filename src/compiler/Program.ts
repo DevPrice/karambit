@@ -1,70 +1,86 @@
-import ts from "typescript"
-import type {SourceFile} from "./Ast"
+import * as fs from "node:fs"
+import * as Path from "node:path"
+import {API} from "typescript/unstable/sync"
+import type {CompilerOptions, Diagnostic, Project} from "typescript/unstable/sync"
+import type {SourceFile} from "./Ast.js"
+import type {TypeChecker} from "./Checker.js"
 
-export type Program = ts.Program
-export type CompilerOptions = ts.CompilerOptions
-export type PrinterOptions = ts.PrinterOptions
-export type Printer = ts.Printer
-export type Diagnostic = ts.Diagnostic
+export type {CompilerOptions, Diagnostic, Project}
 
-export interface ParsedConfig {
-    readonly fileNames: readonly string[]
-    readonly options: CompilerOptions
-    readonly errors: readonly Diagnostic[]
+export interface PrinterOptions {
+    preserveSourceNewlines?: boolean
+    neverAsciiEscape?: boolean
 }
 
-export function parseConfigFile(configFileName: string, basePath: string): ParsedConfig | {readonly readError: string} {
-    const configFile = ts.readConfigFile(configFileName, ts.sys.readFile)
-    if (configFile.error) {
-        return {readError: formatDiagnostic(configFile.error)}
+/** The slice of a loaded project that Karambit reads. */
+export interface Program {
+    getTypeChecker(): TypeChecker
+    getCompilerOptions(): CompilerOptions
+    getSourceFiles(): readonly SourceFile[]
+    isSourceFileFromExternalLibrary(sourceFile: SourceFile): boolean
+    isSourceFileDefaultLibrary(sourceFile: SourceFile): boolean
+    printFile(sourceFile: SourceFile, options?: PrinterOptions): string
+}
+
+export function createProgram(project: Project): Program {
+    return {
+        getTypeChecker: () => project.checker,
+        getCompilerOptions: () => project.compilerOptions,
+        getSourceFiles: () => project.program.getSourceFileNames()
+            .map(it => project.program.getSourceFile(it))
+            .filter(it => it !== undefined),
+        isSourceFileFromExternalLibrary: sourceFile => project.program.isSourceFileFromExternalLibrary(sourceFile),
+        isSourceFileDefaultLibrary: sourceFile => project.program.isSourceFileDefaultLibrary(sourceFile),
+        printFile: (sourceFile, options) => project.emitter.printNode(sourceFile, options),
     }
-    const parsed = ts.parseJsonConfigFileContent(configFile.config, ts.sys, basePath)
-    return {fileNames: parsed.fileNames, options: parsed.options, errors: parsed.errors}
 }
 
 export function formatDiagnostic(diagnostic: Diagnostic): string {
-    return ts.flattenDiagnosticMessageText(diagnostic.messageText, "\n")
+    return diagnostic.message
 }
 
-export function createProgram(fileNames: readonly string[], options: CompilerOptions): Program {
-    return ts.createProgram(
-        fileNames.slice(),
-        {...options, incremental: options.incremental && !!options.tsBuildInfoFile},
-    )
-}
-
-// calls onProgram with a fresh program whenever the input changes; blocks for the life of the watch
-export function watchProgram(
-    fileNames: readonly string[],
-    options: CompilerOptions,
-    onProgram: (program: Program, options: CompilerOptions) => void,
-): void {
-    const createProgram: ts.CreateProgram<ts.SemanticDiagnosticsBuilderProgram> = (...args) => {
-        const builderProgram = ts.createSemanticDiagnosticsBuilderProgram(...args)
-        onProgram(builderProgram.getProgram(), builderProgram.getCompilerOptions())
-        return builderProgram
+/**
+ * Loads the project at `configFileName` and hands it to `use`. The compiler runs as a separate
+ * process, so the session has to be closed rather than left to the garbage collector.
+ */
+export function withProject<T>(configFileName: string, use: (project: Project) => T): T {
+    const configPath = Path.resolve(configFileName)
+    const api = new API({cwd: Path.dirname(configPath)})
+    try {
+        const project = api.updateSnapshot({openProjects: [configPath]}).getProjects()[0]
+        if (!project) throw new Error(`No project was loaded from ${configFileName}!`)
+        return use(project)
+    } finally {
+        api.close()
     }
-    ts.createWatchProgram(
-        ts.createWatchCompilerHost(
-            fileNames.slice(),
-            options,
-            ts.sys,
-            createProgram,
-            () => { },
-            () => { },
-        )
-    )
 }
 
-export function getScriptTargets(): ReadonlyMap<string, ts.ScriptTarget> {
-    return new Map(
-        Object.entries(ts.ScriptTarget)
-            .filter(([key, value]) => isNaN(Number(key)) && typeof value !== "string")
-            .filter(([key]) => key.toLowerCase() !== "json")
-            .map(([key, value]) => [key.toLowerCase(), value as ts.ScriptTarget])
-    )
+/**
+ * Reloads the project whenever anything under the config file's directory changes, calling `onProject`
+ * with each reload. Blocks for the life of the watch.
+ *
+ * The compiler's API is driven by its caller rather than watching on its own, so the watching is here.
+ */
+export function watchProject(configFileName: string, onProject: (project: Project) => void): void {
+    const configPath = Path.resolve(configFileName)
+    const root = Path.dirname(configPath)
+    const api = new API({cwd: root})
+
+    const reload = () => {
+        const project = api.updateSnapshot({openProjects: [configPath], fileChanges: {invalidateAll: true}})
+            .getProjects()[0]
+        if (project) onProject(project)
+    }
+
+    reload()
+
+    let pending: NodeJS.Timeout | undefined
+    fs.watch(root, {recursive: true}, (_, fileName) => {
+        if (!fileName || !watchedExtensions.some(it => fileName.toString().endsWith(it))) return
+        if (pending) clearTimeout(pending)
+        pending = setTimeout(reload, watchDebounceMs)
+    })
 }
 
-export function printFile(sourceFile: SourceFile, options?: PrinterOptions): string {
-    return ts.createPrinter(options).printFile(sourceFile)
-}
+const watchedExtensions = [".ts", ".tsx", ".mts", ".cts", ".json"]
+const watchDebounceMs = 100

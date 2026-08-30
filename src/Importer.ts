@@ -1,8 +1,8 @@
-import * as ts from "./compiler"
+import * as ts from "./compiler/index.js"
 import * as Path from "path"
-import {ProgramScope} from "./Scopes"
-import {KarambitOptions} from "./karambit"
-import {bound, memoized} from "./Util"
+import {ProgramScope} from "./Scopes.js"
+import {KarambitOptions} from "./karambit.js"
+import {bound, memoized} from "./Util.js"
 
 
 /**

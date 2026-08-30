@@ -1,8 +1,8 @@
-import * as ts from "./compiler"
-import {QualifiedType} from "./QualifiedType"
-import {ProgramScope} from "./Scopes"
-import {memoized} from "./Util"
-import {KarambitOptions} from "./karambit"
+import * as ts from "./compiler/index.js"
+import {QualifiedType} from "./QualifiedType.js"
+import {ProgramScope} from "./Scopes.js"
+import {memoized} from "./Util.js"
+import {KarambitOptions} from "./karambit.js"
 
 /**
  * @inject

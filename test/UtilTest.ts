@@ -1,5 +1,5 @@
 import * as assert from "assert"
-import {filterTreeMap, printTreeMap} from "../src/Util"
+import {filterTreeMap, printTreeMap} from "../src/Util.js"
 import chalk from "chalk"
 
 describe("Util", () => {

@@ -3,7 +3,7 @@ import * as assert from "assert"
 import * as fs from "fs"
 import * as os from "os"
 import * as Path from "path"
-import {generateComponentFiles} from "../src/karambit"
+import {generateComponentFiles} from "../src/karambit.js"
 
 const stockCommands = `
     /** @inject */

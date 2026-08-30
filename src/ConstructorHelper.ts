@@ -1,10 +1,10 @@
-import * as ts from "./compiler"
-import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
-import {createQualifiedType} from "./QualifiedType"
-import {ComponentFactory, ConstructorParameter} from "./Providers"
-import {findAllChildren} from "./Visitor"
-import {ComponentLikeDeclaration} from "./TypescriptUtil"
-import {ErrorReporter} from "./ErrorReporter"
+import * as ts from "./compiler/index.js"
+import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector.js"
+import {createQualifiedType} from "./QualifiedType.js"
+import {ComponentFactory, ConstructorParameter} from "./Providers.js"
+import {findAllChildren} from "./Visitor.js"
+import {ComponentLikeDeclaration} from "./TypescriptUtil.js"
+import {ErrorReporter} from "./ErrorReporter.js"
 
 /**
  * @inject
@@ -41,7 +41,7 @@ export class ConstructorHelper {
     getFactoryParamsForComponent(declaration: ComponentLikeDeclaration): ComponentFactory {
         const factoryTag = this.nodeDetector.getJSDocTag(declaration, KarambitAnnotationTag.factory)
         if (factoryTag) {
-            const linkTags = factoryTag.getChildren().filter(ts.isJSDocLink)
+            const linkTags = ts.getChildren(factoryTag).filter(ts.isJSDocLink)
             if (linkTags.length !== 1) {
                 this.errorReporter.reportParseFailed("Expected exactly one @link TSDoc tag for @factory tag!", factoryTag)
             }
