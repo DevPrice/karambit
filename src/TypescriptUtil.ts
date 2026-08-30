@@ -43,5 +43,5 @@ export function isComponentLikeDeclaration(node: ts.Node): node is ComponentLike
 }
 
 export function isJSDocTag(node: ts.Node): node is ts.JSDocTag {
-    return node.kind >= ts.SyntaxKind.JSDocTag && node.kind <= ts.SyntaxKind.JSDocImportTag
+    return node.kind >= ts.SyntaxKind.FirstJSDocTagNode && node.kind <= ts.SyntaxKind.LastJSDocTagNode
 }

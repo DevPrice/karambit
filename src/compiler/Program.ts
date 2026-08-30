@@ -3,7 +3,7 @@ import * as Path from "node:path"
 import {API} from "typescript/unstable/sync"
 import type {CompilerOptions, Diagnostic, Project} from "typescript/unstable/sync"
 import type {SourceFile} from "./Ast.js"
-import type {TypeChecker} from "./Checker.js"
+import {createTypeChecker, type TypeChecker} from "./Checker.js"
 
 export type {CompilerOptions, Diagnostic, Project}
 
@@ -23,8 +23,9 @@ export interface Program {
 }
 
 export function createProgram(project: Project): Program {
+    const checker = createTypeChecker(project.checker)
     return {
-        getTypeChecker: () => project.checker,
+        getTypeChecker: () => checker,
         getCompilerOptions: () => project.compilerOptions,
         getSourceFiles: () => project.program.getSourceFileNames()
             .map(it => project.program.getSourceFile(it))
@@ -36,7 +37,7 @@ export function createProgram(project: Project): Program {
 }
 
 export function formatDiagnostic(diagnostic: Diagnostic): string {
-    return diagnostic.message
+    return diagnostic.text
 }
 
 /**

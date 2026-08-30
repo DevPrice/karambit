@@ -62,7 +62,7 @@ export class ModuleLocator {
                 }
                 const originalSymbol = this.nodeDetector.getOriginalSymbol(symbol)
                 const aliasedSymbol = this.nodeDetector.getAliasedTypeSymbol(originalSymbol)
-                const declarations = [...originalSymbol.declarations ?? [], ...aliasedSymbol.declarations ?? []]
+                const declarations = [...ts.getDeclarations(originalSymbol), ...ts.getDeclarations(aliasedSymbol)]
                 if (declarations.some(this.nodeDetector.getComponentAnnotation) || declarations.some(this.nodeDetector.getSubcomponentAnnotation)) {
                     this.errorReporter.reportParseFailed("@includeModule should NOT reference a Component or Subcomponent!", tag)
                 }
@@ -105,10 +105,10 @@ export class ModuleLocator {
                     const originalSymbol = this.nodeDetector.getOriginalSymbol(symbol)
                     // a subcomponent may be declared as the type alias itself, which carries the annotation, so only
                     // resolve through the alias when the referenced declaration isn't annotated
-                    const subcomponentSymbol = (originalSymbol.declarations ?? []).some(this.nodeDetector.getSubcomponentAnnotation)
+                    const subcomponentSymbol = ts.getDeclarations(originalSymbol).some(this.nodeDetector.getSubcomponentAnnotation)
                         ? originalSymbol
                         : this.nodeDetector.getAliasedTypeSymbol(originalSymbol)
-                    if (!(subcomponentSymbol.declarations ?? []).some(this.nodeDetector.getSubcomponentAnnotation)) {
+                    if (!ts.getDeclarations(subcomponentSymbol).some(this.nodeDetector.getSubcomponentAnnotation)) {
                         this.errorReporter.reportParseFailed("@includeSubcomponent should reference a declaration marked @subcomponent!", tag)
                     }
                     return subcomponentSymbol
@@ -122,11 +122,12 @@ export class ModuleLocator {
 
     getGeneratedName(declaration: ComponentLikeDeclaration): string | undefined {
         const tag = this.nodeDetector.getJSDocTag(declaration, "generatedName")
-        if (tag && typeof tag.comment === "string") {
-            if (!isValidIdentifier(tag.comment)) {
-                this.errorReporter.reportParseFailed(`Invalid identifier '${tag.comment}'!`, tag)
+        const name = tag && ts.getJSDocCommentText(tag)
+        if (name) {
+            if (!isValidIdentifier(name)) {
+                this.errorReporter.reportParseFailed(`Invalid identifier '${name}'!`, tag)
             }
-            return tag.comment
+            return name
         }
         const decorator = this.nodeDetector.getComponentAnnotation(declaration)
         if (decorator && ts.isDecorator(decorator)) {
@@ -226,7 +227,7 @@ export class ModuleLocator {
             type: this.typeChecker.getReturnTypeOfSignature(signature),
             qualifier: this.nodeDetector.getQualifier(property)
         })
-        const parameters = signature.parameters
+        const parameters = this.typeChecker.getSignatureParameters(signature)
             .map(it => this.typeChecker.getTypeOfSymbolAtLocation(it, property))
         if (parameters.length != 1) this.errorReporter.reportInvalidBindingArguments(property)
         const paramType = createQualifiedType({

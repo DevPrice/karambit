@@ -9,9 +9,9 @@ import {
     KarambitNotExposedMultibindingsComponent,
     KarambitEmptyRootMultibindingsComponent,
     KarambitOptionalComponent,
-} from "../src/karambit-generated/karambit"
-import {ChildComponent, childInstance, nullProvidedCount} from "../src/TestComponents"
-import {multibindingScopedProvidedCount} from "../src/MultibindingModules"
+} from "../src/karambit-generated/karambit.js"
+import {ChildComponent, childInstance, nullProvidedCount} from "../src/TestComponents.js"
+import {multibindingScopedProvidedCount} from "../src/MultibindingModules.js"
 
 describe("Injection", () => {
     describe("Scope", () => {

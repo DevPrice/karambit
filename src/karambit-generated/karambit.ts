@@ -46,7 +46,7 @@ export class KarambitProgramComponent extends Component_1.ProgramComponent {
     private getNameAllocator_1(): ReturnType<typeof Component_1.ProgramModule.provideNameAllocator> { return this.nameAllocator_1 ?? (this.nameAllocator_1 = Component_1.ProgramModule.provideNameAllocator()); }
     private compilerOptions_1?: ReturnType<typeof Component_1.ProgramModule.provideCompilerOptions>;
     private getCompilerOptions_1(): ReturnType<typeof Component_1.ProgramModule.provideCompilerOptions> { return this.compilerOptions_1 ?? (this.compilerOptions_1 = Component_1.ProgramModule.provideCompilerOptions(this.getProgram_1())); }
-    private getFileWriter_1() { return new FileWriter_1.FileWriter(this.getKarambitOptions_1()); }
+    private getFileWriter_1() { return new FileWriter_1.FileWriter(this.getProgram_1(), this.getKarambitOptions_1()); }
     private getDryRunWriter_1() { return new FileWriter_1.DryRunWriter(this.getLogger_1()); }
     private logger_1?: ReturnType<typeof Component_1.ProgramModule.provideDefaultLogger>;
     private getLogger_1(): ReturnType<typeof Component_1.ProgramModule.provideDefaultLogger> { return this.logger_1 ?? (this.logger_1 = Component_1.ProgramModule.provideDefaultLogger(this.getKarambitOptions_1())); }

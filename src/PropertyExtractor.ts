@@ -23,7 +23,7 @@ export class PropertyExtractor {
     ) { }
 
     extractProperties(type: ts.Type): ComponentProperty[] {
-        return type.getApparentProperties()
+        return this.typeChecker.getApparentProperties(type)
             .map(symbol => {
                 const symbolType = this.typeChecker.getTypeOfSymbol(symbol)
                 if (symbol.flags & ts.SymbolFlags.Method) {
@@ -40,8 +40,9 @@ export class PropertyExtractor {
                     }
                 }
                 const optional = !!(symbol.flags & ts.SymbolFlags.Optional)
-                const returnType = ts.getValueDeclaration(symbol) && ts.isPropertyDeclaration(ts.getValueDeclaration(symbol))
-                    ? this.typeChecker.getTypeAtLocation(ts.getValueDeclaration(symbol).type ?? ts.getValueDeclaration(symbol))
+                const valueDeclaration = ts.getValueDeclaration(symbol)
+                const returnType = valueDeclaration && ts.isPropertyDeclaration(valueDeclaration)
+                    ? this.typeChecker.getTypeAtLocation(valueDeclaration.type ?? valueDeclaration)
                     : symbolType
                 return {
                     symbol,

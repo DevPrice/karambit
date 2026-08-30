@@ -79,11 +79,11 @@ export class ComponentGenerator {
 
     private getRootDependencies(componentType: ts.Type): RootDependency[] {
         const unimplementedProperties = this.propertyExtractor.extractProperties(componentType)
-            .filter(property => ts.getTypeSymbol(property).declarations?.every(needsImplementation))
+            .filter(property => ts.getDeclarations(property.symbol).every(needsImplementation))
         unimplementedProperties.forEach(method => {
             if (method.parameters && method.parameters.length > 0) {
                 // TODO: Maybe consider accepting arguments as dependencies
-                this.errorReporter.reportParseFailed("Component has method(s) that Karambit cannot implement! A Component should not have any unimplemented methods with arguments.", ts.getTypeSymbol(method).valueDeclaration)
+                this.errorReporter.reportParseFailed("Component has method(s) that Karambit cannot implement! A Component should not have any unimplemented methods with arguments.", ts.getValueDeclaration(method.symbol))
             }
         })
         return unimplementedProperties.map(property => {
@@ -91,7 +91,7 @@ export class ComponentGenerator {
             return {
                 type: createQualifiedType({type: property.returnType}),
                 optional: property.optional,
-                name: ts.createIdentifier(ts.getTypeSymbol(property).name),
+                name: ts.createIdentifier(property.symbol.name),
                 getter: !property.parameters,
             }
         })
@@ -187,7 +187,7 @@ export class ComponentGenerator {
         const classDeclaration = builder.declareComponent({
             identifier: componentIdentifier,
             declaration: component,
-            factorySymbol: ts.getTypeSymbol(componentFactory),
+            factorySymbol: componentFactory.symbol,
             factoryParams: componentFactory.parameters,
             members: [
                 ...definition.exposedProperties.map(it => builder.declareComponentProperty(component, it)),

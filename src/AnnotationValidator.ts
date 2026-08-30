@@ -81,7 +81,7 @@ export class AnnotationValidator {
             } else if (ts.isMethodDeclaration(parent) || ts.isMethodSignature(parent)) {
                 // TODO: Assert single parameter
                 const signature = this.typeChecker.getSignatureFromDeclaration(parent)
-                signature?.parameters?.forEach(param => {
+                if (signature) this.typeChecker.getSignatureParameters(signature).forEach(param => {
                     this.errorReporter.assertValidType(this.typeChecker.getTypeOfSymbol(param), parent)
                 })
                 const type = signature && this.typeChecker.getReturnTypeOfSignature(signature)

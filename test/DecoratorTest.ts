@@ -1,5 +1,5 @@
 import * as assert from "assert"
-import {bound, memoized} from "../src/Util"
+import {bound, memoized} from "../src/Util.js"
 
 class Probe {
     calls = 0

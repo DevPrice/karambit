@@ -65,7 +65,7 @@ export class ProviderLocator {
                         type: propertyType,
                         optional: property.optional,
                         name,
-                        propertyName: ts.getTypeSymbol(property).name,
+                        propertyName: property.symbol.name,
                     }
                     const existing = dependencyMap.get(type)
                     if (existing) throw this.errorReporter.reportDuplicateProviders(type, [existing, provider])
