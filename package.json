@@ -24,7 +24,7 @@
   "scripts": {
     "prepare": "husky install",
     "clean": "rm -rf build && rm -rf src/karambit-generated",
-    "karambit": "karambit -o src/karambit-generated/karambit.ts",
+    "karambit": "node build/cli.js . -o src/karambit-generated/karambit.ts",
     "build": "tsc",
     "test": "npm run typecheck && vitest run && npm run --prefix integration build && npm run --prefix integration test",
     "lint": "eslint",

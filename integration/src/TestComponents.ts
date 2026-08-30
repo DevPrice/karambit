@@ -12,7 +12,7 @@ import {
     Subcomponent,
 } from "karambit-decorators"
 import type {Named, Provider, Qualified, SubcomponentFactory} from "karambit-inject"
-import {MultibindingMapModule, MultibindingSetModule, MultibindingSetSubcomponentModule} from "./MultibindingModules"
+import {MultibindingMapModule, MultibindingSetModule, MultibindingSetSubcomponentModule} from "./MultibindingModules.js"
 
 const TestScope = Scope()
 const TestSubcomponentScope = Scope()

@@ -36,13 +36,13 @@ export class SubcomponentFactoryLocator {
         const signatures = this.typeChecker.getSignaturesOfType(type, ts.SignatureKind.Call)
         if (signatures.length === 0) return undefined
         const signature = signatures[0]
-        const signatureDeclaration = signature.declaration
+        const signatureDeclaration = ts.getSignatureDeclaration(signature)
         if (!signatureDeclaration || ts.isJSDocSignature(signatureDeclaration)) return undefined
 
         const returnType = this.typeChecker.getReturnTypeOfSignature(signature)
         const subcomponentType = ts.getTypeSymbol(returnType) && this.aliasMap.get(ts.getTypeSymbol(returnType))
         if (!subcomponentType) return undefined
-        const declarations = subcomponentType.declarations
+        const declarations = ts.getDeclarations(subcomponentType)
         if (!declarations || declarations.length === 0) return undefined
 
         const declaration = declarations[0]
@@ -63,7 +63,7 @@ export class SubcomponentFactoryLocator {
             providerType: ProviderType.SUBCOMPONENT_FACTORY,
             subcomponentType: createQualifiedType({type: returnType, qualifier: internalQualifier}),
             type: createQualifiedType({type}),
-            factorySymbol: ts.getTypeSymbol(componentFactory),
+            factorySymbol: componentFactory.symbol,
             factoryParams: componentFactory.parameters,
             declaration,
             decorator: ts.isDecorator(annotation) ? annotation : undefined,
@@ -74,7 +74,7 @@ export class SubcomponentFactoryLocator {
         const aliasedType = this.nodeDetector.isSubcomponentFactory(type)
         if (!aliasedType) return undefined
 
-        const declarations = aliasedType.getSymbol()?.declarations
+        const declarations = ts.getDeclarations(ts.getTypeSymbol(aliasedType))
         if (!declarations || declarations.length === 0) return undefined
 
         const declaration = declarations[0]
@@ -91,7 +91,7 @@ export class SubcomponentFactoryLocator {
             providerType: ProviderType.SUBCOMPONENT_FACTORY,
             subcomponentType: createQualifiedType({type: subcomponentType, qualifier: internalQualifier}),
             type: createQualifiedType({type}),
-            factorySymbol: ts.getTypeSymbol(componentFactory),
+            factorySymbol: componentFactory.symbol,
             factoryParams: componentFactory.parameters,
             declaration,
             decorator: ts.isDecorator(annotation) ? annotation : undefined,

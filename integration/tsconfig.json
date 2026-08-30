@@ -4,13 +4,20 @@
     "rootDir": "./src",
     "outDir": "./build",
     "tsBuildInfoFile": "./build/.tsbuildinfo",
-    "module": "Node16",
+    "module": "nodenext",
     "esModuleInterop": true,
     "removeComments": true,
     "strict": true,
     "sourceMap": true,
     "experimentalDecorators": true,
-    "incremental": true
+    "incremental": true,
+    "moduleResolution": "nodenext",
+    "lib": [
+      "esnext"
+    ],
+    "types": [
+      "node"
+    ]
   },
   "include": [
     "src/**/*.ts"

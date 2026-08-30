@@ -80,19 +80,27 @@ export class TupleMap<K extends ReadonlyArray<unknown>, V> implements Map<K, V> 
         return this
     }
 
-    [Symbol.iterator](): IterableIterator<[K, V]> {
+    getOrInsert(): V {
         throw new Error("Not implemented")
     }
 
-    entries(): IterableIterator<[K, V]> {
+    getOrInsertComputed(): V {
         throw new Error("Not implemented")
     }
 
-    keys(): IterableIterator<K> {
+    [Symbol.iterator](): MapIterator<[K, V]> {
         throw new Error("Not implemented")
     }
 
-    values(): IterableIterator<V> {
+    entries(): MapIterator<[K, V]> {
+        throw new Error("Not implemented")
+    }
+
+    keys(): MapIterator<K> {
+        throw new Error("Not implemented")
+    }
+
+    values(): MapIterator<V> {
         throw new Error("Not implemented")
     }
 

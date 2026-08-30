@@ -1,5 +1,5 @@
 import * as is from "typescript/unstable/ast/is"
-import {getJSDocTags as getTags, SyntaxKind} from "typescript/unstable/ast"
+import {getJSDocTags as getTags, getTextOfJSDocComment, SyntaxKind} from "typescript/unstable/ast"
 import type {Declaration, Decorator, JSDocTag, Node, PropertyDeclaration} from "./Ast.js"
 
 export const {
@@ -56,6 +56,10 @@ function isAutoAccessorProperty(declaration: Declaration): boolean {
 
 export function getJSDocTags(node: Node): readonly JSDocTag[] {
     return getTags(node)
+}
+
+export function getJSDocCommentText(tag: JSDocTag): string | undefined {
+    return getTextOfJSDocComment(tag.comment)
 }
 
 export function getDecorators(node: Node): readonly Decorator[] | undefined {

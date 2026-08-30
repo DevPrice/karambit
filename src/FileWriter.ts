@@ -14,6 +14,7 @@ export interface ComponentWriter {
 export class FileWriter implements ComponentWriter {
 
     constructor(
+        private readonly program: ts.Program,
         private readonly options: KarambitOptions,
     ) { }
 

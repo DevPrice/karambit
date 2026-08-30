@@ -1,6 +1,6 @@
 import * as k from "karambit-decorators"
 import {Binds, ElementsIntoMap, IntoMap, IntoSet, MapKey, Module, Provides, Reusable} from "karambit-decorators"
-import {MultibindingType, MultibindingTypeImpl, ThreeHolder} from "./TestComponents"
+import {MultibindingType, MultibindingTypeImpl, ThreeHolder} from "./TestComponents.js"
 
 export let multibindingScopedProvidedCount = 0
 

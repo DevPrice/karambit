@@ -50,7 +50,7 @@ export class ConstructorHelper {
             if (!symbol) {
                 this.errorReporter.reportParseFailed("Expected valid symbol!", linkTag)
             }
-            const declarations = symbol.declarations ?? []
+            const declarations = ts.getDeclarations(symbol)
             if (declarations.length !== 1) {
                 this.errorReporter.reportParseFailed("Component factory type must have exactly one signature!", linkTag)
             }

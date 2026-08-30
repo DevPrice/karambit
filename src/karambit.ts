@@ -6,6 +6,10 @@ export {Logger}
 export {KarambitError, KarambitErrorScope} from "./KarambitError.js"
 export {ComponentDeclaration} from "./TypescriptUtil.js"
 
+/** Loading a project to generate from. */
+export {createProgram, withProject, watchProject} from "./compiler/index.js"
+export type {Program, Project} from "./compiler/index.js"
+
 /** @internal */
 export type ConstructorType<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> = abstract new (...args: ConstructorParameters<T>) => InstanceType<T>
 

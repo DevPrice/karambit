@@ -17,6 +17,7 @@ export interface TypeChecker {
     getBaseTypeOfLiteralType(type: Type): Type
     getAliasedSymbol(symbol: Symbol): Symbol
     getPropertiesOfType(type: Type): readonly Symbol[]
+    getApparentProperties(type: Type): readonly Symbol[]
     getTypeArguments(type: Type): readonly Type[]
     getSignatureParameters(signature: Signature): readonly Symbol[]
     isTypeAssignableTo(source: Type, target: Type): boolean
@@ -36,6 +37,7 @@ export function createTypeChecker(checker: Checker): TypeChecker {
         getBaseTypeOfLiteralType: type => checker.getBaseTypeOfLiteralType(type)!,
         getAliasedSymbol: symbol => checker.getAliasedSymbol(symbol),
         getPropertiesOfType: type => checker.getPropertiesOfType(type),
+        getApparentProperties: type => checker.getPropertiesOfType(checker.getApparentType(type) ?? type),
         getTypeArguments: type => type.isTypeReference() ? checker.getTypeArguments(type) : [],
         getSignatureParameters: signature => signature.getParameters(),
         isTypeAssignableTo: (source, target) => checker.isTypeAssignableTo(source, target),
@@ -62,8 +64,8 @@ export function getSymbolName(symbol: Symbol): string {
     return symbol.name
 }
 
-export function getTypeSymbol(type: Type): Symbol | undefined {
-    return type.getAliasSymbol() ?? type.getSymbol()
+export function getTypeSymbol(type: Type): Symbol {
+    return (type.getAliasSymbol() ?? type.getSymbol())!
 }
 
 export function getUnionOrIntersectionTypes(type: Type): readonly Type[] | undefined {

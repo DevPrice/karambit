@@ -46,10 +46,20 @@ export function getEmittedModuleFileExtension(fileName: string, options: Compile
     }
 }
 
-// JsxEmit isn't reachable from the compiler's public entry points; 1 is Preserve and 2 is ReactNative
+type JsxEmitValue = NonNullable<CompilerOptions["jsx"]>
+
+// the enum isn't reachable from the compiler's public entry points, so its values are restated here
+export const JsxEmit = {
+    None: 0,
+    Preserve: 1,
+    ReactNative: 2,
+    React: 3,
+    ReactJSX: 4,
+    ReactJSXDev: 5,
+} as unknown as Record<"None" | "Preserve" | "ReactNative" | "React" | "ReactJSX" | "ReactJSXDev", JsxEmitValue>
+
 function jsxIsPreserved(options: CompilerOptions): boolean {
-    const jsx: number | undefined = options.jsx
-    return jsx === 1 || jsx === 2
+    return options.jsx === JsxEmit.Preserve || options.jsx === JsxEmit.ReactNative
 }
 
 /**

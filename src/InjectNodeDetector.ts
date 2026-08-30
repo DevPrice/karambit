@@ -87,11 +87,12 @@ export class InjectNodeDetector {
 
                 return aliasedSymbol
             }
-            if (scopeTag && typeof scopeTag.comment === "string") {
-                if (!isValidIdentifier(scopeTag.comment)) {
-                    this.errorReporter.reportParseFailed(`Invalid identifier '${scopeTag.comment}'!`, scopeTag)
+            const scopeName = scopeTag && ts.getJSDocCommentText(scopeTag)
+            if (scopeName) {
+                if (!isValidIdentifier(scopeName)) {
+                    this.errorReporter.reportParseFailed(`Invalid identifier '${scopeName}'!`, scopeTag)
                 }
-                return scopeTag.comment
+                return scopeName
             }
         }
     }
@@ -100,7 +101,7 @@ export class InjectNodeDetector {
     getAliasedTypeSymbol(symbol: ts.Symbol): ts.Symbol {
         const originalSymbol = this.getOriginalSymbol(symbol)
         if (originalSymbol.flags & ts.SymbolFlags.TypeAlias) {
-            const declarations = originalSymbol.declarations ?? []
+            const declarations = ts.getDeclarations(originalSymbol)
             const declaration = declarations && declarations.length === 1 && declarations[0]
             const declarationType = declaration && this.typeChecker.getTypeAtLocation(declaration)
             if (declarationType && ts.getTypeSymbol(declarationType)) {
@@ -406,7 +407,7 @@ export class InjectNodeDetector {
     @bound
     isReadonlySet(type: ts.Type): ts.Type | undefined {
         const symbol = type.getSymbol()
-        if (symbol?.getName() === "ReadonlySet") {
+        if (symbol !== undefined && ts.getSymbolName(symbol) === "ReadonlySet") {
             const typeArguments = ts.getResolvedTypeArguments(this.typeChecker, type) ?? ts.getAliasTypeArguments(type) ?? []
             if (typeArguments.length != 1) ErrorReporter.reportParseFailed("Invalid ReadonlySet type!")
             return typeArguments[0]
@@ -416,7 +417,7 @@ export class InjectNodeDetector {
     @bound
     isReadonlyMap(type: ts.Type): [ts.Type, ts.Type] | undefined {
         const symbol = type.getSymbol()
-        if (symbol?.getName() === "ReadonlyMap") {
+        if (symbol !== undefined && ts.getSymbolName(symbol) === "ReadonlyMap") {
             const typeArguments = ts.getResolvedTypeArguments(this.typeChecker, type) ?? ts.getAliasTypeArguments(type) ?? []
             if (typeArguments.length != 2) ErrorReporter.reportParseFailed("Invalid ReadonlyMap type!")
             return typeArguments as [ts.Type, ts.Type]
@@ -426,7 +427,8 @@ export class InjectNodeDetector {
     @bound
     isIterable(type: ts.Type): ts.Type | undefined {
         const iterator = this.typeChecker.getPropertiesOfType(type).find(it => it.name.startsWith("__@iterator@"))
-        const iterableType = iterator?.valueDeclaration && this.typeChecker.getTypeOfSymbolAtLocation(iterator, iterator?.valueDeclaration)
+        const iteratorDeclaration = iterator && ts.getValueDeclaration(iterator)
+        const iterableType = iterator && iteratorDeclaration && this.typeChecker.getTypeOfSymbolAtLocation(iterator, iteratorDeclaration)
         if (iterableType) {
             const iteratorTypes = this.typeChecker.getSignaturesOfType(iterableType, ts.SignatureKind.Call).map(this.typeChecker.getReturnTypeOfSignature)
             if (iteratorTypes.length !== 1) this.errorReporter.reportParseFailed(`Invalid Iterable type: ${this.typeChecker.typeToString(type)}!`)

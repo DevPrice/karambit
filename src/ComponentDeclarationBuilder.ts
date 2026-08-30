@@ -168,7 +168,7 @@ export class ComponentDeclarationBuilder {
             this.errorReporter.reportParseFailed("Component missing name!", factory.declaration)
         }
         const symbol = ts.getTypeSymbol(factory.subcomponentType.type)
-        const declaration = symbol.declarations![0]
+        const declaration = ts.getDeclarations(symbol)[0]
         return ts.createPropertyDeclaration(
             [ts.createToken(ts.SyntaxKind.PrivateKeyword)],
             this.nameGenerator.getPropertyIdentifier(factory.subcomponentType),
@@ -176,7 +176,7 @@ export class ComponentDeclarationBuilder {
             undefined,
             ts.createClassExpression(
                 undefined,
-                identifier,
+                typeof identifier === "string" ? ts.createIdentifier(identifier) : identifier,
                 undefined,
                 [ts.createHeritageClause(
                     ts.isClassLike(declaration) ? ts.SyntaxKind.ExtendsKeyword : ts.SyntaxKind.ImplementsKeyword,
@@ -271,7 +271,7 @@ export class ComponentDeclarationBuilder {
                                 ts.createParameterDeclaration(
                                     undefined,
                                     undefined,
-                                    it.name,
+                                    ts.createIdentifier(it.name),
                                     undefined,
                                     factory.factorySymbol
                                         ? undefined
@@ -332,7 +332,7 @@ export class ComponentDeclarationBuilder {
                                     ts.createParameterDeclaration(
                                         undefined,
                                         undefined,
-                                        it.name,
+                                        ts.createIdentifier(it.name),
                                         undefined,
                                         typeNode && this.constructorParamTypeNode(typeNode, it.constructorParamIndex),
                                         undefined,
@@ -641,7 +641,7 @@ export class ComponentDeclarationBuilder {
 
     private constructorParamTypeNode(typeNode: ts.TypeNode, index: number, constructorSymbol?: ts.Symbol) {
         const type = constructorSymbol && this.typeChecker.getTypeOfSymbol(constructorSymbol)
-        const isProtected = type && !!ts.getTypeSymbol(type) && !!ts.getTypeSymbol(type).declarations && ts.getTypeSymbol(type).declarations.some(declaration => {
+        const isProtected = type !== undefined && ts.getDeclarations(ts.getTypeSymbol(type)).some(declaration => {
             if (ts.isClassDeclaration(declaration)) {
                 const constructor = findAllChildren(declaration, ts.isConstructorDeclaration)
                     .find(constructor => constructor.body)

@@ -1,8 +1,7 @@
 import * as fs from "fs"
 import * as Path from "path"
 import * as assert from "assert"
-import {generateComponentFiles, KarambitError} from "karambit-inject"
-import ts from "typescript"
+import {createProgram, generateComponentFiles, KarambitError, withProject} from "karambit-inject"
 
 const failuresDir = "failures"
 
@@ -22,19 +21,10 @@ describe("Validation", () => {
 })
 
 function runKarambitForError(dirName: string, errorScope: string) {
-    const configFile = ts.readConfigFile(Path.join(dirName, "tsconfig.json"), ts.sys.readFile)
-    if (configFile.error) {
-        throw configFile.error
-    }
-
-    const parsedCommandLine = ts.parseJsonConfigFileContent(configFile.config, ts.sys, dirName)
-    if (parsedCommandLine.errors.length > 0) {
-        throw parsedCommandLine.errors
-    }
-    const program = ts.createProgram(parsedCommandLine.fileNames, parsedCommandLine.options)
-
     expectKarambitError(errorScope, () => {
-        generateComponentFiles(program, {dryRun: true})
+        withProject(Path.join(dirName, "tsconfig.json"), project => {
+            generateComponentFiles(createProgram(project), {dryRun: true})
+        })
     })
 }
 
