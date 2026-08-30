@@ -15,6 +15,9 @@
     "karambit": "bin/index.js"
   },
   "license": "Apache-2.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "files": [
     "LICENSE.txt",
     "bin/**/*.js",
@@ -23,7 +26,7 @@
   ],
   "scripts": {
     "prepare": "husky install",
-    "clean": "rm -rf build && rm -rf src/karambit-generated",
+    "clean": "rm -rf build",
     "karambit": "node build/cli.js . -o src/karambit-generated/karambit.ts",
     "build": "tsc",
     "test": "npm run typecheck && vitest run && npm run --prefix integration build && npm run --prefix integration test",
@@ -31,7 +34,7 @@
     "lint:fix": "eslint --fix",
     "check": "npm run test",
     "prerelease": "npm run clean",
-    "release": "npm run build && npm run --prefix decorators build && npm run check",
+    "release": "npm run build && npm run karambit && npm run build && npm run --prefix decorators build && npm run check",
     "prerelease-version": "version-from-git --no-git-tag-version --no-commit-hooks",
     "typecheck": "tsc --noEmit -p test/tsconfig.json"
   },
