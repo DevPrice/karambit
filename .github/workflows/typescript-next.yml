@@ -1,0 +1,32 @@
+name: typescript-next
+
+# Karambit builds against TypeScript's unstable compiler API, which is expected to be replaced.
+# This runs the release checks against the next TypeScript so a break shows up here rather than in
+# someone's build. It gates nothing: it isn't a pull request check, so it can never block a merge.
+
+on:
+  schedule:
+    # dev builds are published daily
+    - cron: "0 6 * * *"
+  push:
+    branches: ["master"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+      # deliberately uncached: the dependency set differs from every other job
+      - run: npm ci
+      - run: npm --prefix integration ci
+      - name: Install the next TypeScript
+        run: |
+          npm install --no-save typescript@next
+          npm install --prefix integration --no-save typescript@next
+      - name: Report the version under test
+        run: node -p "'typescript ' + require('typescript/package.json').version"
+      - run: npm run release
