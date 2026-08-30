@@ -44,8 +44,7 @@ function expectKarambitError(scope: string, block: () => void) {
         assert.fail(`Expected validation to fail with reason '${scope}'!`)
     } catch (e) {
         if (e instanceof KarambitError) {
-            expect(e).toBeInstanceOf(KarambitError)
-            expect(e).toHaveProperty("scope", scope)
+            assert.strictEqual(e.scope, scope)
         } else {
             throw e
         }
