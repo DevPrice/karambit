@@ -1,5 +1,5 @@
 import * as assert from "assert"
-import {NameAllocator} from "../src/compiler"
+import {NameAllocator} from "../src/compiler/index.js"
 
 describe("NameAllocator", () => {
     describe("Allocate", () => {

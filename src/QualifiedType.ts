@@ -1,4 +1,4 @@
-import * as ts from "./compiler"
+import * as ts from "./compiler/index.js"
 
 export const internalQualifier = Symbol("internal-qualifier")
 

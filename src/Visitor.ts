@@ -1,4 +1,4 @@
-import * as ts from "./compiler"
+import * as ts from "./compiler/index.js"
 
 export type SourceFileVisitor = (sourceFile: ts.SourceFile) => void
 
@@ -10,7 +10,7 @@ export function findChild(node: ts.Node | ReadonlyArray<ts.Node>, predicate: (no
         if (predicate(current)) {
             return current
         }
-        nodes.push(...current.getChildren())
+        nodes.push(...ts.getChildren(current))
     }
     return undefined
 }
@@ -24,7 +24,7 @@ export function findAllChildren(node: ts.Node | ReadonlyArray<ts.Node>, predicat
         if (predicate(current)) {
             matchingNodes.push(current)
         }
-        nodes.push(...current.getChildren())
+        nodes.push(...ts.getChildren(current))
     }
     return matchingNodes
 }

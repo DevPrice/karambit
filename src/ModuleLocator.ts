@@ -1,12 +1,12 @@
-import * as ts from "./compiler"
-import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector"
-import {createQualifiedType, QualifiedType} from "./QualifiedType"
-import {isModuleLike, ModuleLike, ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers"
-import {ErrorReporter} from "./ErrorReporter"
-import {findAllChildren} from "./Visitor"
-import {bound, isNotNull, memoized} from "./Util"
-import {KarambitOptions} from "./karambit"
-import {ComponentLikeDeclaration, isValidIdentifier} from "./TypescriptUtil"
+import * as ts from "./compiler/index.js"
+import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector.js"
+import {createQualifiedType, QualifiedType} from "./QualifiedType.js"
+import {isModuleLike, ModuleLike, ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers.js"
+import {ErrorReporter} from "./ErrorReporter.js"
+import {findAllChildren} from "./Visitor.js"
+import {bound, isNotNull, memoized} from "./Util.js"
+import {KarambitOptions} from "./karambit.js"
+import {ComponentLikeDeclaration, isValidIdentifier} from "./TypescriptUtil.js"
 
 export interface Binding {
     paramType: QualifiedType
@@ -49,7 +49,7 @@ export class ModuleLocator {
         const tags = this.nodeDetector.getJSDocTags(declaration, KarambitAnnotationTag.includeModule)
         return tags
             .flatMap(tag => {
-                const linkTags = tag.getChildren().filter(ts.isJSDocLink)
+                const linkTags = ts.getChildren(tag).filter(ts.isJSDocLink)
                 if (linkTags.length <= 0) {
                     this.errorReporter.reportParseFailed("Expected at least one @link TSDoc tag for @includeModule tag!", tag)
                 }
@@ -89,7 +89,7 @@ export class ModuleLocator {
         if (tags.length > 0) {
             const linkTags = tags
                 .flatMap(tag => {
-                    const linkTags = tag.getChildren().filter(ts.isJSDocLink)
+                    const linkTags = ts.getChildren(tag).filter(ts.isJSDocLink)
                     if (linkTags.length <= 0) {
                         this.errorReporter.reportParseFailed("Expected at least one @link TSDoc tag for @includeSubcomponent tag!", tag)
                     }
@@ -174,7 +174,7 @@ export class ModuleLocator {
         }
         const signature = this.typeChecker.getSignatureFromDeclaration(method)!
         const returnType = createQualifiedType({
-            type: signature.getReturnType(),
+            type: this.typeChecker.getReturnTypeOfSignature(signature),
             qualifier: this.nodeDetector.getQualifier(method),
         })
         const parameters: ProvidesMethodParameter[] = method.parameters.map(param => {
@@ -199,7 +199,7 @@ export class ModuleLocator {
         }
         const signature = this.typeChecker.getSignatureFromDeclaration(method)!
         const returnType = createQualifiedType({
-            type: signature.getReturnType()
+            type: this.typeChecker.getReturnTypeOfSignature(signature)
         })
         const parameters = method.parameters
         if (parameters.length != 1) this.errorReporter.reportInvalidBindingArguments(method)
@@ -223,7 +223,7 @@ export class ModuleLocator {
         if (signatures.length !== 1) this.errorReporter.reportParseFailed("Couldn't read signature of @Binds property!")
         const signature = signatures[0]
         const returnType = createQualifiedType({
-            type: signature.getReturnType(),
+            type: this.typeChecker.getReturnTypeOfSignature(signature),
             qualifier: this.nodeDetector.getQualifier(property)
         })
         const parameters = signature.parameters

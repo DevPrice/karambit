@@ -7,10 +7,10 @@
  * differently is a function here rather than a member access.
  */
 
-export * from "./Ast"
-export * from "./Checker"
-export * from "./Factory"
-export * from "./Guards"
-export * from "./Modules"
-export * from "./Names"
-export * from "./Program"
+export * from "./Ast.js"
+export * from "./Checker.js"
+export * from "./Factory.js"
+export * from "./Guards.js"
+export * from "./Modules.js"
+export * from "./Names.js"
+export * from "./Program.js"

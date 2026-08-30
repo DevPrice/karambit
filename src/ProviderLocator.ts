@@ -1,14 +1,14 @@
-import * as ts from "./compiler"
-import {createQualifiedType, QualifiedType} from "./QualifiedType"
-import {MapMultibinding, PropertyProvider, ProviderType, ProvidesMethod, SetMultibinding} from "./Providers"
-import {TupleMap} from "./TupleMap"
-import {Binding, ModuleLocator} from "./ModuleLocator"
-import {InjectNodeDetector} from "./InjectNodeDetector"
-import {ErrorReporter} from "./ErrorReporter"
-import {ConstructorHelper} from "./ConstructorHelper"
-import {NameGenerator} from "./NameGenerator"
-import {PropertyExtractor} from "./PropertyExtractor"
-import {ComponentLikeDeclaration, ComponentScope} from "./TypescriptUtil"
+import * as ts from "./compiler/index.js"
+import {createQualifiedType, QualifiedType} from "./QualifiedType.js"
+import {MapMultibinding, PropertyProvider, ProviderType, ProvidesMethod, SetMultibinding} from "./Providers.js"
+import {TupleMap} from "./TupleMap.js"
+import {Binding, ModuleLocator} from "./ModuleLocator.js"
+import {InjectNodeDetector} from "./InjectNodeDetector.js"
+import {ErrorReporter} from "./ErrorReporter.js"
+import {ConstructorHelper} from "./ConstructorHelper.js"
+import {NameGenerator} from "./NameGenerator.js"
+import {PropertyExtractor} from "./PropertyExtractor.js"
+import {ComponentLikeDeclaration, ComponentScope} from "./TypescriptUtil.js"
 
 export interface ModuleProviders {
     factories: ReadonlyMap<QualifiedType, ProvidesMethod>
@@ -65,7 +65,7 @@ export class ProviderLocator {
                         type: propertyType,
                         optional: property.optional,
                         name,
-                        propertyName: property.symbol.name,
+                        propertyName: ts.getTypeSymbol(property).name,
                     }
                     const existing = dependencyMap.get(type)
                     if (existing) throw this.errorReporter.reportDuplicateProviders(type, [existing, provider])

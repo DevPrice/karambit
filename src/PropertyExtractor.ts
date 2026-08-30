@@ -1,5 +1,5 @@
-import * as ts from "./compiler"
-import {ErrorReporter} from "./ErrorReporter"
+import * as ts from "./compiler/index.js"
+import {ErrorReporter} from "./ErrorReporter.js"
 
 export type PropertyLike = ts.PropertyDeclaration | ts.PropertySignature
 export type ElementLike = ts.ClassElement | ts.TypeElement
@@ -27,7 +27,7 @@ export class PropertyExtractor {
             .map(symbol => {
                 const symbolType = this.typeChecker.getTypeOfSymbol(symbol)
                 if (symbol.flags & ts.SymbolFlags.Method) {
-                    const declaration = symbol.valueDeclaration
+                    const declaration = ts.getValueDeclaration(symbol)
                     if (declaration && ts.isMethodDeclaration(declaration)) {
                         return {
                             symbol,
@@ -36,18 +36,18 @@ export class PropertyExtractor {
                             optional: false,
                         }
                     } else {
-                        this.errorReporter.reportParseFailed(`Failed to get method declaration for property '${symbol.name}'!`, symbol.valueDeclaration)
+                        this.errorReporter.reportParseFailed(`Failed to get method declaration for property '${symbol.name}'!`, ts.getValueDeclaration(symbol))
                     }
                 }
                 const optional = !!(symbol.flags & ts.SymbolFlags.Optional)
-                const returnType = symbol.valueDeclaration && ts.isPropertyDeclaration(symbol.valueDeclaration)
-                    ? this.typeChecker.getTypeAtLocation(symbol.valueDeclaration.type ?? symbol.valueDeclaration)
+                const returnType = ts.getValueDeclaration(symbol) && ts.isPropertyDeclaration(ts.getValueDeclaration(symbol))
+                    ? this.typeChecker.getTypeAtLocation(ts.getValueDeclaration(symbol).type ?? ts.getValueDeclaration(symbol))
                     : symbolType
                 return {
                     symbol,
                     returnType,
                     optional,
-                    declaration: symbol.valueDeclaration,
+                    declaration: ts.getValueDeclaration(symbol),
                 }
             })
     }

@@ -1,5 +1,5 @@
 import chalk from "chalk"
-import {TupleMap} from "./TupleMap"
+import {TupleMap} from "./TupleMap.js"
 
 /**
  * Used to report log messages. By default, defers to {@link console}.

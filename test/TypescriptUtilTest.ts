@@ -1,5 +1,5 @@
 import * as assert from "assert"
-import * as ts from "../src/compiler"
+import * as ts from "../src/compiler/index.js"
 
 describe("TypescriptUtil", () => {
     describe("Remove module file extensions", () => {

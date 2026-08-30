@@ -1,9 +1,9 @@
-import * as ts from "./compiler"
-import {InjectNodeDetector} from "./InjectNodeDetector"
-import {NameGenerator} from "./NameGenerator"
-import {Importer} from "./Importer"
-import {TypeResolver} from "./TypeResolver"
-import {createQualifiedType, QualifiedType} from "./QualifiedType"
+import * as ts from "./compiler/index.js"
+import {InjectNodeDetector} from "./InjectNodeDetector.js"
+import {NameGenerator} from "./NameGenerator.js"
+import {Importer} from "./Importer.js"
+import {TypeResolver} from "./TypeResolver.js"
+import {createQualifiedType, QualifiedType} from "./QualifiedType.js"
 import {
     AssistedFactory,
     ConstructorParameter,
@@ -15,12 +15,12 @@ import {
     ProvidesMethod,
     SetMultibinding,
     SubcomponentFactory,
-} from "./Providers"
-import {ErrorReporter} from "./ErrorReporter"
-import {bound, isNotNull} from "./Util"
-import {ComponentDeclaration, ComponentScope, isTypeNullable} from "./TypescriptUtil"
-import {findAllChildren} from "./Visitor"
-import {ConstructorHelper} from "./ConstructorHelper"
+} from "./Providers.js"
+import {ErrorReporter} from "./ErrorReporter.js"
+import {bound, isNotNull} from "./Util.js"
+import {ComponentDeclaration, ComponentScope, isTypeNullable} from "./TypescriptUtil.js"
+import {findAllChildren} from "./Visitor.js"
+import {ConstructorHelper} from "./ConstructorHelper.js"
 
 export type ComponentDeclarationBuilderFactory = (typeResolver: TypeResolver, instanceProviders: ReadonlyMap<QualifiedType, InstanceProvider>) => ComponentDeclarationBuilder
 
@@ -167,7 +167,7 @@ export class ComponentDeclarationBuilder {
         if (!parentName) {
             this.errorReporter.reportParseFailed("Component missing name!", factory.declaration)
         }
-        const symbol = factory.subcomponentType.type.symbol
+        const symbol = ts.getTypeSymbol(factory.subcomponentType.type)
         const declaration = symbol.declarations![0]
         return ts.createPropertyDeclaration(
             [ts.createToken(ts.SyntaxKind.PrivateKeyword)],
@@ -283,7 +283,7 @@ export class ComponentDeclarationBuilder {
                                                 )
                                             ),
                                             it.index + 1,
-                                            factory.subcomponentType.type.symbol,
+                                            ts.getTypeSymbol(factory.subcomponentType.type),
                                         ),
                                     undefined
                                 )
@@ -641,7 +641,7 @@ export class ComponentDeclarationBuilder {
 
     private constructorParamTypeNode(typeNode: ts.TypeNode, index: number, constructorSymbol?: ts.Symbol) {
         const type = constructorSymbol && this.typeChecker.getTypeOfSymbol(constructorSymbol)
-        const isProtected = type && !!type.symbol && !!type.symbol.declarations && type.symbol.declarations.some(declaration => {
+        const isProtected = type && !!ts.getTypeSymbol(type) && !!ts.getTypeSymbol(type).declarations && ts.getTypeSymbol(type).declarations.some(declaration => {
             if (ts.isClassDeclaration(declaration)) {
                 const constructor = findAllChildren(declaration, ts.isConstructorDeclaration)
                     .find(constructor => constructor.body)

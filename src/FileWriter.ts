@@ -1,8 +1,8 @@
-import * as ts from "./compiler"
+import * as ts from "./compiler/index.js"
 import * as Path from "path"
 import * as fs from "fs"
-import {Logger} from "./Util"
-import {KarambitOptions} from "./karambit"
+import {Logger} from "./Util.js"
+import {KarambitOptions} from "./karambit.js"
 
 export interface ComponentWriter {
     writeComponentFile(sourceFile: ts.SourceFile, outputFilename: string): void
@@ -18,7 +18,7 @@ export class FileWriter implements ComponentWriter {
     ) { }
 
     writeComponentFile(sourceFile: ts.SourceFile, outputFilename: string) {
-        const resultText: string = ts.printFile(sourceFile, this.options.printerOptions)
+        const resultText: string = this.program.printFile(sourceFile, this.options.printerOptions)
         if (resultText) {
             const outputDir = Path.dirname(outputFilename)
             if (!fs.existsSync(outputDir)) {

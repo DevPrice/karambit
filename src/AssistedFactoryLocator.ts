@@ -1,10 +1,10 @@
-import * as ts from "./compiler"
-import {createQualifiedType, internalQualifier} from "./QualifiedType"
-import {InjectNodeDetector} from "./InjectNodeDetector"
-import {ConstructorHelper} from "./ConstructorHelper"
-import {AssistedFactory, ProviderType} from "./Providers"
-import {ErrorReporter} from "./ErrorReporter"
-import {bound, memoized} from "./Util"
+import * as ts from "./compiler/index.js"
+import {createQualifiedType, internalQualifier} from "./QualifiedType.js"
+import {InjectNodeDetector} from "./InjectNodeDetector.js"
+import {ConstructorHelper} from "./ConstructorHelper.js"
+import {AssistedFactory, ProviderType} from "./Providers.js"
+import {ErrorReporter} from "./ErrorReporter.js"
+import {bound, memoized} from "./Util.js"
 
 /**
  * @inject
@@ -27,7 +27,7 @@ export class AssistedFactoryLocator {
         const signatureDeclaration = signature.declaration
         if (!signatureDeclaration || ts.isJSDocSignature(signatureDeclaration)) return undefined
 
-        const returnType = signature.getReturnType()
+        const returnType = this.typeChecker.getReturnTypeOfSignature(signature)
         const declarations = returnType.getSymbol()?.declarations
         if (!declarations || declarations.length === 0) return undefined
 

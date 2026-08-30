@@ -1,6 +1,6 @@
-import * as ts from "./compiler"
-import {QualifiedType} from "./QualifiedType"
-import {ComponentDeclaration, ComponentScope} from "./TypescriptUtil"
+import * as ts from "./compiler/index.js"
+import {QualifiedType} from "./QualifiedType.js"
+import {ComponentDeclaration, ComponentScope} from "./TypescriptUtil.js"
 
 export type InstanceProvider = PropertyProvider | ProvidesMethod | InjectableConstructor | SubcomponentFactory | AssistedFactory | UndefinedProvider | ParentProvider | SetMultibinding | MapMultibinding
 export type MultibindingProvider = SetMultibinding | MapMultibinding

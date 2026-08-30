@@ -1,11 +1,11 @@
-import ts from "typescript"
-import type {Declaration, Decorator, JSDocTag, Node, PropertyDeclaration} from "./Ast"
+import * as is from "typescript/unstable/ast/is"
+import {getJSDocTags as getTags, SyntaxKind} from "typescript/unstable/ast"
+import type {Declaration, Decorator, JSDocTag, Node, PropertyDeclaration} from "./Ast.js"
 
 export const {
     isArrayLiteralExpression,
     isCallExpression,
     isClassDeclaration,
-    isClassLike,
     isConstructorDeclaration,
     isDecorator,
     isFunctionTypeNode,
@@ -17,9 +17,7 @@ export const {
     isJSDocLink,
     isJSDocSignature,
     isMethodDeclaration,
-    isMethodSignature,
     isObjectLiteralExpression,
-    isParameter,
     isPropertyAssignment,
     isPropertyDeclaration,
     isSetAccessorDeclaration,
@@ -27,21 +25,48 @@ export const {
     isTypeAliasDeclaration,
     isVariableDeclaration,
     isVariableDeclarationList,
-} = ts
+} = is
+
+export const isClassLike = is.isClassLikeDeclaration
+export const isMethodSignature = is.isMethodSignatureDeclaration
+export const isParameter = is.isParameterDeclaration
 
 export function isPropertyLikeDeclaration(declaration: Declaration): declaration is PropertyDeclaration {
-    return ts.isPropertyDeclaration(declaration) || ts.isAutoAccessorPropertyDeclaration(declaration)
+    return is.isPropertyDeclaration(declaration) || isAutoAccessorProperty(declaration)
 }
 
 // needs the parent as well as the kind, so it isn't a plain syntax-kind test
 export function isParameterProperty(declaration: Declaration): boolean {
-    return ts.isParameterPropertyDeclaration(declaration, declaration.parent)
+    if (!is.isParameterDeclaration(declaration) || !is.isConstructorDeclaration(declaration.parent)) return false
+    return declaration.modifiers?.some(it => modifierFlagsOnParameterProperties.has(it.kind)) ?? false
+}
+
+const modifierFlagsOnParameterProperties: ReadonlySet<SyntaxKind> = new Set([
+    SyntaxKind.PublicKeyword,
+    SyntaxKind.PrivateKeyword,
+    SyntaxKind.ProtectedKeyword,
+    SyntaxKind.ReadonlyKeyword,
+    SyntaxKind.OverrideKeyword,
+])
+
+function isAutoAccessorProperty(declaration: Declaration): boolean {
+    return is.isPropertyDeclaration(declaration)
+        && (declaration.modifiers?.some(it => it.kind === SyntaxKind.AccessorKeyword) ?? false)
 }
 
 export function getJSDocTags(node: Node): readonly JSDocTag[] {
-    return ts.getJSDocTags(node)
+    return getTags(node)
 }
 
 export function getDecorators(node: Node): readonly Decorator[] | undefined {
-    return ts.canHaveDecorators(node) ? ts.getDecorators(node) : undefined
+    if (!("modifiers" in node)) return undefined
+    const modifiers = (node as {modifiers?: readonly Node[]}).modifiers
+    return modifiers?.filter(is.isDecorator)
+}
+
+// the compiler no longer materializes a children array; this walks the same nodes
+export function getChildren(node: Node): readonly Node[] {
+    const children: Node[] = []
+    node.forEachChild(child => { children.push(child) })
+    return children
 }

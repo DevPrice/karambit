@@ -1,22 +1,22 @@
-import * as ts from "./compiler"
+import * as ts from "./compiler/index.js"
 import picomatch from "picomatch"
 import {Provider, Qualified} from "karambit-inject"
-import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes"
-import type {SourceFileGenerator} from "./SourceFileGenerator"
+import {ComponentGenerationScope, ProgramScope, SourceFileScope} from "./Scopes.js"
+import type {SourceFileGenerator} from "./SourceFileGenerator.js"
 import {
     ComponentGenerator,
     ComponentGeneratorDependencies,
     ComponentGeneratorDependenciesFactory,
     GeneratedComponent,
-} from "./ComponentGenerator"
-import type {KarambitOptions} from "./karambit"
-import {AnnotationValidator} from "./AnnotationValidator"
-import {ComponentWriter, DryRunWriter, FileWriter} from "./FileWriter"
-import {findAllChildren, SourceFileVisitor} from "./Visitor"
-import {ignore, isNotNull, Logger} from "./Util"
-import {InjectNodeDetector} from "./InjectNodeDetector"
+} from "./ComponentGenerator.js"
+import type {KarambitOptions} from "./karambit.js"
+import {AnnotationValidator} from "./AnnotationValidator.js"
+import {ComponentWriter, DryRunWriter, FileWriter} from "./FileWriter.js"
+import {findAllChildren, SourceFileVisitor} from "./Visitor.js"
+import {ignore, isNotNull, Logger} from "./Util.js"
+import {InjectNodeDetector} from "./InjectNodeDetector.js"
 import * as Path from "path"
-import {ComponentDeclaration, isComponentDeclaration} from "./TypescriptUtil"
+import {ComponentDeclaration, isComponentDeclaration} from "./TypescriptUtil.js"
 
 declare const generatedQualifier: unique symbol
 type GeneratedSourceFile = ts.SourceFile & Qualified<typeof generatedQualifier>

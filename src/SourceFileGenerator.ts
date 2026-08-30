@@ -1,10 +1,10 @@
-import * as ts from "./compiler"
-import {GeneratedComponent} from "./ComponentGenerator"
-import {NameGenerator} from "./NameGenerator"
-import {isNotNull} from "./Util"
-import {Importer} from "./Importer"
-import {KarambitOptions} from "./karambit"
-import {ErrorReporter} from "./ErrorReporter"
+import * as ts from "./compiler/index.js"
+import {GeneratedComponent} from "./ComponentGenerator.js"
+import {NameGenerator} from "./NameGenerator.js"
+import {isNotNull} from "./Util.js"
+import {Importer} from "./Importer.js"
+import {KarambitOptions} from "./karambit.js"
+import {ErrorReporter} from "./ErrorReporter.js"
 
 /**
  * @inject

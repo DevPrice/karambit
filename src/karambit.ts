@@ -1,10 +1,10 @@
-import * as ts from "./compiler"
-import {KarambitProgramComponent} from "./karambit-generated/karambit"
-import type {Logger} from "./Util"
+import * as ts from "./compiler/index.js"
+import {KarambitProgramComponent} from "./karambit-generated/karambit.js"
+import type {Logger} from "./Util.js"
 
 export {Logger}
-export {KarambitError, KarambitErrorScope} from "./KarambitError"
-export {ComponentDeclaration} from "./TypescriptUtil"
+export {KarambitError, KarambitErrorScope} from "./KarambitError.js"
+export {ComponentDeclaration} from "./TypescriptUtil.js"
 
 /** @internal */
 export type ConstructorType<T extends abstract new (...args: ConstructorParameters<T>) => InstanceType<T>> = abstract new (...args: ConstructorParameters<T>) => InstanceType<T>

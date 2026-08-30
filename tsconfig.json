@@ -1,10 +1,12 @@
 {
   "compilerOptions": {
     "target": "es2022",
+    "lib": ["esnext"],
+    "types": ["node"],
     "rootDir": "./src",
     "outDir": "./build",
     "tsBuildInfoFile": "./build/.tsbuildinfo",
-    "module": "Node16",
+    "module": "nodenext",
     "esModuleInterop": true,
     "declaration": true,
     "removeComments": true,

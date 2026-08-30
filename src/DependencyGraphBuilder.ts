@@ -1,10 +1,10 @@
-import {createQualifiedType, QualifiedType} from "./QualifiedType"
-import {TypeResolver} from "./TypeResolver"
-import {ConstructorHelper} from "./ConstructorHelper"
-import {Container, findCycles, isNotNull, memoized} from "./Util"
-import * as ts from "./compiler"
-import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator"
-import {InjectNodeDetector} from "./InjectNodeDetector"
+import {createQualifiedType, QualifiedType} from "./QualifiedType.js"
+import {TypeResolver} from "./TypeResolver.js"
+import {ConstructorHelper} from "./ConstructorHelper.js"
+import {Container, findCycles, isNotNull, memoized} from "./Util.js"
+import * as ts from "./compiler/index.js"
+import {SubcomponentFactoryLocator} from "./SubcomponentFactoryLocator.js"
+import {InjectNodeDetector} from "./InjectNodeDetector.js"
 import {
     InjectableConstructor,
     InstanceProvider,
@@ -13,10 +13,10 @@ import {
     ProviderType,
     ProvidesMethod,
     SetMultibinding,
-} from "./Providers"
-import {ErrorReporter} from "./ErrorReporter"
-import {AssistedFactoryLocator} from "./AssistedFactoryLocator"
-import {ComponentScope} from "./TypescriptUtil"
+} from "./Providers.js"
+import {ErrorReporter} from "./ErrorReporter.js"
+import {AssistedFactoryLocator} from "./AssistedFactoryLocator.js"
+import {ComponentScope} from "./TypescriptUtil.js"
 
 export interface Dependency {
     readonly type: QualifiedType

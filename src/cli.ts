@@ -1,10 +1,10 @@
-import * as ts from "./compiler"
+import * as ts from "./compiler/index.js"
 import * as Path from "node:path"
 import * as fs from "fs"
 import {hideBin} from "yargs/helpers"
 import yargs from "yargs"
-import {generateComponentFiles} from "./karambit"
-import {KarambitError} from "./KarambitError"
+import {generateComponentFiles} from "./karambit.js"
+import {KarambitError} from "./KarambitError.js"
 
 const scriptTargets: ReadonlyMap<string, ts.ScriptTarget> = ts.getScriptTargets()
 

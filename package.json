@@ -50,7 +50,7 @@
   "devDependencies": {
     "@devprice/eslint-config": "^1.1.2",
     "@types/jest": "^29.5.13",
-    "@types/node": "^20.16.10",
+    "@types/node": "^24.13.3",
     "@types/picomatch": "^4.0.2",
     "eslint": "^9.12.0",
     "globals": "^15.11.0",
@@ -60,14 +60,11 @@
     "lint-staged": "^15.2.10",
     "ts-jest": "^29.2.5",
     "typedoc": "^0.28.15",
-    "typescript": "^5.9.3",
+    "typescript": "^7.0.2",
     "version-from-git": "^1.1.2"
   },
   "peerDependencies": {
     "typescript": ">= 4.8.0"
-  },
-  "lint-staged": {
-    "*.ts": "eslint --fix"
   },
   "jest": {
     "preset": "ts-jest",
@@ -82,5 +79,6 @@
     "extensionsToTreatAsEsm": [
       ".ts"
     ]
-  }
+  },
+  "type": "module"
 }

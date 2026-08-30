@@ -1,6 +1,6 @@
-import * as ts from "./compiler"
+import * as ts from "./compiler/index.js"
 import * as Path from "path"
-import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType"
+import {createQualifiedType, QualifiedType, qualifiedTypeToString} from "./QualifiedType.js"
 import {
     InjectableConstructor,
     InstanceProvider,
@@ -10,13 +10,13 @@ import {
     isSubcomponentFactory,
     ProviderType,
     ProvidesMethod,
-} from "./Providers"
-import {filterTree, isNotNull, printTreeMap} from "./Util"
-import {Dependency, DependencyProvider} from "./DependencyGraphBuilder"
-import {Binding} from "./ModuleLocator"
+} from "./Providers.js"
+import {filterTree, isNotNull, printTreeMap} from "./Util.js"
+import {Dependency, DependencyProvider} from "./DependencyGraphBuilder.js"
+import {Binding} from "./ModuleLocator.js"
 import chalk from "chalk"
-import {KarambitError, KarambitErrorScope} from "./KarambitError"
-import {ComponentDeclaration, ComponentScope, scopeToString} from "./TypescriptUtil"
+import {KarambitError, KarambitErrorScope} from "./KarambitError.js"
+import {ComponentDeclaration, ComponentScope, scopeToString} from "./TypescriptUtil.js"
 
 type ErrorContext = ts.Node | ts.Node[]
 
