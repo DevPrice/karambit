@@ -74,7 +74,6 @@ export interface SubcomponentFactory<T extends ConstructorType<T>> {
  * @property allowEmptyModules if true, generation will succeed even if there are empty modules
  * @property allowEmptyOutput if true, generation will succeed even if no component declarations were found in the input program
  * @property enableDocTags if true, enable support for doc tag annotation in addition to decorators
- * @property outputScriptTarget script target of the generated output TypeScript
  * @property include if specified, only files matching this glob pattern will be examined
  * @property exclude if specified, files matching this glob pattern will *not* be examined (even if specified by {@link include})
  * @property logger allows replacing the default logging with a custom logger; defaults to {@link console}
@@ -88,7 +87,6 @@ export interface KarambitOptions {
     allowEmptyModules: boolean
     allowEmptyOutput: boolean
     enableDocTags: boolean
-    outputScriptTarget: ts.ScriptTarget
     include?: string[]
     exclude?: string[]
     logger?: Logger
@@ -116,5 +114,4 @@ const defaultOptions: KarambitOptions = {
     allowEmptyModules: false,
     allowEmptyOutput: false,
     enableDocTags: false,
-    outputScriptTarget: ts.ScriptTarget.Latest,
 }

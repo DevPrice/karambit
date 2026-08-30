@@ -24,7 +24,7 @@ export class SourceFileGenerator {
         }
         const classDeclarations = components.map(it => it.classDeclaration)
         const requiresUnsetSymbolDeclaration = components.some(it => it.requiresUnsetSymbolDeclaration)
-        const sourceFile = ts.createSourceFile(this.options.outFile, this.options.outputScriptTarget)
+        const sourceFile = ts.createSourceFile(this.options.outFile)
         return ts.updateSourceFile(
             sourceFile,
             [

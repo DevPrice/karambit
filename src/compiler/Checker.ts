@@ -1,5 +1,5 @@
 import type {Checker, SignatureKind} from "typescript/unstable/sync"
-import type {Declaration, Node, ObjectType, Signature, Symbol, TupleType, Type} from "./Ast.js"
+import type {Declaration, Node, ObjectType, Signature, SignatureDeclaration, Symbol, TupleType, Type} from "./Ast.js"
 
 /**
  * The type-system questions Karambit asks. The compiler's own checker answers most of these with
@@ -54,8 +54,8 @@ export function getValueDeclaration(symbol: Symbol): Declaration | undefined {
     return symbol.valueDeclaration?.resolve() as Declaration | undefined
 }
 
-export function getSignatureDeclaration(signature: Signature): Declaration | undefined {
-    return signature.declaration?.resolve() as Declaration | undefined
+export function getSignatureDeclaration(signature: Signature): SignatureDeclaration | undefined {
+    return signature.declaration?.resolve() as SignatureDeclaration | undefined
 }
 
 export function getSymbolName(symbol: Symbol): string {
