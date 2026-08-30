@@ -32,6 +32,7 @@ export type VariableDeclaration = ast.VariableDeclaration
 export type ImportDeclaration = ast.ImportDeclaration
 export type TypeElement = ast.TypeElement
 export type TypeNode = ast.TypeNode
+export type SignatureDeclaration = ast.SignatureDeclaration
 
 export type Type = api.Type
 export type ObjectType = api.ObjectType

@@ -24,11 +24,12 @@ export class AssistedFactoryLocator {
         const signatures = this.typeChecker.getSignaturesOfType(type, ts.SignatureKind.Call)
         if (signatures.length === 0) return undefined
         const signature = signatures[0]
-        const signatureDeclaration = signature.declaration
+        const signatureDeclaration = ts.getSignatureDeclaration(signature)
         if (!signatureDeclaration || ts.isJSDocSignature(signatureDeclaration)) return undefined
 
         const returnType = this.typeChecker.getReturnTypeOfSignature(signature)
-        const declarations = returnType.getSymbol()?.declarations
+        const returnSymbol = ts.getTypeSymbol(returnType)
+        const declarations = returnSymbol && ts.getDeclarations(returnSymbol)
         if (!declarations || declarations.length === 0) return undefined
 
         const declaration = declarations[0]

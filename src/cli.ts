@@ -1,12 +1,10 @@
 import * as ts from "./compiler/index.js"
 import * as Path from "node:path"
-import * as fs from "fs"
+import * as fs from "node:fs"
 import {hideBin} from "yargs/helpers"
 import yargs from "yargs"
 import {generateComponentFiles} from "./karambit.js"
 import {KarambitError} from "./KarambitError.js"
-
-const scriptTargets: ReadonlyMap<string, ts.ScriptTarget> = ts.getScriptTargets()
 
 interface GenerateCommandOptions {
     tsconfig: string
@@ -19,7 +17,6 @@ interface GenerateCommandOptions {
     allowEmptyModules: boolean
     allowEmptyOutput: boolean
     disableTags: boolean
-    scriptTarget?: string
 }
 
 yargs(hideBin(process.argv))
@@ -87,12 +84,6 @@ yargs(hideBin(process.argv))
                 type: "boolean",
                 description: "Disable JS Doc tag support",
                 default: false,
-            })
-            .option("script-target", {
-                type: "string",
-                alias: "t",
-                description: "The script target to use for the generated output file(s)",
-                choices: Array.from(scriptTargets.keys()),
             }),
         args => {
             if (!fs.existsSync(args.tsconfig)) {
@@ -102,24 +93,17 @@ yargs(hideBin(process.argv))
 
             const tsconfigFile = getFile(args.tsconfig, "tsconfig.json")
 
-            const basePath = Path.dirname(args.tsconfig)
-            const config = ts.parseConfigFile(tsconfigFile, basePath)
-            if ("readError" in config) {
-                console.error("Failed to read config file!")
-                console.error(config.readError)
-                process.exit(1)
-            }
-            if (config.errors.length > 0) {
-                for (const error of config.errors) {
-                    console.error(ts.formatDiagnostic(error))
-                }
-                process.exit(1)
-            }
-
             if (args.watch) {
-                watchComponents(config.fileNames, config.options, args)
+                ts.watchProject(tsconfigFile, project => {
+                    process.stdout.write("Regenerating Karambit output...")
+                    if (generateFromProject(project, args) === 0) {
+                        process.stdout.write(" done.\n")
+                    } else {
+                        process.stdout.write("\n")
+                    }
+                })
             } else {
-                generateComponents(config.fileNames, config.options, args)
+                process.exit(ts.withProject(tsconfigFile, project => generateFromProject(project, args)))
             }
         },
     )
@@ -131,27 +115,9 @@ function getFile(input: string, defaultFilename: string) {
         : input
 }
 
-function generateComponents(fileNames: readonly string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
-    const program = ts.createProgram(fileNames, compilerOptions)
-    process.exit(generateFromProgram(program, compilerOptions, cliOptions))
-}
-
-function watchComponents(fileNames: readonly string[], compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): void {
-    // TODO: When Karambit generates its output, it causes TS to recreate the program, causing Karambit to regenerate again if it changed...
-    ts.watchProgram(fileNames, compilerOptions, (program, options) => {
-        process.stdout.write("Regenerating Karambit output...")
-        const result = generateFromProgram(program, options, cliOptions)
-        if (result === 0) {
-            process.stdout.write(" done.\n")
-        } else {
-            process.stdout.write("\n")
-        }
-    })
-}
-
-function generateFromProgram(program: ts.Program, compilerOptions: ts.CompilerOptions, cliOptions: GenerateCommandOptions): number {
+function generateFromProject(project: ts.Project, cliOptions: GenerateCommandOptions): number {
     try {
-        generateComponentFiles(program, {
+        generateComponentFiles(ts.createProgram(project), {
             outFile: cliOptions.output,
             include: cliOptions.include,
             exclude: cliOptions.exclude,
@@ -161,7 +127,6 @@ function generateFromProgram(program: ts.Program, compilerOptions: ts.CompilerOp
             allowEmptyOutput: cliOptions.allowEmptyOutput,
             verbose: cliOptions.verbose,
             enableDocTags: !cliOptions.disableTags,
-            outputScriptTarget: cliOptions.scriptTarget ? scriptTargets.get(cliOptions.scriptTarget) : compilerOptions.target,
         })
     } catch (e) {
         if (e instanceof KarambitError && !cliOptions.verbose) {
