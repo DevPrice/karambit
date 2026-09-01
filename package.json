@@ -52,6 +52,7 @@
     "@devprice/eslint-config": "^1.1.2",
     "@types/node": "^20.16.10",
     "@types/picomatch": "^4.0.2",
+    "@types/yargs": "^17.0.35",
     "eslint": "^9.12.0",
     "globals": "^15.11.0",
     "husky": "^8.0.1",
