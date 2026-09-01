@@ -3,7 +3,14 @@ import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector.js
 import {ErrorReporter} from "./ErrorReporter.js"
 import {bound} from "./Util.js"
 import {findAllChildren, findAncestor} from "./Visitor.js"
-import {AnnotationLike, ComponentLikeDeclaration, isComponentLikeDeclaration, isJSDocTag} from "./TypescriptUtil.js"
+import {
+    AnnotationLike,
+    ComponentLikeDeclaration,
+    getCallSignatures,
+    isComponentLikeDeclaration,
+    isJSDocTag,
+} from "./TypescriptUtil.js"
+import {isProvidesProperty} from "./Providers.js"
 
 /**
  * @inject
@@ -69,8 +76,14 @@ export class AnnotationValidator {
                 if (type) {
                     this.errorReporter.assertValidType(type, parent)
                 }
+            } else if (isProvidesProperty(parent)) {
+                const signatures = getCallSignatures(this.typeChecker, parent)
+                if (signatures.length !== 1) {
+                    this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} property must have exactly one call signature!`, parent)
+                }
+                this.errorReporter.assertValidType(this.typeChecker.getReturnTypeOfSignature(signatures[0]), parent)
             } else {
-                this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} annotation must be applied to a method declaration!`, parent)
+                this.errorReporter.reportParseFailed(`${getAnnotationName(annotation)} annotation must be applied to a method, or to a property whose value is a function!`, parent)
             }
         })
 

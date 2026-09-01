@@ -40,12 +40,18 @@ export function isModuleLike(node: ts.Node): node is ModuleLike {
 }
 
 export type ModuleLike = ts.ClassDeclaration | ts.VariableDeclaration | ts.InterfaceDeclaration
-export type ModuleProviderLike = ts.MethodDeclaration | ts.PropertyDeclaration | ts.MethodSignature
+export type ProvidesProperty = ts.PropertyAssignment | ts.ShorthandPropertyAssignment | ts.PropertyDeclaration
+export type ProvidesDeclaration = ts.MethodDeclaration | ProvidesProperty
+export type ModuleProviderLike = ts.MethodDeclaration | ts.PropertyDeclaration | ts.MethodSignature | ts.PropertyAssignment | ts.ShorthandPropertyAssignment
+
+export function isProvidesProperty(node: ts.Node): node is ProvidesProperty {
+    return ts.isPropertyAssignment(node) || ts.isShorthandPropertyAssignment(node) || ts.isPropertyDeclaration(node)
+}
 
 export interface ProvidesMethod {
     readonly providerType: ProviderType.PROVIDES_METHOD
     readonly module: ModuleLike
-    readonly declaration: ts.MethodDeclaration
+    readonly declaration: ProvidesDeclaration
     readonly type: QualifiedType
     readonly parameters: ProvidesMethodParameter[]
     readonly scope: ComponentScope | undefined

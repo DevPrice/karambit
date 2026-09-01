@@ -1,12 +1,12 @@
 import * as ts from "./compiler/index.js"
 import {InjectNodeDetector, KarambitAnnotationTag} from "./InjectNodeDetector.js"
 import {createQualifiedType, QualifiedType} from "./QualifiedType.js"
-import {isModuleLike, ModuleLike, ProviderType, ProvidesMethod, ProvidesMethodParameter} from "./Providers.js"
+import {isModuleLike, ModuleLike, ProviderType, ProvidesMethod, ProvidesMethodParameter, ProvidesProperty} from "./Providers.js"
 import {ErrorReporter} from "./ErrorReporter.js"
 import {findAllChildren} from "./Visitor.js"
 import {bound, isNotNull, memoized} from "./Util.js"
 import {KarambitOptions} from "./karambit.js"
-import {ComponentLikeDeclaration, isValidIdentifier} from "./TypescriptUtil.js"
+import {ComponentLikeDeclaration, getCallSignatures, isValidIdentifier} from "./TypescriptUtil.js"
 
 export interface Binding {
     paramType: QualifiedType
@@ -65,6 +65,9 @@ export class ModuleLocator {
                 const declarations = [...ts.getDeclarations(originalSymbol), ...ts.getDeclarations(aliasedSymbol)]
                 if (declarations.some(this.nodeDetector.getComponentAnnotation) || declarations.some(this.nodeDetector.getSubcomponentAnnotation)) {
                     this.errorReporter.reportParseFailed("@includeModule should NOT reference a Component or Subcomponent!", tag)
+                }
+                if (declarations.length > 0 && !declarations.some(ts.isExported)) {
+                    this.errorReporter.reportParseFailed("Module referenced by @includeModule must be exported!", declarations[0])
                 }
                 return aliasedSymbol
             })
@@ -194,6 +197,35 @@ export class ModuleLocator {
     }
 
     @bound
+    private getProvidesProperty(property: ProvidesProperty): Omit<ProvidesMethod, "module"> {
+        if (ts.isPropertyDeclaration(property) && !property.modifiers?.some(it => it.kind === ts.SyntaxKind.StaticKeyword)) {
+            this.errorReporter.reportParseFailed("Provider class properties must be static!", property)
+        }
+        const signatures = getCallSignatures(this.typeChecker, property)
+        if (signatures.length !== 1) {
+            this.errorReporter.reportParseFailed("@Provides property must have exactly one call signature!", property)
+        }
+        const signature = signatures[0]
+        const returnType = createQualifiedType({
+            type: this.typeChecker.getReturnTypeOfSignature(signature),
+            qualifier: this.nodeDetector.getQualifier(property),
+        })
+        const parameters: ProvidesMethodParameter[] = this.typeChecker.getSignatureParameters(signature).map(param => {
+            return {
+                type: createQualifiedType({
+                    type: this.typeChecker.getTypeOfSymbolAtLocation(param, property),
+                    qualifier: this.nodeDetector.getQualifier(param),
+                }),
+                optional: isOptionalParameterSymbol(param),
+            }
+        })
+        const scope = this.nodeDetector.getScope(property)
+        const isIterableProvider = this.nodeDetector.isIterableProvider(property)
+
+        return {providerType: ProviderType.PROVIDES_METHOD, declaration: property, type: returnType, parameters, scope, isIterableProvider}
+    }
+
+    @bound
     private getBinding(method: ts.MethodDeclaration | ts.MethodSignature): Binding {
         if (!method.modifiers?.some(it => it.kind === ts.SyntaxKind.AbstractKeyword) && !ts.isMethodSignature(method)) {
             this.errorReporter.reportBindingNotAbstract(method)
@@ -248,7 +280,12 @@ export class ModuleLocator {
         const factories = methods.filter((node): node is ts.MethodDeclaration => {
             return ts.isMethodDeclaration(node) && !!this.nodeDetector.getProvidesAnnotation(node)
         })
-            .flatMap(this.getProvidesMethod)
+            .map(this.getProvidesMethod)
+            .concat(
+                this.getProviderProperties(module)
+                    .filter(this.nodeDetector.getProvidesAnnotation)
+                    .map(this.getProvidesProperty)
+            )
             .map(factory => ({...factory, module}))
 
         const bindings = methods
@@ -275,6 +312,19 @@ export class ModuleLocator {
         return []
     }
 
+    private getProviderProperties(module: ModuleLike): ProvidesProperty[] {
+        if (ts.isClassDeclaration(module)) {
+            return module.members.filter(ts.isPropertyDeclaration)
+        }
+        if (ts.isInterfaceDeclaration(module)) {
+            return []
+        }
+        if (module.initializer && ts.isObjectLiteralExpression(module.initializer)) {
+            return module.initializer.properties.filter(isObjectLiteralProvider)
+        }
+        return []
+    }
+
     private getSymbolList(decorator: ts.Decorator, identifierName: string): ts.Symbol[] {
         const property = findAllChildren(decorator, ts.isPropertyAssignment)
             .find(it => ts.isIdentifier(it.name) && it.name.text === identifierName)
@@ -288,4 +338,14 @@ export class ModuleLocator {
             .map(this.typeChecker.getSymbolAtLocation)
             .filter(isNotNull)
     }
+}
+
+function isObjectLiteralProvider(node: ts.Node): node is ts.PropertyAssignment | ts.ShorthandPropertyAssignment {
+    return ts.isPropertyAssignment(node) || ts.isShorthandPropertyAssignment(node)
+}
+
+function isOptionalParameterSymbol(parameter: ts.Symbol): boolean {
+    const declaration = ts.getValueDeclaration(parameter)
+    return declaration !== undefined && ts.isParameter(declaration) &&
+        (declaration.questionToken !== undefined || declaration.initializer !== undefined)
 }

@@ -1,5 +1,5 @@
 import * as is from "typescript/unstable/ast/is"
-import {getJSDocTags as getTags, getTextOfJSDocComment, SyntaxKind} from "typescript/unstable/ast"
+import {getJSDocTags as getTags, getTextOfJSDocComment, ModifierFlags, SyntaxKind} from "typescript/unstable/ast"
 import type {Declaration, Decorator, JSDocTag, Node, PropertyDeclaration} from "./Ast.js"
 
 export const {
@@ -21,6 +21,7 @@ export const {
     isPropertyAssignment,
     isPropertyDeclaration,
     isSetAccessorDeclaration,
+    isShorthandPropertyAssignment,
     isStringLiteral,
     isTypeAliasDeclaration,
     isVariableDeclaration,
@@ -52,6 +53,13 @@ const modifierFlagsOnParameterProperties: ReadonlySet<SyntaxKind> = new Set([
 function isAutoAccessorProperty(declaration: Declaration): boolean {
     return is.isPropertyDeclaration(declaration)
         && (declaration.modifiers?.some(it => it.kind === SyntaxKind.AccessorKeyword) ?? false)
+}
+
+export function isExported(declaration: Declaration): boolean {
+    const node: Node = is.isVariableDeclaration(declaration) ? declaration.parent.parent : declaration
+    if (!("modifierFlags" in node)) return false
+    const modifierFlags = (node as {modifierFlags: ModifierFlags}).modifierFlags
+    return (modifierFlags & ModifierFlags.Export) !== 0
 }
 
 export function getJSDocTags(node: Node): readonly JSDocTag[] {
