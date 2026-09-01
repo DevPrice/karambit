@@ -386,18 +386,21 @@ export class AnotherAssistedInjectClass {
     ) { }
 }
 
-@Module
-export abstract class AssistedInjectModule {
+function provideString() {
+    return "provided-string"
+}
 
-    @Provides
-    static provideString(): string {
-        return "provided-string"
-    }
+export const assistedInjectModule = {
+    /** @provides */
+    provideString: provideString,
 }
 
 export type AnotherAssistedInjectClassFactory = (symbol: symbol, object: object, number: number) => AnotherAssistedInjectClass
 
-@Component({modules: [AssistedInjectModule]})
+/**
+ * @component
+ * @includeModule {@link assistedInjectModule}
+ */
 export abstract class AssistedInjectComponent {
     abstract readonly assistedFactory: (number: number) => AssistedInjectClass
     abstract readonly anotherAssistedFactory: AnotherAssistedInjectClassFactory

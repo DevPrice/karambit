@@ -23,7 +23,7 @@ describe("Validation", () => {
 function runKarambitForError(dirName: string, errorScope: string) {
     expectKarambitError(errorScope, () => {
         withProject(Path.join(dirName, "tsconfig.json"), project => {
-            generateComponentFiles(createProgram(project), {dryRun: true})
+            generateComponentFiles(createProgram(project), {dryRun: true, enableDocTags: true})
         })
     })
 }
