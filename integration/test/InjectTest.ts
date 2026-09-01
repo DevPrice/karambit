@@ -9,6 +9,7 @@ import {
     KarambitNotExposedMultibindingsComponent,
     KarambitEmptyRootMultibindingsComponent,
     KarambitOptionalComponent,
+    KarambitAliasProviderComponent,
 } from "../src/karambit-generated/karambit"
 import {ChildComponent, childInstance, nullProvidedCount} from "../src/TestComponents"
 import {multibindingScopedProvidedCount} from "../src/MultibindingModules"
@@ -213,6 +214,25 @@ describe("Injection", () => {
             const subcomponent = emptyRootComponent.subcomponentFactory()
             assert.strictEqual(subcomponent.numberSetExtension.size, 1)
             assert.strictEqual(subcomponent.numberMapExtension.size, 1)
+        })
+    })
+    describe("Alias providers", () => {
+        const aliasProviderComponent = new KarambitAliasProviderComponent()
+        it("shorthand property provides", () => {
+            assert.strictEqual(aliasProviderComponent.aliasedNumber, 1337)
+        })
+        it("aliased function receives dependencies and optional bindings", () => {
+            assert.strictEqual(aliasProviderComponent.description, "1337?")
+        })
+        it("class property provides", () => {
+            assert.strictEqual(aliasProviderComponent.flag, true)
+        })
+        it("module imported from another file can be included", () => {
+            assert.deepStrictEqual(aliasProviderComponent.importedModuleType, {})
+        })
+        it("scope is read from the property, not the aliased function", () => {
+            assert.notStrictEqual(aliasProviderComponent.unscopedTarget, aliasProviderComponent.unscopedTarget)
+            assert.strictEqual(aliasProviderComponent.scopedTarget, aliasProviderComponent.scopedTarget)
         })
     })
     describe("Configuration", () => {

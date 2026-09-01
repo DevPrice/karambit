@@ -48,7 +48,7 @@ export class InjectNodeDetector {
     }
 
     @bound
-    isIterableProvider(item: ts.MethodDeclaration): boolean {
+    isIterableProvider(item: Annotated): boolean {
         return !!(this.getElementsIntoSetAnnotation(item) || this.getElementsIntoMapAnnotation(item))
     }
 
@@ -329,8 +329,7 @@ export class InjectNodeDetector {
     }
 
     private getMapKey(declaration: ModuleProviderLike): {keyType: ts.Type, expression: ts.Expression} | undefined {
-        if (ts.isMethodSignature(declaration)) return undefined
-        const decorators = declaration.modifiers?.filter(this.isMapKeyDecorator)
+        const decorators = ts.getDecorators(declaration)?.filter(this.isMapKeyDecorator)
         if (!decorators || decorators.length !== 1) return undefined
         const decorator = decorators[0]
 

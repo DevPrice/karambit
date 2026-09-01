@@ -144,6 +144,24 @@ export abstract class HelloWorldModule {
 > **Note**
 > Provides methods defined in a class must be static.
 
+A provider can also be a property whose value is a function, which lets an existing function be aliased into a Module without wrapping it:
+
+```typescript
+function greet(): string {
+    return "Hello"
+}
+
+export const HelloWorldModule = {
+    /** @provides */
+    provideGreeting: greet,
+}
+```
+
+Shorthand properties and arrow functions work the same way, as do static properties of a class Module. The property must have exactly one call signature; its parameters are the provider's dependencies, and its return type is the provided type.
+
+> **Note**
+> Tags on the aliased function are ignored. [Scopes](#scope), [multibindings](#multibindings) and other annotations are always read from the Module property, so the same function can be installed in more than one Module with different behavior.
+
 Modules are installed using the `@includeModule` tag. Modules can be installed to Components, Subcomponents, and even other Modules.
 
 ```typescript

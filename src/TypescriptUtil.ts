@@ -42,6 +42,10 @@ export function isComponentLikeDeclaration(node: ts.Node): node is ComponentLike
     return ts.isClassLike(node) || ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node)
 }
 
+export function getCallSignatures(typeChecker: ts.TypeChecker, node: ts.Node): readonly ts.Signature[] {
+    return typeChecker.getSignaturesOfType(typeChecker.getTypeAtLocation(node), ts.SignatureKind.Call)
+}
+
 export function isJSDocTag(node: ts.Node): node is ts.JSDocTag {
     return node.kind >= ts.SyntaxKind.JSDocTag && node.kind <= ts.SyntaxKind.JSDocImportTag
 }

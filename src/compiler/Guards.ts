@@ -23,6 +23,7 @@ export const {
     isPropertyAssignment,
     isPropertyDeclaration,
     isSetAccessorDeclaration,
+    isShorthandPropertyAssignment,
     isStringLiteral,
     isTypeAliasDeclaration,
     isVariableDeclaration,
@@ -36,6 +37,10 @@ export function isPropertyLikeDeclaration(declaration: Declaration): declaration
 // needs the parent as well as the kind, so it isn't a plain syntax-kind test
 export function isParameterProperty(declaration: Declaration): boolean {
     return ts.isParameterPropertyDeclaration(declaration, declaration.parent)
+}
+
+export function isExported(declaration: Declaration): boolean {
+    return (ts.getCombinedModifierFlags(declaration) & ts.ModifierFlags.Export) !== 0
 }
 
 export function getJSDocTags(node: Node): readonly JSDocTag[] {
